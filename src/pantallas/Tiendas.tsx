@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { db } from "../db/db";
-import { agregarDeuda, cerrarDeudas, deudasPorTienda } from "../db/tiendas";
+import { agregarDeuda, cerrarDeudas, crearTienda, deudasPorTienda } from "../db/tiendas";
 import { aCentimos, money } from "../lib/dinero";
 import { horaTxt, hoyISO, sumarDias } from "../lib/fecha";
 import { avisoGuardado } from "../lib/aviso";
@@ -11,13 +11,16 @@ import { normalizar, parecido } from "../tiendas/normalizar";
 import { Cabecera, S, Vacio } from "../ui/base";
 
 /**
- * El directorio. No se carga a mano: cada tienda de esta lista nació de un
- * dictado, y su precio, su parada y su hora se aprendieron solos.
+ * El directorio. La mayoría de tiendas nace de un dictado y su precio, su
+ * parada y su hora se aprenden solas; el botón de agregar es para las que
+ * conviene tener ya cargadas antes de repartirles (sin precio ni hora todavía).
  */
 export function Tiendas() {
   const [busca, setBusca] = useState("");
   const [editando, setEditando] = useState<number | null>(null);
   const [monto, setMonto] = useState("");
+  const [agregando, setAgregando] = useState(false);
+  const [nombreNuevo, setNombreNuevo] = useState("");
   /** Las deudas viejas se fechan ayer: son de «antes», no de hoy. */
   const ayer = sumarDias(hoyISO(), -1);
 
@@ -34,16 +37,28 @@ export function Tiendas() {
     q ? tiendas.filter((t) => parecido(q, t.nombreNorm) > 0.55) : tiendas
   ).sort((a, b) => (a.ordenRuta || 99) - (b.ordenRuta || 99));
 
+  const crear = () => {
+    const nombre = nombreNuevo.trim();
+    if (!nombre) return;
+    void crearTienda(nombre).then(() => {
+      avisoGuardado();
+      setNombreNuevo("");
+      setAgregando(false);
+    });
+  };
+
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
       <Cabecera titulo={`Tiendas · ${tiendas.length}`} />
 
-      <div style={{ flex: "none", padding: "0 20px 12px" }}>
+      <div style={{ flex: "none", padding: "0 20px 12px", display: "flex", gap: 8 }}>
         <div
           style={{
             display: "flex",
             alignItems: "center",
             gap: 10,
+            flex: 1,
+            minWidth: 0,
             background: "var(--superficie)",
             borderRadius: "var(--radio)",
             padding: "0 14px",
@@ -65,7 +80,70 @@ export function Tiendas() {
             }}
           />
         </div>
+        <button
+          aria-label="Nueva tienda"
+          onClick={() => setAgregando((v) => !v)}
+          className="pulsable-acento"
+          style={{
+            flex: "none",
+            width: 52,
+            height: 52,
+            borderRadius: "var(--radio)",
+            border: "1.5px solid var(--acento)",
+            color: "var(--acento-300)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Plus size={24} />
+        </button>
       </div>
+
+      {agregando && (
+        <div style={{ flex: "none", padding: "0 20px 12px" }}>
+          <div style={{ ...S.tarjeta, padding: 16, display: "flex", gap: 8 }}>
+            <input
+              autoFocus
+              value={nombreNuevo}
+              onChange={(e) => setNombreNuevo(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && crear()}
+              placeholder="Nombre de la tienda"
+              style={{
+                flex: 1,
+                minWidth: 0,
+                height: 54,
+                borderRadius: "var(--radio)",
+                border: "1.5px solid var(--borde)",
+                background: "var(--hundido)",
+                padding: "0 14px",
+                fontSize: 17,
+              }}
+            />
+            <button
+              onClick={crear}
+              className="pulsable-acento"
+              disabled={!nombreNuevo.trim()}
+              style={{
+                flex: "none",
+                width: 90,
+                height: 54,
+                borderRadius: "var(--radio)",
+                border: "1.5px solid var(--acento)",
+                color: "var(--acento-300)",
+                fontSize: 16,
+                fontWeight: 600,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                opacity: nombreNuevo.trim() ? 1 : 0.45,
+              }}
+            >
+              Crear
+            </button>
+          </div>
+        </div>
+      )}
 
       <div
         className="scroll"
@@ -82,7 +160,7 @@ export function Tiendas() {
         {tiendas.length === 0 && (
           <Vacio
             titulo="Todavía no hay tiendas"
-            sub="Se van creando solas: la primera vez que nombres a alguien al dictar, la app te preguntará si es cliente nuevo."
+            sub="Se van creando solas la primera vez que nombres a alguien al dictar, o agrégala a mano con el botón +."
           />
         )}
         {tiendas.length > 0 && lista.length === 0 && (
