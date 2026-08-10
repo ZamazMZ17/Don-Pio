@@ -9,6 +9,11 @@ import { useAjuste } from "../lib/ganchos";
 import { ChevronRight, Sparkles } from "lucide-react";
 import { guardarAjuste, CLAVE_API, CLAVE_ORDEN } from "../voz/ajustes";
 import { S, Vacio } from "../ui/base";
+// Importado como módulo, no referenciado por ruta absoluta: es el único
+// sitio de la app que pinta una imagen suelta, y `/icono-192.png` a pelo no
+// se resolvía dentro del WebView del APK aunque en el navegador sí. Así lo
+// procesa Vite igual que a las fuentes y queda con la misma garantía.
+import logo from "../assets/logo.png";
 
 /**
  * La pantalla principal. Todo el estado del día sin desplazar: con cuánto
@@ -99,7 +104,7 @@ export function Hoy({
         >
           <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
             <img
-              src="/icono-192.png"
+              src={logo}
               alt=""
               width={28}
               height={28}
