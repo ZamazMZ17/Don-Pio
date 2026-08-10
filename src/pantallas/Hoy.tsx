@@ -97,7 +97,16 @@ export function Hoy({
             marginBottom: 14,
           }}
         >
-          <div style={{ fontSize: 22, fontWeight: 600 }}>{diaCorto(fecha)}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+            <img
+              src="/icono-192.png"
+              alt=""
+              width={28}
+              height={28}
+              style={{ borderRadius: 7, flex: "none" }}
+            />
+            <div style={{ fontSize: 22, fontWeight: 600 }}>{diaCorto(fecha)}</div>
+          </div>
           <div
             style={{
               fontSize: 14,
