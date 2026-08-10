@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Keyboard, Mic, Square } from "lucide-react";
 import type { Candidata, Emparejamiento } from "../tiendas/emparejar";
 import type { Intencion } from "../voz/intencion";
-import { aCentimos, aGramos, kg, money } from "../lib/dinero";
+import { aCentimos, aGramos, money } from "../lib/dinero";
 import { calcular } from "../dominio/calculo";
 import { S } from "./base";
 
@@ -153,6 +153,7 @@ export function TarjetaConfirmacion({
   onElegirOtra,
   onCrearNueva,
   onCorregir,
+  onEditar,
 }: {
   propuesta: Propuesta;
   precioDefectoKg: number;
@@ -160,6 +161,8 @@ export function TarjetaConfirmacion({
   onElegirOtra: (tiendaId: number) => void;
   onCrearNueva: (nombre: string) => void;
   onCorregir: () => void;
+  /** Corrige a mano lo que se entendió mal, antes de confirmar. */
+  onEditar: (cambios: Partial<Intencion>) => void;
 }) {
   const { intencion: i, emparejamiento: em } = propuesta;
   const [eligiendo, setEligiendo] = useState(em.decision === "ambiguo" || !em.mejor);
@@ -332,13 +335,15 @@ export function TarjetaConfirmacion({
         </div>
       )}
 
-      {/* Qué */}
+      {/* Qué. Todo editable: lo que se entendió mal se corrige aquí mismo,
+          sin tener que descartar y repetir el dictado entero. */}
       {!esPago && (
         <>
           <div
             style={{
               display: "flex",
-              gap: 0,
+              flexWrap: "wrap",
+              gap: 14,
               borderTop: "1px solid var(--borde)",
               borderBottom: "1px solid var(--borde)",
               padding: "14px 0",
@@ -347,22 +352,42 @@ export function TarjetaConfirmacion({
           >
             {/* Pechos y piernas solo ocupan sitio si los hay: en la mayoría
                 de las entregas son pollos enteros y nada más. */}
-            <Campo
+            <CampoEditable
               flex={1}
               rotulo={i.pechos || i.piernas ? "Enteros" : "Pollos"}
               valor={String(i.pollos)}
+              onGuardar={(n) => onEditar({ pollos: Math.max(0, Math.round(n)) })}
             />
-            {i.pechos > 0 && <Campo flex={1} rotulo="Pechos" valor={String(i.pechos)} />}
-            {i.piernas > 0 && <Campo flex={1} rotulo="Piernas" valor={String(i.piernas)} />}
-            <Campo
+            {i.pechos > 0 && (
+              <CampoEditable
+                flex={1}
+                rotulo="Pechos"
+                valor={String(i.pechos)}
+                onGuardar={(n) => onEditar({ pechos: Math.max(0, Math.round(n)) })}
+              />
+            )}
+            {i.piernas > 0 && (
+              <CampoEditable
+                flex={1}
+                rotulo="Piernas"
+                valor={String(i.piernas)}
+                onGuardar={(n) => onEditar({ piernas: Math.max(0, Math.round(n)) })}
+              />
+            )}
+            <CampoEditable
               flex={1.2}
               rotulo="Peso"
-              valor={cuenta.peso ? kg(cuenta.peso) : "sin pesar"}
+              valor={cuenta.peso ? (cuenta.peso / 1000).toFixed(2) : ""}
+              placeholder="sin pesar"
+              sufijo="kg"
+              onGuardar={(n) => onEditar({ tandasKg: [], pesoTotalKg: n > 0 ? n : null })}
             />
-            <Campo
+            <CampoEditable
               flex={1.2}
               rotulo="Por kilo"
-              valor={cuenta.precioKg ? (cuenta.precioKg / 100).toFixed(2) : "—"}
+              valor={cuenta.precioKg ? (cuenta.precioKg / 100).toFixed(2) : ""}
+              placeholder="—"
+              onGuardar={(n) => onEditar({ precioPorKg: n > 0 ? n : null })}
             />
           </div>
 
@@ -372,25 +397,54 @@ export function TarjetaConfirmacion({
               alignItems: "baseline",
               justifyContent: "space-between",
               gap: 10,
-              marginBottom: 18,
+              marginBottom: cuenta.origen === "incompleto" ? 6 : 18,
             }}
           >
             <span style={{ fontSize: 15, color: "var(--texto-3)" }}>Total</span>
-            {/* Un aviso no es una cifra: a 44px «falta el precio» partía la
-                tarjeta en dos líneas y empujaba los botones fuera. */}
-            <span
+            <input
+              key={cuenta.origen === "incompleto" ? "vacio" : cuenta.total}
+              defaultValue={cuenta.origen === "incompleto" ? "" : (cuenta.total / 100).toFixed(2)}
+              inputMode="decimal"
+              placeholder="0.00"
+              aria-label="Total"
+              onFocus={(ev) => ev.currentTarget.select()}
+              onBlur={(ev) => {
+                const n = Number(ev.target.value.replace(",", "."));
+                if (!Number.isFinite(n) || n < 0) return;
+                // Si no cambió, no lo fijes: si no, cualquier toque sin
+                // querer congelaría el total en vez de dejarlo recalcularse
+                // solo cuando cambia el peso o el precio.
+                if (Math.abs(n - cuenta.total / 100) < 0.005) return;
+                onEditar({ totalDictado: n > 0 ? n : null });
+              }}
               style={{
-                fontSize: cuenta.origen === "incompleto" ? 19 : 44,
-                fontWeight: cuenta.origen === "incompleto" ? 600 : 700,
+                width: 170,
+                textAlign: "right",
+                fontSize: cuenta.origen === "incompleto" ? 22 : 44,
+                fontWeight: 700,
                 lineHeight: 1.15,
                 letterSpacing: cuenta.origen === "incompleto" ? 0 : -1,
-                textAlign: "right",
+                background: "none",
+                border: "none",
+                borderBottom: "1.5px dashed var(--borde)",
+                padding: "2px 0",
+                outline: "none",
                 color: cuenta.origen === "incompleto" ? "var(--ambar)" : "var(--texto)",
               }}
-            >
-              {cuenta.origen === "incompleto" ? "Falta el precio · tócalo para ponerlo" : money(cuenta.total)}
-            </span>
+            />
           </div>
+          {cuenta.origen === "incompleto" && (
+            <div
+              style={{
+                textAlign: "right",
+                fontSize: 12,
+                color: "var(--ambar)",
+                marginBottom: 12,
+              }}
+            >
+              Falta el precio o el total · tócalo para ponerlo
+            </div>
+          )}
         </>
       )}
 
@@ -502,11 +556,50 @@ function Candidato({ candidata, onClick }: { candidata: Candidata; onClick: () =
   );
 }
 
-function Campo({ rotulo, valor, flex }: { rotulo: string; valor: string; flex: number }) {
+/** Un número que se corrige tocándolo y se guarda al salir del campo. */
+function CampoEditable({
+  rotulo,
+  valor,
+  placeholder,
+  sufijo,
+  flex,
+  onGuardar,
+}: {
+  rotulo: string;
+  valor: string;
+  placeholder?: string;
+  sufijo?: string;
+  flex: number;
+  onGuardar: (n: number) => void;
+}) {
   return (
-    <div style={{ flex, minWidth: 0 }}>
+    <div style={{ flex, minWidth: 64 }}>
       <div style={{ fontSize: 12, color: "var(--texto-4)", marginBottom: 4 }}>{rotulo}</div>
-      <div style={{ fontSize: 24, fontWeight: 700 }}>{valor}</div>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+        <input
+          key={valor}
+          defaultValue={valor}
+          placeholder={placeholder}
+          inputMode="decimal"
+          onFocus={(ev) => ev.currentTarget.select()}
+          onBlur={(ev) => {
+            const n = Number(ev.target.value.replace(",", "."));
+            if (Number.isFinite(n)) onGuardar(n);
+          }}
+          style={{
+            width: "100%",
+            minWidth: 0,
+            fontSize: 24,
+            fontWeight: 700,
+            background: "none",
+            border: "none",
+            borderBottom: "1.5px dashed var(--borde)",
+            padding: "2px 0",
+            outline: "none",
+          }}
+        />
+        {sufijo && <span style={{ fontSize: 13, color: "var(--texto-3)" }}>{sufijo}</span>}
+      </div>
     </div>
   );
 }

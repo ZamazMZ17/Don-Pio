@@ -33,6 +33,7 @@ import {
 import { duracion, useGrabadora } from "./voz/grabacion";
 import { useReconocedor } from "./voz/reconocimiento";
 import type { Contexto } from "./tiendas/emparejar";
+import type { Intencion } from "./voz/intencion";
 
 import { Hoy } from "./pantallas/Hoy";
 import { Detalle } from "./pantallas/Detalle";
@@ -318,6 +319,16 @@ export default function App() {
     setPropuesta(null);
   }, [propuesta]);
 
+  /** Corrige a mano un dato que se entendió mal, antes de confirmar. */
+  const editarPropuesta = useCallback(
+    (cambios: Partial<Intencion>) => {
+      setPropuesta((actual) =>
+        actual ? { ...actual, intencion: { ...actual.intencion, ...cambios } } : actual,
+      );
+    },
+    [],
+  );
+
   /* ── Navegación ─────────────────────────────────────────────────────── */
 
   const ir = useCallback(
@@ -513,6 +524,7 @@ export default function App() {
               onElegirOtra={elegirOtra}
               onCrearNueva={(nombre) => void confirmar(null, nombre)}
               onCorregir={descartar}
+              onEditar={editarPropuesta}
             />
           )}
 
