@@ -165,3 +165,17 @@ export async function actualizarTienda(
   if (cambios.nombre) cambios.nombreNorm = normalizar(cambios.nombre);
   await db.tiendas.update(id, cambios);
 }
+
+/**
+ * Borra una tienda del directorio. No se permite con una deuda abierta: esa
+ * plata se volvería invisible en Cobranza, que solo mira tiendas que existen
+ * — se perdería de vista en vez de cobrarse. Las entregas ya registradas se
+ * quedan (la plata de esos días no se toca); en el historial pasan a
+ * aparecer como «Sin nombre».
+ */
+export async function borrarTienda(id: number): Promise<{ ok: true } | { ok: false; deuda: Centimos }> {
+  const deuda = await deudaDe(id);
+  if (deuda > 0) return { ok: false, deuda };
+  await db.tiendas.delete(id);
+  return { ok: true };
+}

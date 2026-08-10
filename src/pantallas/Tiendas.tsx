@@ -1,8 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, Trash2 } from "lucide-react";
 import { db } from "../db/db";
-import { agregarDeuda, cerrarDeudas, crearTienda, deudasPorTienda } from "../db/tiendas";
+import {
+  actualizarTienda,
+  agregarDeuda,
+  borrarTienda,
+  cerrarDeudas,
+  crearTienda,
+  deudasPorTienda,
+} from "../db/tiendas";
 import { aCentimos, money } from "../lib/dinero";
 import { horaTxt, hoyISO, sumarDias } from "../lib/fecha";
 import { avisoGuardado } from "../lib/aviso";
@@ -21,8 +28,19 @@ export function Tiendas() {
   const [monto, setMonto] = useState("");
   const [agregando, setAgregando] = useState(false);
   const [nombreNuevo, setNombreNuevo] = useState("");
+  const [nombreEdit, setNombreEdit] = useState("");
+  /** Qué tienda tiene armado el «¿seguro que la borro?», esperando confirmación. */
+  const [borrando, setBorrando] = useState<number | null>(null);
   /** Las deudas viejas se fechan ayer: son de «antes», no de hoy. */
   const ayer = sumarDias(hoyISO(), -1);
+
+  // Si lo dejó a medias, la confirmación de borrado no se queda armada
+  // esperando un toque suelto que después borre algo sin querer.
+  useEffect(() => {
+    if (borrando === null) return;
+    const id = setTimeout(() => setBorrando(null), 8000);
+    return () => clearTimeout(id);
+  }, [borrando]);
 
   const datos = useLiveQuery(async () => {
     const [tiendas, deudas] = await Promise.all([db.tiendas.toArray(), deudasPorTienda()]);
@@ -45,6 +63,12 @@ export function Tiendas() {
       setNombreNuevo("");
       setAgregando(false);
     });
+  };
+
+  const guardarNombre = (id: number, actual: string) => {
+    const nombre = nombreEdit.trim();
+    if (!nombre || nombre === actual) return;
+    void actualizarTienda(id, { nombre }).then(() => avisoGuardado());
   };
 
   return (
@@ -188,6 +212,8 @@ export function Tiendas() {
                 onClick={() => {
                   setEditando(abierta ? null : t.id!);
                   setMonto("");
+                  setNombreEdit(t.nombre);
+                  setBorrando(null);
                 }}
                 style={{ width: "100%" }}
               >
@@ -233,6 +259,49 @@ export function Tiendas() {
                     animation: "dpup .2s ease-out",
                   }}
                 >
+                  <div style={{ fontSize: 14, color: "var(--texto-3)", marginBottom: 10 }}>
+                    Nombre
+                  </div>
+                  <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
+                    <input
+                      value={nombreEdit}
+                      onChange={(ev) => setNombreEdit(ev.target.value)}
+                      onKeyDown={(ev) => ev.key === "Enter" && guardarNombre(t.id!, t.nombre)}
+                      placeholder="Nombre de la tienda"
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        height: 54,
+                        borderRadius: "var(--radio)",
+                        border: "1.5px solid var(--borde)",
+                        background: "var(--hundido)",
+                        padding: "0 14px",
+                        fontSize: 17,
+                      }}
+                    />
+                    <button
+                      className="pulsable-acento"
+                      disabled={!nombreEdit.trim() || nombreEdit.trim() === t.nombre}
+                      onClick={() => guardarNombre(t.id!, t.nombre)}
+                      style={{
+                        flex: "none",
+                        width: 96,
+                        height: 54,
+                        borderRadius: "var(--radio)",
+                        border: "1.5px solid var(--acento)",
+                        color: "var(--acento-300)",
+                        fontSize: 16,
+                        fontWeight: 600,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        opacity: nombreEdit.trim() && nombreEdit.trim() !== t.nombre ? 1 : 0.45,
+                      }}
+                    >
+                      Guardar
+                    </button>
+                  </div>
+
                   <div style={{ fontSize: 14, color: "var(--texto-3)", marginBottom: 10 }}>
                     Deuda de días anteriores
                   </div>
@@ -304,6 +373,71 @@ export function Tiendas() {
                       Dar por saldada su deuda de {money(saldo)}
                     </button>
                   )}
+
+                  <div
+                    style={{
+                      marginTop: 14,
+                      paddingTop: 14,
+                      borderTop: "1px solid var(--borde)",
+                    }}
+                  >
+                    {saldo > 0 ? (
+                      <div
+                        style={{
+                          fontSize: 13,
+                          color: "var(--texto-4)",
+                          textAlign: "center",
+                          padding: "6px 0",
+                        }}
+                      >
+                        Salda su deuda para poder borrarla
+                      </div>
+                    ) : borrando === t.id ? (
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ flex: 1, fontSize: 14, color: "var(--rojo)" }}>
+                          ¿Borrar {t.nombre}? No se puede deshacer.
+                        </div>
+                        <button
+                          onClick={() => {
+                            void borrarTienda(t.id!).then((r) => {
+                              if (!r.ok) return;
+                              avisoGuardado();
+                              setEditando(null);
+                              setBorrando(null);
+                            });
+                          }}
+                          style={{
+                            flex: "none",
+                            height: 44,
+                            padding: "0 16px",
+                            borderRadius: "var(--radio)",
+                            border: "1.5px solid var(--rojo)",
+                            color: "var(--rojo)",
+                            fontSize: 15,
+                            fontWeight: 600,
+                          }}
+                        >
+                          Sí, borrar
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setBorrando(t.id!)}
+                        style={{
+                          height: 48,
+                          width: "100%",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: 8,
+                          color: "var(--texto-4)",
+                          fontSize: 15,
+                        }}
+                      >
+                        <Trash2 size={17} /> Borrar tienda
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

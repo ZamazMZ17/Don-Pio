@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import { db } from "../db/db";
 import {
   borrarEntrega,
@@ -9,7 +9,7 @@ import {
   fijarTotal,
   registrarCobro,
 } from "../db/entregas";
-import { deudaDetalle } from "../db/tiendas";
+import { actualizarTienda, deudaDetalle } from "../db/tiendas";
 import { aCentimos, aGramos, kg, money } from "../lib/dinero";
 import { diaCorto } from "../lib/fecha";
 import { avisoGuardado } from "../lib/aviso";
@@ -62,6 +62,8 @@ function CampoNumero({
  */
 export function Detalle({ entregaId, volver }: { entregaId: number; volver: () => void }) {
   const [nuevaTanda, setNuevaTanda] = useState("");
+  const [renombrando, setRenombrando] = useState(false);
+  const [nombreEdit, setNombreEdit] = useState("");
 
   const datos = useLiveQuery(async () => {
     const entrega = await db.entregas.get(entregaId);
@@ -85,6 +87,15 @@ export function Detalle({ entregaId, volver }: { entregaId: number; volver: () =
 
   const cambiarTandas = (tandas: number[]) => void editarEntrega(entregaId, { tandas });
 
+  const guardarNombre = () => {
+    const nombre = nombreEdit.trim();
+    if (!tienda || !nombre || nombre === tienda.nombre) return;
+    void actualizarTienda(tienda.id!, { nombre }).then(() => {
+      avisoGuardado();
+      setRenombrando(false);
+    });
+  };
+
   const agregarTanda = () => {
     const n = Number(nuevaTanda.replace(",", "."));
     if (!Number.isFinite(n) || n <= 0) return;
@@ -94,7 +105,24 @@ export function Detalle({ entregaId, volver }: { entregaId: number; volver: () =
 
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <Cabecera titulo={tienda?.nombre ?? "Entrega"} volver={volver} />
+      <Cabecera
+        titulo={tienda?.nombre ?? "Entrega"}
+        volver={volver}
+        derecha={
+          tienda && (
+            <button
+              aria-label="Editar nombre"
+              onClick={() => {
+                setNombreEdit(tienda.nombre);
+                setRenombrando((v) => !v);
+              }}
+              style={{ color: "var(--texto-3)", display: "flex", padding: 8, flex: "none" }}
+            >
+              <Pencil size={20} />
+            </button>
+          )
+        }
+      />
 
       <div
         className="scroll"
@@ -106,6 +134,49 @@ export function Detalle({ entregaId, volver }: { entregaId: number; volver: () =
           gap: 12,
         }}
       >
+        {renombrando && tienda && (
+          <div style={{ ...S.tarjeta, padding: 16, display: "flex", gap: 8 }}>
+            <input
+              autoFocus
+              value={nombreEdit}
+              onChange={(ev) => setNombreEdit(ev.target.value)}
+              onKeyDown={(ev) => ev.key === "Enter" && guardarNombre()}
+              placeholder="Nombre de la tienda"
+              style={{
+                flex: 1,
+                minWidth: 0,
+                height: 54,
+                borderRadius: "var(--radio)",
+                border: "1.5px solid var(--borde)",
+                background: "var(--hundido)",
+                padding: "0 14px",
+                fontSize: 17,
+              }}
+            />
+            <button
+              onClick={guardarNombre}
+              className="pulsable-acento"
+              disabled={!nombreEdit.trim() || nombreEdit.trim() === tienda.nombre}
+              style={{
+                flex: "none",
+                width: 96,
+                height: 54,
+                borderRadius: "var(--radio)",
+                border: "1.5px solid var(--acento)",
+                color: "var(--acento-300)",
+                fontSize: 16,
+                fontWeight: 600,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                opacity: nombreEdit.trim() && nombreEdit.trim() !== tienda.nombre ? 1 : 0.45,
+              }}
+            >
+              Guardar
+            </button>
+          </div>
+        )}
+
         {deuda.monto > 0 && (
           <button
             className="pulsable"
