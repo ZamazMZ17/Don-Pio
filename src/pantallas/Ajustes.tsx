@@ -1,6 +1,9 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
+import { Filesystem, Directory, Encoding } from "@capacitor/filesystem";
+import { Share } from "@capacitor/share";
 import { db } from "../db/db";
+import { generarRespaldo, restaurarRespaldo } from "../db/respaldo";
 import {
   CLAVE_API,
   CLAVE_HORA_CIERRE,
@@ -14,6 +17,9 @@ import {
 } from "../voz/ajustes";
 import { pendientes, procesarCola } from "../voz/cola";
 import { useAjuste, useAjusteBool } from "../lib/ganchos";
+import { hoyISO } from "../lib/fecha";
+import { avisoAtencion, avisoGuardado } from "../lib/aviso";
+import { esNativo } from "../lib/plataforma";
 import { Cabecera, S } from "../ui/base";
 
 /**
@@ -33,6 +39,75 @@ export function Ajustes({ volver }: { volver: () => void }) {
   const tiendas = useLiveQuery(() => db.tiendas.count(), []) ?? 0;
   const [verKey, setVerKey] = useState(false);
   const [repasando, setRepasando] = useState(false);
+
+  const [compartiendo, setCompartiendo] = useState(false);
+  const [restaurando, setRestaurando] = useState(false);
+  const [mensajeRespaldo, setMensajeRespaldo] = useState<string | null>(null);
+  const archivoRef = useRef<HTMLInputElement | null>(null);
+
+  /**
+   * Nunca lleva la API key (CLAUDE.md §3): un respaldo viaja por WhatsApp o
+   * correo, que no es "hacia el proveedor". Se comparte como archivo, no como
+   * texto pegado, para que llegue entero por cualquier app y no se corte.
+   */
+  const compartirRespaldo = async () => {
+    setCompartiendo(true);
+    setMensajeRespaldo(null);
+    try {
+      const json = JSON.stringify(await generarRespaldo(), null, 2);
+      const nombre = `don-pio-respaldo-${hoyISO()}.json`;
+
+      if (esNativo) {
+        const { uri } = await Filesystem.writeFile({
+          path: nombre,
+          data: json,
+          directory: Directory.Cache,
+          encoding: Encoding.UTF8,
+        });
+        await Share.share({
+          title: "Respaldo de Don Pio",
+          dialogTitle: "Compartir respaldo",
+          url: uri,
+        });
+      } else {
+        // En el navegador de desarrollo no hay hoja de compartir: se descarga.
+        const url = URL.createObjectURL(new Blob([json], { type: "application/json" }));
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = nombre;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch {
+      avisoAtencion();
+      setMensajeRespaldo("No se pudo armar el respaldo.");
+    } finally {
+      setCompartiendo(false);
+    }
+  };
+
+  const onArchivoElegido = async (ev: React.ChangeEvent<HTMLInputElement>) => {
+    const archivo = ev.target.files?.[0];
+    // Para poder elegir el mismo archivo dos veces seguidas si algo falla.
+    ev.target.value = "";
+    if (!archivo) return;
+
+    setRestaurando(true);
+    setMensajeRespaldo(null);
+    try {
+      const datos = JSON.parse(await archivo.text());
+      await restaurarRespaldo(datos);
+      avisoGuardado();
+      setMensajeRespaldo("Listo, se restauró el respaldo.");
+    } catch (e) {
+      avisoAtencion();
+      setMensajeRespaldo(
+        e instanceof Error ? e.message : "Ese archivo no se pudo leer como respaldo.",
+      );
+    } finally {
+      setRestaurando(false);
+    }
+  };
 
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
@@ -175,6 +250,47 @@ export function Ajustes({ volver }: { volver: () => void }) {
             ? "Todavía no hay tiendas. Se crean solas la primera vez que nombras a alguien al dictar."
             : `${tiendas} ${tiendas === 1 ? "tienda aprendida" : "tiendas aprendidas"} desde tus dictados. Cada entrega que confirmas afina su hora y su parada en la ruta.`}
         </div>
+
+        <div style={{ ...S.tarjeta, borderRadius: 12, padding: 16 }}>
+          <div style={{ ...S.rotulo, marginBottom: 4 }}>Respaldo</div>
+          <div
+            style={{ fontSize: 14, color: "var(--texto-3)", marginBottom: 12, lineHeight: 1.5 }}
+          >
+            Para pasar tus tiendas, entregas y deudas a otro teléfono, o para tener una copia por
+            las dudas. Nunca incluye tu API key.
+          </div>
+
+          <button
+            onClick={() => void compartirRespaldo()}
+            disabled={compartiendo}
+            className="pulsable"
+            style={{ ...botonRespaldo, marginBottom: 10, opacity: compartiendo ? 0.6 : 1 }}
+          >
+            {compartiendo ? "Armando…" : "Compartir respaldo"}
+          </button>
+
+          <button
+            onClick={() => archivoRef.current?.click()}
+            disabled={restaurando}
+            className="pulsable"
+            style={{ ...botonRespaldo, opacity: restaurando ? 0.6 : 1 }}
+          >
+            {restaurando ? "Restaurando…" : "Restaurar desde un archivo"}
+          </button>
+          <input
+            ref={archivoRef}
+            type="file"
+            accept="application/json,.json"
+            onChange={(ev) => void onArchivoElegido(ev)}
+            style={{ display: "none" }}
+          />
+
+          {mensajeRespaldo && (
+            <div style={{ fontSize: 13, color: "var(--texto-3)", marginTop: 10, lineHeight: 1.5 }}>
+              {mensajeRespaldo}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -190,6 +306,18 @@ const campo: React.CSSProperties = {
   padding: "0 14px",
   fontSize: 16,
   minWidth: 0,
+};
+
+const botonRespaldo: React.CSSProperties = {
+  height: 52,
+  width: "100%",
+  borderRadius: "var(--radio)",
+  border: "1.5px solid var(--borde)",
+  color: "var(--texto-2)",
+  fontSize: 15,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
 };
 
 function Interruptor({
