@@ -119,9 +119,9 @@ Por lo tanto **el nombre solo no basta para identificar a una tienda**. `emparej
 puntúa cada candidata con tres señales:
 
 ```
-puntaje = 0.5 · similitudNombre      normalizado, difuso, contra nombre y alias
-        + 0.3 · proximidadHora       gaussiana sobre la mediana de sus horas, σ 45 min
-        + 0.2 · coherenciaSecuencia  quién suele ir antes + posición típica en la ruta
+puntaje = 0.50 · similitudNombre      normalizado, difuso, contra nombre y alias
+        + 0.18 · proximidadHora       gaussiana sobre la mediana de sus horas, σ 45 min
+        + 0.32 · coherenciaSecuencia  quién suele ir antes + posición típica en la ruta
 ```
 
 Y decide:

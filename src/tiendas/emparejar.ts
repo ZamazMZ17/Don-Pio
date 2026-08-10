@@ -17,8 +17,15 @@ import { normalizar, parecido } from "./normalizar";
  */
 
 export const PESO_NOMBRE = 0.5;
-export const PESO_HORA = 0.3;
-export const PESO_SECUENCIA = 0.2;
+export const PESO_HORA = 0.18;
+/**
+ * A quién suele seguir y en qué parada suele caer. Subido a propósito: en
+ * ruta ya avanzada, la posición desempata homónimos mejor que la hora sola
+ * — el tráfico corre la hora, pero raras veces salta el orden de las
+ * paradas. El nombre sigue mandando: esto solo entra en juego entre
+ * candidatas que ya pasaron `UMBRAL_NOMBRE`.
+ */
+export const PESO_SECUENCIA = 0.32;
 
 /**
  * Por debajo de esto el nombre no da ni para considerar a la candidata. Es la
