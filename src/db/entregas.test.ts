@@ -182,6 +182,24 @@ describe("pollos partidos en pecho y pierna", () => {
     expect(r.restantePollos).toBe(114);
     expect(Number.isNaN(r.restantePiernas)).toBe(false);
   });
+
+  it("entregar más piernas de las que hay deja pechos sueltos por vender", async () => {
+    // Solo 2 piernas sueltas y nadie dejó pechos hoy: para armar las 5 que
+    // pidieron hubo que partir 3 pollos más solo por la pierna, y de cada uno
+    // quedó un pecho sin dueño todavía.
+    await conStock(120, 2);
+    const t = await crearTienda("Restaurante Central");
+    await registrarEntrega(
+      { tiendaId: t.id!, pollos: 0, piernas: 5, peso: aGramos(3.5), precioKg: aCentimos(9.5) },
+      ctx(1),
+      { fecha: HOY },
+    );
+
+    const r = await resumenDe(HOY);
+    expect(r.pechosLibres).toBe(3);
+    expect(r.restantePiernas).toBe(0);
+    expect(r.restantePollos).toBe(117); // 120 - 3 partidos solo por la pierna
+  });
 });
 
 describe("corregir a mano una entrega", () => {

@@ -159,6 +159,12 @@ una tienda existente en silencio: **el emparejamiento siempre se muestra antes d
 
   Las `piernas` del stock inicial son producto que **compra aparte**, no salen de partir.
 
+  El reverso también pasa: si un día entrega más piernas de las que tiene sueltas
+  (las que compró más las que sacó de partir pechos), esas de más solo pudieron salir
+  de partir pollos enteros por la pierna. Cada una gasta un pollo más y deja un
+  **pecho suelto** sin vender — `pechosLibres` en `resumenDe`, y se enseña en Hoy
+  junto al resto de piernas.
+
 ## 7 bis. Fallos que ya costaron una versión
 
 - **`pointer-events`.** La capa que flota sobre la lista va con `pointer-events: none` para

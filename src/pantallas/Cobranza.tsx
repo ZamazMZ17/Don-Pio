@@ -144,10 +144,7 @@ export function Cobranza({
           </button>
         </div>
         <div style={{ fontSize: 14, color: "var(--texto-3)", marginBottom: 10 }}>
-          {orden === "retorno"
-            ? "Como vuelves: de la última tienda a la primera"
-            : "En el orden en que repartes: de la primera a la última"}
-          {" · lo que deben de antes ya está sumado"}
+          Lo que deben de antes ya está sumado
         </div>
         <div
           style={{

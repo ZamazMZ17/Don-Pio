@@ -166,6 +166,9 @@ export function Hoy({
             <div>
               {resumen.stockPollos > 0 ? resumen.restantePiernas : resumen.repartidoPiernas} piernas
             </div>
+            {resumen.pechosLibres > 0 && (
+              <div style={{ color: "var(--ambar)" }}>{resumen.pechosLibres} pechos libres</div>
+            )}
             <div>
               {resumen.tiendas} {resumen.tiendas === 1 ? "tienda" : "tiendas"}
             </div>
