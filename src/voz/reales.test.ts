@@ -77,6 +77,10 @@ const CASOS: Caso[] = [
   // ── Solo cantidad, sin peso ni precio ────────────────────────────────
   { dicho: "Rochi un pollo", cliente: "Rochi", pollos: 1 },
   { dicho: "Adela dos pollos", cliente: "Adela", pollos: 2 },
+
+  // ── El reconocedor pega dos números sin punto ni «con» de por medio ──
+  // «35.30» dicho con una pausa sale transcrito «3530», pegado.
+  { dicho: "Calacho un pollo 3530 soles", cliente: "Calacho", pollos: 1, total: 35.3 },
 ];
 
 describe("dictados reales de un día de reparto", () => {

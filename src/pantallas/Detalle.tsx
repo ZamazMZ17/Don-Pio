@@ -4,6 +4,7 @@ import { Pencil, Trash2 } from "lucide-react";
 import { db } from "../db/db";
 import {
   borrarEntrega,
+  cobrarEntrega,
   editarEntrega,
   fijarPeso,
   fijarTotal,
@@ -434,6 +435,36 @@ export function Detalle({ entregaId, volver }: { entregaId: number; volver: () =
             valor={money(e.descuentoRedondeo)}
             color={e.descuentoRedondeo > 0 ? "var(--acento-claro)" : "var(--texto-4)"}
           />
+
+          {/*
+            Cobrar esta entrega ahí mismo. Hace falta cuando pasa dos veces
+            por la misma tienda el mismo día: la primera ya se cobró y esta
+            todavía no, y sin este botón la única forma de cobrarla era
+            Cobranza, que junta todo lo del día en una sola cuenta.
+          */}
+          {saldo > 0 && (
+            <button
+              className="pulsable-acento"
+              onClick={() => {
+                void cobrarEntrega(entregaId, saldo).then(() => {
+                  avisoGuardado();
+                });
+              }}
+              style={{
+                marginTop: 14,
+                height: 54,
+                width: "100%",
+                borderRadius: "var(--radio)",
+                border: "1.5px solid var(--acento)",
+                background: "var(--acento-900)",
+                color: "var(--acento-200)",
+                fontSize: 16,
+                fontWeight: 600,
+              }}
+            >
+              Cobrar {money(saldo)}
+            </button>
+          )}
         </div>
 
         <BotonPrincipal onClick={volver}>Listo</BotonPrincipal>

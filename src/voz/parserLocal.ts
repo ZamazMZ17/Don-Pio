@@ -25,13 +25,21 @@ function num(s: string | undefined): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-/** Junta la parte entera con los céntimos, se digan como se digan. */
+/**
+ * Junta la parte entera con los céntimos, se digan como se digan.
+ *
+ * Sin céntimos explícitos, un número de tres cifras o más casi nunca es la
+ * cantidad real: es el punto que el reconocedor se comió. «A 970» es 9.70, y
+ * «35 30 soles» dicho con una pausa —sin «con» ni coma de por medio— sale
+ * transcrito pegado como «3530», que es 35.30. En los pedidos reales de
+ * reparto no hay entregas de miles de soles, así que hasta 9999 se asume
+ * partido; de ahí para arriba ya es sospechoso y se deja tal cual.
+ */
 function juntar(entero: string, ...dec: (string | undefined)[]): number {
   const d = dec.find(Boolean);
   if (d) return Number(`${entero}.${d}`);
   const n = Number(entero);
-  // «a 970» es 9.70: el reconocedor se come el punto y quedan tres cifras.
-  return n >= 100 && n <= 3000 ? n / 100 : n;
+  return n >= 100 && n <= 9999 ? n / 100 : n;
 }
 
 /**

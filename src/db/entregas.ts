@@ -145,6 +145,37 @@ export async function borrarEntrega(id: number): Promise<void> {
 
 /* ── Cobros ──────────────────────────────────────────────────────────── */
 
+/**
+ * Cobra **esta** entrega y nada más — ni la deuda vieja de la tienda ni otra
+ * entrega del mismo día. Hace falta cuando pasa dos veces por la misma
+ * tienda: si usara `registrarCobro`, que paga lo más viejo primero, la plata
+ * de esta entrega podría irse a saldar la deuda o la entrega anterior en vez
+ * de esta, que es justo lo que pidió cobrar.
+ */
+export async function cobrarEntrega(id: number, montoRecibido: Centimos): Promise<void> {
+  await db.transaction("rw", db.entregas, db.pagos, async () => {
+    const e = await db.entregas.get(id);
+    if (!e) return;
+    const falta = e.totalCalculado - e.totalCobrado - e.descuentoRedondeo;
+    const aplica = Math.min(Math.max(0, montoRecibido), falta);
+    if (aplica <= 0) return;
+
+    const cobrado = e.totalCobrado + aplica;
+    await db.entregas.update(id, {
+      totalCobrado: cobrado,
+      estadoPago: estadoDe(e.totalCalculado, cobrado + e.descuentoRedondeo),
+    });
+    await db.pagos.add({
+      tiendaId: e.tiendaId,
+      entregaId: id,
+      fecha: e.fecha,
+      monto: aplica,
+      tipo: "delDia",
+      creada: Date.now(),
+    });
+  });
+}
+
 export interface CuentaTienda {
   tienda: Tienda;
   /** Lo que falta de las entregas de hoy. */
