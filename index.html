@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <!--
+      interactive-widget=resizes-content: al abrir el teclado se encoge el
+      viewport de layout, no solo el visual. Sin esto la tarjeta de confirmación
+      y el teclado de cobro quedan anclados al fondo, debajo del teclado del
+      sistema, y no se ve ni el total ni el botón de confirmar.
+    -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content"
+    />
+    <meta name="theme-color" content="#161826" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="description" content="Control de reparto de pollos, por voz." />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Don Pio" />
+    <link rel="apple-touch-icon" href="/icono-180.png" />
+    <title>Don Pio</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

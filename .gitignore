@@ -1,0 +1,17 @@
+node_modules/
+dist/
+*.apk
+tsconfig.tsbuildinfo
+
+# La API key nunca vive en el repo: se pega desde Ajustes y se queda en el
+# teléfono. Si algún día hace falta un .env, que no se suba.
+.env
+.env.local
+
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/.idea/
+android/app/src/main/assets/public/
+android/app/src/main/res/xml/config.xml

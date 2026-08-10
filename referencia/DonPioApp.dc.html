@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+@keyframes dpring{0%{transform:scale(1);opacity:.55}100%{transform:scale(1.9);opacity:0}}
+@keyframes dpup{from{transform:translateY(28px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes dpbar{0%,100%{transform:scaleY(.25)}50%{transform:scaleY(1)}}
+</style>
+</helmet>
+<div style="width:100%;height:100%;background:#161826;color:#e9e9ed;font-family:Inter,system-ui,sans-serif;display:flex;flex-direction:column;overflow:hidden;position:relative;-webkit-font-smoothing:antialiased">
+
+  <div style="flex:none;display:flex;align-items:center;padding:16px 24px 2px;font-size:15px;font-weight:600;letter-spacing:.2px;color:#e9e9ed">
+    <span style="flex:1">6:42</span>
+    <span style="width:120px;flex:none"></span>
+    <div style="flex:1;display:flex;align-items:center;justify-content:flex-end;gap:6px;font-size:13px;color:#9397ab">
+      <span style="width:8px;height:8px;border-radius:50%;background:#d9b26a;flex:none"></span>
+      <span>Sin señal</span>
+    </div>
+  </div>
+  <div style="flex:none;padding:6px 20px 0;font-size:12.5px;color:#75798c">Guardando en el teléfono · se sube solo cuando haya internet</div>
+
+  <sc-if value="{{ isHoy }}" hint-placeholder-val="{{ true }}">
+  <div style="flex:1;display:flex;flex-direction:column;min-height:0">
+
+    <sc-if value="{{ dirA }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:none;padding:6px 20px 16px;border-bottom:1px solid #2c2f3d">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px">
+        <div style="font-size:22px;font-weight:600">Lunes 8</div>
+        <div style="font-size:14px;color:#9397ab">jornada abierta</div>
+      </div>
+      <div style="display:flex;align-items:flex-end;gap:14px;margin-bottom:14px">
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <div style="font-size:12px;letter-spacing:.9px;text-transform:uppercase;color:#75798c">Salí con</div>
+          <div style="font-size:30px;font-weight:600;color:#7bbf8f;line-height:1">120</div>
+        </div>
+        <div style="font-size:26px;color:#595d6c;padding-bottom:2px">→</div>
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <div style="font-size:12px;letter-spacing:.9px;text-transform:uppercase;color:#75798c">Me quedan</div>
+          <div style="font-size:44px;font-weight:700;color:#e0a06a;line-height:1">59</div>
+        </div>
+        <div style="margin-left:auto;text-align:right;font-size:13px;color:#9397ab;line-height:1.55">
+          <div>34 piernas</div>
+          <div>8 tiendas</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <div style="flex:1;background:#232532;border-radius:10px;padding:10px 12px">
+          <div style="font-size:11px;letter-spacing:.9px;text-transform:uppercase;color:#75798c;margin-bottom:3px">Cobrado</div>
+          <div style="font-size:20px;font-weight:600;color:#7bbf8f">{{ cobradoTxt }}</div>
+        </div>
+        <div style="flex:1;background:#232532;border-radius:10px;padding:10px 12px">
+          <div style="font-size:11px;letter-spacing:.9px;text-transform:uppercase;color:#75798c;margin-bottom:3px">Por cobrar</div>
+          <div style="font-size:20px;font-weight:600;color:#e07a6a">{{ porCobrarTxt }}</div>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ dirB }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:none;padding:10px 22px 18px">
+      <div style="font-size:14px;color:#9397ab;margin-bottom:2px">Lunes 8 · me quedan</div>
+      <div style="display:flex;align-items:baseline;gap:10px">
+        <div style="font-size:86px;font-weight:700;line-height:.92;color:#e0a06a;letter-spacing:-3px">59</div>
+        <div style="font-size:22px;font-weight:500;color:#b2b6ca;padding-bottom:8px">pollos</div>
+        <div style="margin-left:auto;text-align:right;padding-bottom:8px">
+          <div style="font-size:22px;font-weight:600;color:#b2b6ca">34</div>
+          <div style="font-size:12px;color:#75798c">piernas</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:16px;padding:4px;background:#232532;border-radius:12px">
+        <div onClick="{{ goHoy }}" style="flex:1;text-align:center;padding:13px 0;border-radius:9px;font-size:16px;font-weight:600;background:#3f424d;color:#e9e9ed">Repartiendo</div>
+        <div onClick="{{ goCobranza }}" style="flex:1;text-align:center;padding:13px 0;border-radius:9px;font-size:16px;font-weight:600;color:#9397ab" style-active="background:#2c2f3d">Cobrando</div>
+      </div>
+    </div>
+    </sc-if>
+
+    <div style="flex:1;overflow-y:auto;padding:14px 18px 220px;display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:0 4px 2px">
+        <div style="font-size:13px;letter-spacing:1px;text-transform:uppercase;color:#75798c">Entregas de hoy · 8</div>
+        <div onClick="{{ toggleOrden }}" style="font-size:13px;color:#b5abfc;font-weight:500">{{ ordenTxt }}</div>
+      </div>
+      <sc-for list="{{ lista }}" as="e" hint-placeholder-count="5">
+        <div onClick="{{ e.open }}" style="background:#232532;border-radius:14px;padding:16px 16px 15px;display:flex;gap:14px;align-items:center;box-shadow:0 0 0 1px #2c2f3d" style-active="background:#2c2f3d">
+          <div style="width:14px;height:14px;border-radius:50%;flex:none;background: {{ e.color }}"></div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:20px;font-weight:600;line-height:1.2;margin-bottom:4px">{{ e.nombre }}</div>
+            <div style="font-size:14px;color:#9397ab">{{ e.sub }}</div>
+            <sc-if value="{{ e.tieneDeuda }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size:13px;color:#e0a06a;margin-top:5px">{{ e.deudaTxt }}</div>
+            </sc-if>
+          </div>
+          <div style="text-align:right;flex:none">
+            <div style="font-size:20px;font-weight:600;line-height:1.2">{{ e.total }}</div>
+            <div style="font-size:13px;margin-top:3px;color: {{ e.color }}">{{ e.estadoTxt }}</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ isCobranza }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;display:flex;flex-direction:column;min-height:0">
+    <div style="flex:none;padding:8px 20px 16px;border-bottom:1px solid #2c2f3d">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+        <div onClick="{{ goHoy }}" style="font-size:26px;color:#b5abfc;line-height:1;width:34px">‹</div>
+        <div style="font-size:22px;font-weight:600">Cobranza de retorno</div>
+      </div>
+      <div style="font-size:14px;color:#9397ab;margin-bottom:10px">En orden de ruta · lo que deben de días anteriores ya está sumado</div>
+      <div style="height:8px;background:#2c2f3d;border-radius:99px;overflow:hidden;margin-bottom:8px">
+        <div style="height:100%;width:38%;background:#9184d9;border-radius:99px"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:14px">
+        <span style="color:#9397ab">Cobradas 3 de 8</span>
+        <span style="font-weight:600;color:#e07a6a">Faltan {{ porCobrarTxt }}</span>
+      </div>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:14px 18px 180px;display:flex;flex-direction:column;gap:10px">
+      <sc-for list="{{ pendientes }}" as="c" hint-placeholder-count="4">
+        <div style="background:#232532;border-radius:14px;padding:16px;box-shadow:0 0 0 1px #2c2f3d">
+          <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px">
+            <div style="font-size:20px;font-weight:600">{{ c.nombre }}</div>
+            <div style="font-size:12px;color:#75798c">parada {{ c.orden }}</div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:14px;color:#9397ab;margin-bottom:3px">
+            <span>De hoy</span><span>{{ c.hoyTxt }}</span>
+          </div>
+          <sc-if value="{{ c.tieneDeuda }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;justify-content:space-between;font-size:14px;color:#e0a06a;margin-bottom:3px">
+              <span>{{ c.deudaLabel }}</span><span>{{ c.deudaMonto }}</span>
+            </div>
+          </sc-if>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;padding-top:10px;margin-top:8px;border-top:1px solid #3f424d">
+            <span style="font-size:13px;letter-spacing:1px;text-transform:uppercase;color:#75798c">A cobrar</span>
+            <span style="font-size:30px;font-weight:700">{{ c.totalTxt }}</span>
+          </div>
+          <sc-if value="{{ c.cerrado }}" hint-placeholder-val="{{ true }}">
+            <div onClick="{{ c.cobrarTodo }}" style="margin-top:14px;height:58px;display:flex;align-items:center;justify-content:center;border-radius:12px;border:1.5px solid #9184d9;color:#d2cefd;font-size:18px;font-weight:600" style-active="background:#2b2741">Me pagó todo</div>
+            <div onClick="{{ c.abrir }}" style="margin-top:8px;height:50px;display:flex;align-items:center;justify-content:center;border-radius:12px;border:1.5px solid #3f424d;color:#b2b6ca;font-size:16px" style-active="background:#2c2f3d">Me dio otra cantidad</div>
+          </sc-if>
+
+          <sc-if value="{{ c.abierto }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:14px;padding-top:16px;border-top:1px solid #3f424d;animation:dpup .2s ease-out">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px">
+              <span style="font-size:13px;letter-spacing:1px;text-transform:uppercase;color:#75798c">Cuánto te dio</span>
+              <span style="font-size:44px;font-weight:700;line-height:1;letter-spacing:-1px;color: {{ montoColor }}">{{ montoTxt }}</span>
+            </div>
+            <div style="background:#1b1d2c;border-radius:12px;padding:12px 14px;margin-bottom:14px;display:flex;flex-direction:column;gap:8px">
+              <sc-for list="{{ desglose }}" as="g" hint-placeholder-count="3">
+                <div style="display:flex;justify-content:space-between;font-size:15px">
+                  <span style="color:#9397ab">{{ g.label }}</span>
+                  <span style="font-weight:600;color: {{ g.color }}">{{ g.valor }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
+              <sc-for list="{{ teclas }}" as="k" hint-placeholder-count="12">
+                <div onClick="{{ k.press }}" style="height:56px;border-radius:12px;background:#2c2f3d;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:600;color: {{ k.color }}" style-active="background:#3f424d">{{ k.t }}</div>
+              </sc-for>
+            </div>
+            <div style="display:flex;gap:10px">
+              <div onClick="{{ cerrarCobro }}" style="flex:1;height:58px;border-radius:12px;border:1.5px solid #3f424d;color:#b2b6ca;display:flex;align-items:center;justify-content:center;font-size:17px" style-active="background:#2c2f3d">Cancelar</div>
+              <div onClick="{{ registrarCobro }}" style="flex:1.5;height:58px;border-radius:12px;border:1.5px solid #9184d9;background:#2b2741;color:#e7e5fe;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600" style-active="background:#423a6a">Registrar cobro</div>
+            </div>
+          </div>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ isDetalle }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;display:flex;flex-direction:column;min-height:0">
+    <div style="flex:none;display:flex;align-items:center;gap:12px;padding:8px 20px 14px">
+      <div onClick="{{ back }}" style="font-size:26px;color:#b5abfc;line-height:1;width:34px">‹</div>
+      <div style="font-size:22px;font-weight:600">{{ det.nombre }}</div>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:0 18px 40px;display:flex;flex-direction:column;gap:12px">
+      <sc-if value="{{ det.tieneDeuda }}" hint-placeholder-val="{{ false }}">
+        <div style="background:#2b2741;border-radius:12px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between">
+          <div style="font-size:16px;color:#e0a06a">{{ det.deudaTxt }}</div>
+          <div style="font-size:15px;font-weight:600;color:#d2cefd">Cobrar aquí</div>
+        </div>
+      </sc-if>
+
+      <div style="background:#232532;border-radius:14px;padding:16px;box-shadow:0 0 0 1px #2c2f3d">
+        <div style="font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#75798c;margin-bottom:12px">Cantidad</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div style="font-size:18px">Pollos</div>
+          <div style="display:flex;align-items:center;gap:16px">
+            <div onClick="{{ det.menos }}" style="width:52px;height:52px;border-radius:12px;border:1.5px solid #3f424d;display:flex;align-items:center;justify-content:center;font-size:28px;color:#e9e9ed" style-active="background:#2c2f3d">−</div>
+            <div style="font-size:30px;font-weight:700;min-width:44px;text-align:center">{{ det.pollos }}</div>
+            <div onClick="{{ det.mas }}" style="width:52px;height:52px;border-radius:12px;border:1.5px solid #3f424d;display:flex;align-items:center;justify-content:center;font-size:26px;color:#e9e9ed" style-active="background:#2c2f3d">+</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="font-size:18px;color:#b2b6ca">Piernas</div>
+          <div style="display:flex;align-items:center;gap:16px">
+            <div style="width:52px;height:52px;border-radius:12px;border:1.5px solid #3f424d;display:flex;align-items:center;justify-content:center;font-size:28px;color:#9397ab">−</div>
+            <div style="font-size:30px;font-weight:700;min-width:44px;text-align:center;color:#b2b6ca">{{ det.piernas }}</div>
+            <div style="width:52px;height:52px;border-radius:12px;border:1.5px solid #3f424d;display:flex;align-items:center;justify-content:center;font-size:26px;color:#9397ab">+</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="background:#232532;border-radius:14px;padding:16px;box-shadow:0 0 0 1px #2c2f3d">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div style="font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#75798c">Tandas de peso</div>
+          <div onClick="{{ det.addTanda }}" style="font-size:15px;font-weight:600;color:#b5abfc">+ Agregar</div>
+        </div>
+        <sc-for list="{{ det.tandas }}" as="t" hint-placeholder-count="2">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid #2c2f3d">
+            <span style="font-size:16px;color:#b2b6ca">{{ t.label }}</span>
+            <span style="font-size:20px;font-weight:600">{{ t.kg }}</span>
+          </div>
+        </sc-for>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding-top:13px">
+          <span style="font-size:16px;color:#b2b6ca">Peso total</span>
+          <span style="font-size:24px;font-weight:700">{{ det.pesoTxt }}</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding-top:12px;margin-top:12px;border-top:1px solid #3f424d">
+          <span style="font-size:16px;color:#b2b6ca">Precio por kilo</span>
+          <span style="font-size:20px;font-weight:600">{{ det.precioTxt }}</span>
+        </div>
+      </div>
+
+      <div style="background:#232532;border-radius:14px;padding:18px 16px;box-shadow:0 0 0 1px #2c2f3d">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px">
+          <span style="font-size:13px;letter-spacing:1px;text-transform:uppercase;color:#75798c">Total</span>
+          <span style="font-size:42px;font-weight:700;line-height:1">{{ det.totalTxt }}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:16px;color:#9397ab;margin-bottom:6px"><span>Cobrado</span><span style="color:#7bbf8f;font-weight:600">{{ det.cobradoTxt }}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:16px;color:#9397ab;margin-bottom:6px"><span>Saldo</span><span style="color:#e07a6a;font-weight:600">{{ det.saldoTxt }}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:16px;color:#9397ab"><span>Redondeo a su favor</span><span>{{ det.redondeoTxt }}</span></div>
+      </div>
+
+      <div onClick="{{ back }}" style="height:60px;display:flex;align-items:center;justify-content:center;border-radius:12px;border:1.5px solid #9184d9;color:#d2cefd;font-size:18px;font-weight:600" style-active="background:#2b2741">Guardar cambios</div>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ isCierre }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;display:flex;flex-direction:column;min-height:0">
+    <div style="flex:none;display:flex;align-items:center;gap:12px;padding:8px 20px 14px">
+      <div onClick="{{ back }}" style="font-size:26px;color:#b5abfc;line-height:1;width:34px">‹</div>
+      <div style="font-size:22px;font-weight:600">Cierre del día</div>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:0 18px 40px;display:flex;flex-direction:column;gap:12px">
+      <div style="background:#262a60;border-radius:16px;padding:22px 18px;text-align:center">
+        <div style="font-size:14px;color:#b5abfc;letter-spacing:.6px;margin-bottom:8px">Deberías tener en la caja</div>
+        <div style="font-size:52px;font-weight:700;line-height:1;letter-spacing:-1px">S/ 2,130</div>
+        <div style="font-size:14px;color:#b2b6ca;margin-top:10px">Cuéntalo y confirma si cuadra</div>
+        <div style="display:flex;gap:10px;margin-top:16px">
+          <div style="flex:1;height:56px;border-radius:12px;border:1.5px solid #b5abfc;color:#e7e5fe;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:600" style-active="background:#353b80">Cuadra</div>
+          <div style="flex:1;height:56px;border-radius:12px;border:1.5px solid #4c5397;color:#b2b6ca;display:flex;align-items:center;justify-content:center;font-size:17px" style-active="background:#353b80">No cuadra</div>
+        </div>
+      </div>
+      <div style="background:#232532;border-radius:14px;padding:16px;box-shadow:0 0 0 1px #2c2f3d">
+        <div style="font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#75798c;margin-bottom:12px">Repartido</div>
+        <div style="display:flex;justify-content:space-between;font-size:17px;padding:8px 0"><span style="color:#b2b6ca">Pollos</span><span><b style="font-weight:700">61</b> <span style="color:#75798c">de 120</span></span></div>
+        <div style="display:flex;justify-content:space-between;font-size:17px;padding:8px 0"><span style="color:#b2b6ca">Piernas</span><span><b style="font-weight:700">6</b> <span style="color:#75798c">de 40</span></span></div>
+        <div style="display:flex;justify-content:space-between;font-size:17px;padding:8px 0;border-top:1px solid #2c2f3d;margin-top:6px"><span style="color:#b2b6ca">Te sobraron</span><span style="color:#e0a06a;font-weight:600">59 pollos · 34 piernas</span></div>
+      </div>
+      <div style="background:#232532;border-radius:14px;padding:16px;box-shadow:0 0 0 1px #2c2f3d">
+        <div style="font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#75798c;margin-bottom:12px">Dinero</div>
+        <div style="display:flex;justify-content:space-between;font-size:17px;padding:8px 0"><span style="color:#b2b6ca">Cobrado hoy</span><span style="color:#7bbf8f;font-weight:600">{{ cobradoTxt }}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:17px;padding:8px 0"><span style="color:#b2b6ca">Queda por cobrar</span><span style="color:#e07a6a;font-weight:600">{{ porCobrarTxt }}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:17px;padding:8px 0"><span style="color:#b2b6ca">Regalado en redondeos</span><span>S/ 3.40</span></div>
+      </div>
+      <div style="height:62px;display:flex;align-items:center;justify-content:center;border-radius:12px;border:1.5px solid #9184d9;color:#d2cefd;font-size:18px;font-weight:600" style-active="background:#2b2741">Cerrar el día</div>
+      <div style="font-size:13px;color:#75798c;text-align:center;line-height:1.6;padding:0 20px">Lo que quede por cobrar pasa como deuda de cada tienda.</div>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ isTiendas }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;display:flex;flex-direction:column;min-height:0">
+    <div style="flex:none;padding:8px 20px 12px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+        <div onClick="{{ back }}" style="font-size:26px;color:#b5abfc;line-height:1;width:34px">‹</div>
+        <div style="font-size:22px;font-weight:600">Tiendas · 54</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;background:#232532;border-radius:12px;padding:0 14px;height:52px">
+        <span style="color:#75798c;font-size:18px">⌕</span>
+        <span style="color:#75798c;font-size:17px">Buscar o preguntar por voz</span>
+      </div>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:8px 18px 40px;display:flex;flex-direction:column;gap:8px">
+      <sc-for list="{{ tiendas }}" as="t" hint-placeholder-count="6">
+        <div style="background:#232532;border-radius:12px;padding:14px 16px;box-shadow:0 0 0 1px #2c2f3d">
+          <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:5px">
+            <div style="font-size:18px;font-weight:600">{{ t.nombre }}</div>
+            <div style="font-size:16px;font-weight:600;color: {{ t.saldoColor }}">{{ t.saldoTxt }}</div>
+          </div>
+          <div style="font-size:14px;color:#9397ab">{{ t.meta }}</div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ isHistorial }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;display:flex;flex-direction:column;min-height:0">
+    <div style="flex:none;display:flex;align-items:center;gap:12px;padding:8px 20px 14px">
+      <div onClick="{{ back }}" style="font-size:26px;color:#b5abfc;line-height:1;width:34px">‹</div>
+      <div style="font-size:22px;font-weight:600">Historial</div>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:0 18px 40px;display:flex;flex-direction:column;gap:12px">
+      <div style="background:#232532;border-radius:14px;padding:16px;box-shadow:0 0 0 1px #2c2f3d">
+        <div style="font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#75798c;margin-bottom:14px">Esta semana</div>
+        <div style="display:flex;gap:8px;align-items:flex-end;height:96px;margin-bottom:10px">
+          <sc-for list="{{ barras }}" as="b" hint-placeholder-count="7">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;justify-content:flex-end;height:100%">
+              <div style="width:100%;border-radius:5px 5px 0 0;background: {{ b.color }};height: {{ b.h }}"></div>
+              <div style="font-size:12px;color:#75798c">{{ b.dia }}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:16px;padding-top:12px;border-top:1px solid #2c2f3d"><span style="color:#b2b6ca">Repartido</span><span style="font-weight:600">648 pollos</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:16px;padding-top:8px"><span style="color:#b2b6ca">Cobrado</span><span style="font-weight:600;color:#7bbf8f">S/ 11,940</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:16px;padding-top:8px"><span style="color:#b2b6ca">Deuda abierta</span><span style="font-weight:600;color:#e07a6a">S/ 612.50</span></div>
+      </div>
+      <div style="font-size:13px;letter-spacing:1px;text-transform:uppercase;color:#75798c;padding:4px 4px 0">Días cerrados</div>
+      <sc-for list="{{ dias }}" as="d" hint-placeholder-count="4">
+        <div onClick="{{ d.abrir }}" style="background:#232532;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 0 0 1px #2c2f3d" style-active="background:#2c2f3d">
+          <div style="flex:1">
+            <div style="font-size:17px;font-weight:600">{{ d.dia }}</div>
+            <div style="font-size:14px;color:#9397ab;margin-top:3px">{{ d.sub }}</div>
+          </div>
+          <div style="font-size:18px;font-weight:600;color:#7bbf8f">{{ d.monto }}</div>
+          <div style="font-size:22px;color:#595d6c;line-height:1">›</div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ isDia }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;display:flex;flex-direction:column;min-height:0">
+    <div style="flex:none;display:flex;align-items:center;gap:12px;padding:8px 20px 14px">
+      <div onClick="{{ volverHistorial }}" style="font-size:26px;color:#b5abfc;line-height:1;width:34px">‹</div>
+      <div style="flex:1">
+        <div style="font-size:22px;font-weight:600">{{ dia.titulo }}</div>
+        <div style="font-size:13px;color:#75798c;margin-top:2px">{{ dia.estado }}</div>
+      </div>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:0 18px 40px;display:flex;flex-direction:column;gap:12px">
+
+      <div style="display:flex;gap:10px">
+        <div style="flex:1;background:#232532;border-radius:12px;padding:13px 14px;box-shadow:0 0 0 1px #2c2f3d">
+          <div style="font-size:11px;letter-spacing:.9px;text-transform:uppercase;color:#75798c;margin-bottom:4px">Repartido</div>
+          <div style="font-size:24px;font-weight:700">{{ dia.repartido }}</div>
+          <div style="font-size:13px;color:#75798c;margin-top:2px">{{ dia.stockTxt }}</div>
+        </div>
+        <div style="flex:1;background:#232532;border-radius:12px;padding:13px 14px;box-shadow:0 0 0 1px #2c2f3d">
+          <div style="font-size:11px;letter-spacing:.9px;text-transform:uppercase;color:#75798c;margin-bottom:4px">Cobrado</div>
+          <div style="font-size:24px;font-weight:700;color:#7bbf8f">{{ dia.cobradoTxt }}</div>
+          <div style="font-size:13px;color:#e07a6a;margin-top:2px">{{ dia.pendienteTxt }}</div>
+        </div>
+      </div>
+
+      <div style="font-size:13px;letter-spacing:1px;text-transform:uppercase;color:#75798c;padding:6px 4px 0">Entregas de ese día</div>
+
+      <sc-for list="{{ dia.entregas }}" as="e" hint-placeholder-count="5">
+        <div style="background:#232532;border-radius:14px;padding:15px 16px;box-shadow:0 0 0 1px #2c2f3d">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <div style="width:11px;height:11px;border-radius:50%;flex:none;background: {{ e.color }}"></div>
+            <div style="flex:1;font-size:18px;font-weight:600">{{ e.nombre }}</div>
+            <div style="font-size:13px;color: {{ e.color }}">{{ e.estadoTxt }}</div>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px 0;border-top:1px solid #2c2f3d;padding-top:11px">
+            <div style="flex:1 0 33%"><div style="font-size:11px;color:#75798c;margin-bottom:2px">Cantidad</div><div style="font-size:16px;font-weight:600">{{ e.cantidad }}</div></div>
+            <div style="flex:1 0 33%"><div style="font-size:11px;color:#75798c;margin-bottom:2px">Peso</div><div style="font-size:16px;font-weight:600">{{ e.peso }}</div></div>
+            <div style="flex:1 0 33%"><div style="font-size:11px;color:#75798c;margin-bottom:2px">Por kilo</div><div style="font-size:16px;font-weight:600">{{ e.precio }}</div></div>
+            <div style="flex:1 0 33%"><div style="font-size:11px;color:#75798c;margin-bottom:2px">Total</div><div style="font-size:16px;font-weight:600">{{ e.total }}</div></div>
+            <div style="flex:1 0 33%"><div style="font-size:11px;color:#75798c;margin-bottom:2px">Cobrado</div><div style="font-size:16px;font-weight:600;color:#7bbf8f">{{ e.cobrado }}</div></div>
+            <div style="flex:1 0 33%"><div style="font-size:11px;color:#75798c;margin-bottom:2px">Quedó debiendo</div><div style="font-size:16px;font-weight:600;color: {{ e.saldoColor }}">{{ e.saldo }}</div></div>
+          </div>
+          <sc-if value="{{ e.tieneTandas }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:13px;color:#75798c;margin-top:11px;padding-top:10px;border-top:1px solid #2c2f3d">{{ e.tandasTxt }}</div>
+          </sc-if>
+        </div>
+      </sc-for>
+
+      <div style="background:#232532;border-radius:14px;padding:16px;box-shadow:0 0 0 1px #2c2f3d">
+        <div style="font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#75798c;margin-bottom:12px">Cierre de ese día</div>
+        <div style="display:flex;justify-content:space-between;font-size:16px;padding:7px 0"><span style="color:#b2b6ca">Caja contada</span><span style="font-weight:600">{{ dia.caja }}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:16px;padding:7px 0"><span style="color:#b2b6ca">Regalado en redondeos</span><span style="font-weight:600">{{ dia.redondeos }}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:16px;padding:7px 0"><span style="color:#b2b6ca">Deuda que pasó a hoy</span><span style="font-weight:600;color:#e0a06a">{{ dia.deudaTraslado }}</span></div>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ isAjustes }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;display:flex;flex-direction:column;min-height:0">
+    <div style="flex:none;display:flex;align-items:center;gap:12px;padding:8px 20px 14px">
+      <div onClick="{{ back }}" style="font-size:26px;color:#b5abfc;line-height:1;width:34px">‹</div>
+      <div style="font-size:22px;font-weight:600">Ajustes</div>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:0 18px 40px;display:flex;flex-direction:column;gap:8px">
+      <sc-for list="{{ ajustes }}" as="a" hint-placeholder-count="6">
+        <div onClick="{{ a.toggle }}" style="background:#232532;border-radius:12px;padding:16px;display:flex;align-items:center;gap:14px;box-shadow:0 0 0 1px #2c2f3d">
+          <div style="flex:1">
+            <div style="font-size:17px;font-weight:500">{{ a.label }}</div>
+            <div style="font-size:14px;color:#9397ab;margin-top:3px">{{ a.sub }}</div>
+          </div>
+          <sc-if value="{{ a.esSwitch }}" hint-placeholder-val="{{ true }}">
+            <div style="width:56px;height:32px;border-radius:99px;padding:3px;flex:none;display:flex;background: {{ a.trackBg }};justify-content: {{ a.knobPos }}">
+              <div style="width:26px;height:26px;border-radius:50%;background:#e9e9ed"></div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ a.esValor }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:17px;font-weight:600;color:#b5abfc;flex:none">{{ a.valor }}</div>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ isStock }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;display:flex;flex-direction:column;min-height:0;padding:0 22px 28px">
+    <div style="flex:none;padding:26px 0 0">
+      <div style="font-size:15px;color:#9397ab;margin-bottom:6px">Lunes 8 · 5:04 a.m.</div>
+      <div style="font-size:34px;font-weight:600;line-height:1.15;letter-spacing:-.5px">¿Con cuánto sales<br>hoy?</div>
+      <div style="font-size:16px;color:#9397ab;margin-top:12px;line-height:1.5">Dile a la app cuánto cargaste, o ajústalo con los botones.</div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:16px">
+      <div style="background:#232532;border-radius:16px;padding:20px;box-shadow:0 0 0 1px #2c2f3d">
+        <div style="font-size:13px;letter-spacing:1px;text-transform:uppercase;color:#75798c;margin-bottom:14px">Pollos</div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div onClick="{{ stockMenos }}" style="width:64px;height:64px;border-radius:14px;border:1.5px solid #3f424d;display:flex;align-items:center;justify-content:center;font-size:34px" style-active="background:#2c2f3d">−</div>
+          <div style="font-size:56px;font-weight:700;line-height:1">{{ stockPollos }}</div>
+          <div onClick="{{ stockMas }}" style="width:64px;height:64px;border-radius:14px;border:1.5px solid #3f424d;display:flex;align-items:center;justify-content:center;font-size:32px" style-active="background:#2c2f3d">+</div>
+        </div>
+      </div>
+      <div style="background:#232532;border-radius:16px;padding:20px;box-shadow:0 0 0 1px #2c2f3d">
+        <div style="font-size:13px;letter-spacing:1px;text-transform:uppercase;color:#75798c;margin-bottom:14px">Piernas</div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="width:64px;height:64px;border-radius:14px;border:1.5px solid #3f424d;display:flex;align-items:center;justify-content:center;font-size:34px;color:#9397ab">−</div>
+          <div style="font-size:56px;font-weight:700;line-height:1;color:#b2b6ca">40</div>
+          <div style="width:64px;height:64px;border-radius:14px;border:1.5px solid #3f424d;display:flex;align-items:center;justify-content:center;font-size:32px;color:#9397ab">+</div>
+        </div>
+      </div>
+      <div style="background:#2b2741;border-radius:12px;padding:14px 16px;font-size:15px;color:#d2cefd;line-height:1.5">Los lunes repartes ~120 pollos. El lunes pasado te sobraron 3.</div>
+    </div>
+    <div onClick="{{ goHoy }}" style="flex:none;height:66px;display:flex;align-items:center;justify-content:center;border-radius:14px;border:1.5px solid #9184d9;color:#d2cefd;font-size:19px;font-weight:600" style-active="background:#2b2741">Empezar el día</div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ isMenu }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;display:flex;flex-direction:column;min-height:0;padding:0 18px 30px">
+    <div style="flex:none;display:flex;align-items:center;gap:12px;padding:8px 2px 20px">
+      <div onClick="{{ goHoy }}" style="font-size:26px;color:#b5abfc;line-height:1;width:34px">‹</div>
+      <div style="font-size:22px;font-weight:600">Menú</div>
+    </div>
+    <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:12px;align-content:start">
+      <sc-for list="{{ menuItems }}" as="m" hint-placeholder-count="6">
+        <div onClick="{{ m.go }}" style="background:#232532;border-radius:16px;padding:20px 16px;min-height:120px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 0 0 1px #2c2f3d" style-active="background:#2c2f3d">
+          <div style="font-size:26px;line-height:1;color:#b5abfc">{{ m.icono }}</div>
+          <div>
+            <div style="font-size:18px;font-weight:600;line-height:1.2">{{ m.label }}</div>
+            <div style="font-size:13px;color:#9397ab;margin-top:4px">{{ m.sub }}</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ showMic }}" hint-placeholder-val="{{ true }}">
+  <div style="position:absolute;left:0;right:0;bottom:0;pointer-events:none;display:flex;flex-direction:column;align-items:stretch;z-index:20">
+
+    <sc-if value="{{ escuchando }}" hint-placeholder-val="{{ false }}">
+      <div style="pointer-events:auto;margin:0 18px 14px;background:#232532;border-radius:16px;padding:18px 18px;box-shadow:0 0 0 1px #3f424d,0 16px 40px rgba(0,0,0,.65);animation:dpup .22s ease-out">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <div style="display:flex;align-items:flex-end;gap:3px;height:18px">
+            <div style="width:3px;height:100%;background:#9184d9;border-radius:2px;animation:dpbar .7s ease-in-out infinite"></div>
+            <div style="width:3px;height:100%;background:#9184d9;border-radius:2px;animation:dpbar .7s ease-in-out .12s infinite"></div>
+            <div style="width:3px;height:100%;background:#9184d9;border-radius:2px;animation:dpbar .7s ease-in-out .24s infinite"></div>
+            <div style="width:3px;height:100%;background:#9184d9;border-radius:2px;animation:dpbar .7s ease-in-out .36s infinite"></div>
+          </div>
+          <div style="font-size:13px;letter-spacing:1px;text-transform:uppercase;color:#75798c">Escuchando</div>
+        </div>
+        <div style="font-size:19px;line-height:1.45;color:#e9e9ed">{{ transcripcion }}</div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ confirmando }}" hint-placeholder-val="{{ false }}">
+      <div style="pointer-events:auto;margin:0 14px 14px;background:#232532;border-radius:20px;padding:20px 18px 18px;box-shadow:0 0 0 1px #595d6c,0 16px 40px rgba(0,0,0,.7);animation:dpup .24s ease-out">
+        <div style="font-size:13px;letter-spacing:1px;text-transform:uppercase;color:#75798c;margin-bottom:12px">Confirma la entrega</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+          <div style="font-size:26px;font-weight:700;line-height:1.15">Carmen Huamán</div>
+          <div style="font-size:12px;padding:4px 9px;border-radius:99px;border:1px solid #5d5294;color:#b5abfc;flex:none">¿es ella?</div>
+        </div>
+        <div style="display:flex;gap:0;border-top:1px solid #3f424d;border-bottom:1px solid #3f424d;padding:14px 0;margin-bottom:16px">
+          <div style="flex:1"><div style="font-size:12px;color:#75798c;margin-bottom:4px">Pollos</div><div style="font-size:24px;font-weight:700">6</div></div>
+          <div style="flex:1.2"><div style="font-size:12px;color:#75798c;margin-bottom:4px">Peso</div><div style="font-size:24px;font-weight:700">19.4 kg</div></div>
+          <div style="flex:1.2"><div style="font-size:12px;color:#75798c;margin-bottom:4px">Por kilo</div><div style="font-size:24px;font-weight:700">9.50</div></div>
+        </div>
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:18px">
+          <span style="font-size:15px;color:#9397ab">Total</span>
+          <span style="font-size:44px;font-weight:700;line-height:1;letter-spacing:-1px">S/ 184.30</span>
+        </div>
+        <div style="display:flex;gap:10px">
+          <div onClick="{{ corregir }}" style="flex:1;height:62px;border-radius:14px;border:1.5px solid #3f424d;color:#b2b6ca;display:flex;align-items:center;justify-content:center;font-size:18px" style-active="background:#2c2f3d">Corregir</div>
+          <div onClick="{{ confirmar }}" style="flex:1.4;height:62px;border-radius:14px;border:1.5px solid #9184d9;background:#2b2741;color:#e7e5fe;display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:600" style-active="background:#423a6a">Confirmar</div>
+        </div>
+        <div style="text-align:center;font-size:13px;color:#75798c;margin-top:12px">También puedes decir «sí, confirma»</div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ dirA }}" hint-placeholder-val="{{ true }}">
+      <div style="pointer-events:auto;position:relative;background:#1b1d2c;border-top:1px solid #2c2f3d;display:flex;align-items:flex-start;padding:10px 8px 26px">
+        <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="4">
+          <div onClick="{{ t.go }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:6px 0">
+            <div style="font-size:22px;line-height:1;color: {{ t.color }}">{{ t.icono }}</div>
+            <div style="font-size:12px;font-weight:500;color: {{ t.color }}">{{ t.label }}</div>
+          </div>
+        </sc-for>
+        <div onClick="{{ dictar }}" style="position:absolute;right:18px;bottom:74px;width:84px;height:84px;border-radius:50%;background:#2b2741;border:2px solid #9184d9;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 30px rgba(0,0,0,.6)">
+          <sc-if value="{{ escuchando }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;inset:-2px;border-radius:50%;border:2px solid #9184d9;animation:dpring 1.35s ease-out infinite"></div>
+          </sc-if>
+          <div style="font-size:34px;line-height:1">🎙</div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ dirB }}" hint-placeholder-val="{{ false }}">
+      <div style="pointer-events:auto;padding:0 18px 24px;display:flex;align-items:center;gap:14px">
+        <div onClick="{{ goMenu }}" style="width:74px;height:74px;flex:none;border-radius:20px;border:1.5px solid #3f424d;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:#232532" style-active="background:#2c2f3d">
+          <div style="font-size:22px;line-height:1;color:#b5abfc">☰</div>
+          <div style="font-size:11px;color:#9397ab">Menú</div>
+        </div>
+        <div onClick="{{ dictar }}" style="position:relative;flex:1;height:74px;border-radius:20px;background:#2b2741;border:2px solid #9184d9;display:flex;align-items:center;justify-content:center;gap:12px;box-shadow:0 10px 30px rgba(0,0,0,.55)">
+          <sc-if value="{{ escuchando }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;inset:-2px;border-radius:20px;border:2px solid #9184d9;animation:dpring 1.35s ease-out infinite"></div>
+          </sc-if>
+          <div style="font-size:30px;line-height:1">🎙</div>
+          <div style="font-size:20px;font-weight:600;color:#e7e5fe">{{ micLabel }}</div>
+        </div>
+      </div>
+    </sc-if>
+  </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:393,&quot;height&quot;:852},&quot;direccion&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;A&quot;,&quot;B&quot;],&quot;default&quot;:&quot;A&quot;,&quot;tsType&quot;:&quot;'A' | 'B'&quot;}}">
+class Component extends DCLogic {
+  state = {
+    screen: 'hoy', listen: 'idle', sel: null, orden: 'ruta', cobrando: null, monto: '', diaSel: 0,
+    stockPollos: 120, respaldo: true, pin: true, redondeo: false, sonido: true,
+    entregas: [
+      { id: 1, nombre: 'Bodega Milagros', orden: 1, pollos: 6, piernas: 0, sinPesar: true, tandas: [], peso: 0, precio: 0, total: 168, cobrado: 168, deuda: 0 },
+      { id: 2, nombre: 'Don Julio Ramírez', orden: 2, pollos: 8, piernas: 0, sinPesar: false, tandas: [14.2, 12.0], peso: 26.2, precio: 9.5, total: 248.9, cobrado: 0, deuda: 30, deudaDia: 'jueves' },
+      { id: 3, nombre: 'Sra. Rosa Quispe', orden: 3, pollos: 5, piernas: 0, sinPesar: true, tandas: [], peso: 0, precio: 0, total: 42, cobrado: 42, deuda: 0 },
+      { id: 4, nombre: 'Pollería El Sabor', orden: 4, pollos: 12, piernas: 0, sinPesar: false, tandas: [20.0, 18.4], peso: 38.4, precio: 9.2, total: 353.28, cobrado: 200, deuda: 0 },
+      { id: 5, nombre: 'Mercado Unicachi P-14', orden: 5, pollos: 9, piernas: 0, sinPesar: false, tandas: [15.6, 13.5], peso: 29.1, precio: 9.5, total: 276.45, cobrado: 0, deuda: 0 },
+      { id: 6, nombre: 'Bodega Sarita', orden: 6, pollos: 4, piernas: 6, sinPesar: false, tandas: [13.0], peso: 13.0, precio: 9.5, total: 123.5, cobrado: 123.5, deuda: 0 },
+      { id: 7, nombre: 'Doña Elsa', orden: 7, pollos: 7, piernas: 0, sinPesar: false, tandas: [11.4, 11.4], peso: 22.8, precio: 9.6, total: 218.88, cobrado: 0, deuda: 45, deudaDia: 'domingo' },
+      { id: 8, nombre: 'Chifa Wong', orden: 8, pollos: 10, piernas: 0, sinPesar: true, tandas: [], peso: 0, precio: 0, total: 320, cobrado: 150, deuda: 0 }
+    ]
+  };
+
+  historia = [
+    { titulo: 'Domingo 7', fecha: '7 de junio', sub: '58 pollos · 2 tiendas quedaron debiendo', stock: 70, repartido: 58, redondeos: 1.6,
+      entregas: [
+        { nombre: 'Bodega Milagros', pollos: 8, piernas: 0, tandas: [], peso: 0, precio: 0, total: 224, cobrado: 224 },
+        { nombre: 'Don Julio Ramírez', pollos: 10, piernas: 0, tandas: [16.4, 15.2], peso: 31.6, precio: 9.5, total: 300.2, cobrado: 300.2 },
+        { nombre: 'Pollería El Sabor', pollos: 14, piernas: 0, tandas: [22.8, 21.0], peso: 43.8, precio: 9.2, total: 402.96, cobrado: 402.96 },
+        { nombre: 'Doña Elsa', pollos: 9, piernas: 4, tandas: [14.6, 14.0], peso: 28.6, precio: 9.6, total: 274.56, cobrado: 229.56 },
+        { nombre: 'Chifa Wong', pollos: 17, piernas: 0, tandas: [], peso: 0, precio: 0, total: 544, cobrado: 544 }
+      ] },
+    { titulo: 'Sábado 6', fecha: '6 de junio', sub: '112 pollos · todo cobrado', stock: 115, repartido: 112, redondeos: 4.2,
+      entregas: [
+        { nombre: 'Mercado Unicachi P-14', pollos: 22, piernas: 0, tandas: [35.4, 34.2], peso: 69.6, precio: 9.5, total: 661.2, cobrado: 661.2 },
+        { nombre: 'Pollería El Sabor', pollos: 30, piernas: 0, tandas: [48.0, 46.6], peso: 94.6, precio: 9.2, total: 870.32, cobrado: 870.32 },
+        { nombre: 'Bodega Sarita', pollos: 18, piernas: 12, tandas: [56.8], peso: 56.8, precio: 9.5, total: 539.6, cobrado: 539.6 },
+        { nombre: 'Sra. Rosa Quispe', pollos: 12, piernas: 0, tandas: [], peso: 0, precio: 0, total: 336, cobrado: 336 },
+        { nombre: 'Bodega Milagros', pollos: 30, piernas: 0, tandas: [], peso: 0, precio: 0, total: 840, cobrado: 840 }
+      ] },
+    { titulo: 'Viernes 5', fecha: '5 de junio', sub: '124 pollos · 1 tienda quedó debiendo', stock: 125, repartido: 124, redondeos: 2.8,
+      entregas: [
+        { nombre: 'Chifa Wong', pollos: 34, piernas: 0, tandas: [], peso: 0, precio: 0, total: 1088, cobrado: 1088 },
+        { nombre: 'Don Julio Ramírez', pollos: 26, piernas: 0, tandas: [42.2, 40.6], peso: 82.8, precio: 9.5, total: 786.6, cobrado: 700 },
+        { nombre: 'Doña Elsa', pollos: 28, piernas: 8, tandas: [45.0, 43.4], peso: 88.4, precio: 9.6, total: 848.64, cobrado: 848.64 },
+        { nombre: 'Mercado Unicachi P-14', pollos: 36, piernas: 0, tandas: [58.2, 56.0], peso: 114.2, precio: 9.5, total: 1084.9, cobrado: 1084.9 }
+      ] },
+    { titulo: 'Jueves 4', fecha: '4 de junio', sub: '98 pollos · de aquí viene la deuda de Julio', stock: 100, repartido: 98, redondeos: 0.9,
+      entregas: [
+        { nombre: 'Don Julio Ramírez', pollos: 24, piernas: 0, tandas: [38.6, 37.4], peso: 76.0, precio: 9.5, total: 722, cobrado: 692 },
+        { nombre: 'Bodega Sarita', pollos: 20, piernas: 10, tandas: [63.2], peso: 63.2, precio: 9.5, total: 600.4, cobrado: 600.4 },
+        { nombre: 'Bodega Milagros', pollos: 26, piernas: 0, tandas: [], peso: 0, precio: 0, total: 728, cobrado: 728 },
+        { nombre: 'Sra. Rosa Quispe', pollos: 28, piernas: 0, tandas: [], peso: 0, precio: 0, total: 784, cobrado: 784 }
+      ] }
+  ];
+
+  aplicar(id, monto) {
+    this.setState(s => ({
+      cobrando: null, monto: '',
+      entregas: s.entregas.map(x => {
+        if (x.id !== id) return x;
+        const aDeuda = Math.min(monto, x.deuda);
+        const aHoy = monto - aDeuda;
+        return { ...x, deuda: Math.max(0, x.deuda - aDeuda), cobrado: Math.min(x.total, x.cobrado + aHoy) };
+      })
+    }));
+  }
+
+  money(n) { return 'S/ ' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+  go(s) { this.setState({ screen: s, listen: 'idle', cobrando: null, monto: '' }); }
+
+  dictar = () => {
+    if (this.state.listen !== 'idle') { this.setState({ listen: 'idle' }); return; }
+    this.setState({ listen: 'listening' });
+    clearTimeout(this._t);
+    this._t = setTimeout(() => this.setState({ listen: 'confirm' }), 2200);
+  };
+
+  estadoDe(e) {
+    if (e.cobrado >= e.total - 0.001) return { txt: 'Pagado', color: '#7bbf8f' };
+    if (e.cobrado > 0) return { txt: 'Parcial', color: '#d9b26a' };
+    return { txt: 'Pendiente', color: '#e07a6a' };
+  }
+
+  renderVals() {
+    const st = this.state;
+    const dirB = this.props.direccion === 'B';
+    const es = st.entregas;
+    const cobrado = es.reduce((a, e) => a + e.cobrado, 0);
+    const porCobrar = es.reduce((a, e) => a + (e.total - e.cobrado) + e.deuda, 0);
+
+    let lista = es.slice();
+    if (st.orden === 'pendientes') lista.sort((a, b) => (a.cobrado / a.total) - (b.cobrado / b.total));
+    else lista.sort((a, b) => a.orden - b.orden);
+
+    const vm = (e) => {
+      const s = this.estadoDe(e);
+      const partes = [e.pollos + ' pollos'];
+      if (e.piernas) partes.push(e.piernas + ' piernas');
+      partes.push(e.sinPesar ? 'sin pesar' : e.peso.toFixed(1) + ' kg · ' + e.precio.toFixed(2) + '/kg');
+      return {
+        nombre: e.nombre, sub: partes.join(' · '), total: this.money(e.total),
+        estadoTxt: s.txt, color: s.color, tieneDeuda: e.deuda > 0,
+        deudaTxt: 'Debe ' + this.money(e.deuda) + ' del ' + (e.deudaDia || 'mes pasado'),
+        open: () => this.setState({ screen: 'detalle', sel: e.id, listen: 'idle' })
+      };
+    };
+
+    const pend = es.filter(e => e.total - e.cobrado > 0.001 || e.deuda > 0).sort((a, b) => a.orden - b.orden).map(e => ({
+      nombre: e.nombre, orden: e.orden,
+      hoyTxt: this.money(e.total - e.cobrado),
+      tieneDeuda: e.deuda > 0,
+      deudaLabel: 'Deuda del ' + (e.deudaDia || 'mes pasado'),
+      deudaMonto: this.money(e.deuda),
+      totalTxt: this.money(e.total - e.cobrado + e.deuda),
+      abierto: st.cobrando === e.id, cerrado: st.cobrando !== e.id,
+      abrir: () => this.setState({ cobrando: e.id, monto: '' }),
+      cobrarTodo: () => this.aplicar(e.id, e.total - e.cobrado + e.deuda)
+    }));
+
+    const objetivo = es.find(e => e.id === st.cobrando);
+    const monto = parseFloat(st.monto || '0') || 0;
+    let desglose = [];
+    let montoColor = st.monto ? '#e9e9ed' : '#595d6c';
+    if (objetivo) {
+      const aDeuda = Math.min(monto, objetivo.deuda);
+      const aHoy = Math.min(monto - aDeuda, objetivo.total - objetivo.cobrado);
+      const cuenta = objetivo.total - objetivo.cobrado + objetivo.deuda;
+      const resto = cuenta - monto;
+      if (objetivo.deuda > 0) desglose.push({ label: 'Se paga primero la deuda', valor: this.money(aDeuda), color: '#e0a06a' });
+      desglose.push({ label: 'Va a lo de hoy', valor: this.money(Math.max(0, aHoy)), color: '#7bbf8f' });
+      if (resto > 0.001) desglose.push({ label: 'Le queda debiendo', valor: this.money(resto), color: '#e07a6a' });
+      else if (resto < -0.001) desglose.push({ label: 'Te dio de más', valor: this.money(-resto), color: '#b5abfc' });
+      else if (monto > 0) desglose.push({ label: 'Queda al día', valor: 'Sin saldo', color: '#7bbf8f' });
+      if (resto > 0.001 && resto <= 1) { desglose.push({ label: 'Descuento por redondeo', valor: this.money(resto), color: '#b5abfc' }); montoColor = '#e9e9ed'; }
+    }
+
+    const key = (t) => ({
+      t, color: t === '←' ? '#b5abfc' : '#e9e9ed',
+      press: () => this.setState(s => {
+        if (t === '←') return { monto: s.monto.slice(0, -1) };
+        if (t === '.' && s.monto.includes('.')) return null;
+        if (s.monto.includes('.') && s.monto.split('.')[1].length >= 2) return null;
+        return { monto: s.monto + t };
+      })
+    });
+    const teclas = ['1','2','3','4','5','6','7','8','9','.','0','←'].map(key);
+
+    const d = es.find(e => e.id === st.sel) || es[1];
+    const det = {
+      nombre: d.nombre, pollos: d.pollos, piernas: d.piernas,
+      tandas: (d.tandas.length ? d.tandas : [0]).map((k, i) => ({ label: (i === 0 ? 'Primera' : i === 1 ? 'Segunda' : 'Tanda ' + (i + 1)) + ' tanda', kg: k.toFixed(2) + ' kg' })),
+      pesoTxt: d.peso.toFixed(2) + ' kg',
+      precioTxt: 'S/ ' + d.precio.toFixed(2),
+      totalTxt: this.money(d.total), cobradoTxt: this.money(d.cobrado),
+      saldoTxt: this.money(Math.max(0, d.total - d.cobrado)), redondeoTxt: 'S/ 0.00',
+      tieneDeuda: d.deuda > 0, deudaTxt: 'Debe ' + this.money(d.deuda) + ' del ' + (d.deudaDia || 'mes pasado'),
+      mas: () => this.setState(s => ({ entregas: s.entregas.map(x => x.id === d.id ? { ...x, pollos: x.pollos + 1 } : x) })),
+      menos: () => this.setState(s => ({ entregas: s.entregas.map(x => x.id === d.id ? { ...x, pollos: Math.max(0, x.pollos - 1) } : x) })),
+      addTanda: () => this.setState(s => ({ entregas: s.entregas.map(x => x.id === d.id ? { ...x, tandas: [...x.tandas, 5], peso: x.peso + 5, total: (x.peso + 5) * x.precio } : x) }))
+    };
+
+    const tiendas = [
+      { nombre: 'Bodega Milagros', meta: 'Sin pesar · S/ 28 el pollo · parada 1', saldo: 0 },
+      { nombre: 'Don Julio Ramírez', meta: 'Pesa · S/ 9.50 el kilo · parada 2', saldo: 278.9 },
+      { nombre: 'Sra. Rosa Quispe', meta: 'Sin pesar · precio de siempre · parada 3', saldo: 0 },
+      { nombre: 'Pollería El Sabor', meta: 'Pesa · S/ 9.20 el kilo · parada 4', saldo: 153.28 },
+      { nombre: 'Mercado Unicachi P-14', meta: 'Pesa · S/ 9.50 el kilo · parada 5', saldo: 276.45 },
+      { nombre: 'Bodega Sarita', meta: 'Pesa · piernas aparte · parada 6', saldo: 0 },
+      { nombre: 'Doña Elsa', meta: 'Pesa · S/ 9.60 el kilo · parada 7', saldo: 263.88 },
+      { nombre: 'Chifa Wong', meta: 'Sin pesar · trato fijo · parada 8', saldo: 170 },
+      { nombre: 'Carmen Huamán', meta: 'Nueva · creada por voz hoy', saldo: 0 }
+    ].map(t => ({ ...t, saldoTxt: t.saldo ? this.money(t.saldo) : 'Al día', saldoColor: t.saldo ? '#e07a6a' : '#7bbf8f' }));
+
+    const barras = [['Lu', 96], ['Ma', 72], ['Mi', 84], ['Ju', 60], ['Vi', 100], ['Sá', 88], ['Do', 40]]
+      .map(([dia, p], i) => ({ dia, h: p + '%', color: i === 4 ? '#9184d9' : '#3f424d' }));
+
+    const dias = this.historia.map((h, i) => ({
+      dia: h.titulo, sub: h.sub, monto: this.money(h.entregas.reduce((a, e) => a + e.cobrado, 0)),
+      abrir: () => this.setState({ screen: 'dia', diaSel: i })
+    }));
+
+    const h = this.historia[st.diaSel] || this.historia[0];
+    const hTotal = h.entregas.reduce((a, e) => a + e.total, 0);
+    const hCobrado = h.entregas.reduce((a, e) => a + e.cobrado, 0);
+    const dia = {
+      titulo: h.titulo, estado: h.fecha + ' · jornada cerrada',
+      repartido: h.repartido + ' pollos',
+      stockTxt: 'de ' + h.stock + ' · sobraron ' + (h.stock - h.repartido),
+      cobradoTxt: this.money(hCobrado),
+      pendienteTxt: hTotal - hCobrado > 0.001 ? 'quedó ' + this.money(hTotal - hCobrado) : 'todo cobrado',
+      caja: this.money(hCobrado), redondeos: this.money(h.redondeos),
+      deudaTraslado: this.money(hTotal - hCobrado),
+      entregas: h.entregas.map(e => {
+        const s = this.estadoDe(e);
+        const saldo = e.total - e.cobrado;
+        return {
+          nombre: e.nombre, color: s.color, estadoTxt: s.txt,
+          cantidad: e.pollos + ' pollos' + (e.piernas ? ' · ' + e.piernas + ' piernas' : ''),
+          peso: e.peso ? e.peso.toFixed(2) + ' kg' : 'sin pesar',
+          precio: e.precio ? 'S/ ' + e.precio.toFixed(2) : '—',
+          total: this.money(e.total), cobrado: this.money(e.cobrado),
+          saldo: saldo > 0.001 ? this.money(saldo) : '—',
+          saldoColor: saldo > 0.001 ? '#e07a6a' : '#75798c',
+          tieneTandas: e.tandas.length > 1,
+          tandasTxt: 'Tandas: ' + e.tandas.map(k => k.toFixed(2) + ' kg').join(' + ')
+        };
+      })
+    };
+
+    const sw = (key, label, sub) => ({
+      label, sub, esSwitch: true, esValor: false,
+      trackBg: st[key] ? '#5d5294' : '#3f424d',
+      knobPos: st[key] ? 'flex-end' : 'flex-start',
+      toggle: () => this.setState(s => ({ [key]: !s[key] }))
+    });
+    const val = (label, sub, valor) => ({ label, sub, esSwitch: false, esValor: true, valor, toggle: () => {} });
+
+    const ajustes = [
+      val('Hora de cierre', 'La app te recuerda cuadrar caja', '7:30 p.m.'),
+      val('Stock de siempre', 'Lo que sueles cargar un lunes', '120'),
+      sw('redondeo', 'Redondear hacia abajo', 'A los .50 más cercanos, siempre queda registrado'),
+      sw('sonido', 'Aviso con sonido y vibración', 'Para no mirar la pantalla al manejar'),
+      sw('respaldo', 'Respaldo automático', 'Sube tus datos cuando hay internet'),
+      sw('pin', 'Pedir huella al abrir', 'Protege tus cuentas y deudas')
+    ];
+
+    const menuItems = [
+      { icono: '↩', label: 'Cobranza', sub: 'Cobrar de retorno', go: () => this.go('cobranza') },
+      { icono: '▣', label: 'Cierre del día', sub: 'Cuadrar la caja', go: () => this.go('cierre') },
+      { icono: '☷', label: 'Tiendas', sub: '54 clientes', go: () => this.go('tiendas') },
+      { icono: '◔', label: 'Historial', sub: 'Semana y mes', go: () => this.go('historial') },
+      { icono: '⬒', label: 'Cargar stock', sub: 'Empezar el día', go: () => this.go('stock') },
+      { icono: '⚙', label: 'Ajustes', sub: 'Respaldo y PIN', go: () => this.go('ajustes') }
+    ];
+
+    const tab = (icono, label, s) => ({
+      icono, label, color: st.screen === s ? '#b5abfc' : '#75798c', go: () => this.go(s)
+    });
+
+    return {
+      dirA: !dirB, dirB,
+      isHoy: st.screen === 'hoy', isCobranza: st.screen === 'cobranza', isDetalle: st.screen === 'detalle',
+      isCierre: st.screen === 'cierre', isTiendas: st.screen === 'tiendas', isHistorial: st.screen === 'historial',
+      isAjustes: st.screen === 'ajustes', isStock: st.screen === 'stock', isMenu: st.screen === 'menu',
+      isDia: st.screen === 'dia', dia,
+      volverHistorial: () => this.go('historial'),
+      teclas, desglose, montoColor,
+      montoTxt: st.monto ? 'S/ ' + st.monto : 'S/ 0',
+      cerrarCobro: () => this.setState({ cobrando: null, monto: '' }),
+      registrarCobro: () => { if (objetivo) this.aplicar(objetivo.id, monto); },
+      showMic: st.screen === 'hoy' || st.screen === 'cobranza',
+      escuchando: st.listen === 'listening', confirmando: st.listen === 'confirm',
+      transcripcion: 'Para la señora Carmen, 6 pollos, diecinueve kilos cuatrocientos, a nueve cincuenta el kilo…',
+      micLabel: st.listen === 'listening' ? 'Te escucho' : 'Hablar',
+      cobradoTxt: this.money(cobrado), porCobrarTxt: this.money(porCobrar),
+      lista: lista.map(vm), pendientes: pend, det, tiendas, barras, dias, ajustes, menuItems,
+      stockPollos: st.stockPollos,
+      ordenTxt: st.orden === 'ruta' ? 'Por ruta ⇅' : 'Por pendientes ⇅',
+      toggleOrden: () => this.setState(s => ({ orden: s.orden === 'ruta' ? 'pendientes' : 'ruta' })),
+      tabs: [tab('▤', 'Hoy', 'hoy'), tab('↩', 'Cobranza', 'cobranza'), tab('☷', 'Tiendas', 'tiendas'), tab('⋯', 'Más', 'menu')],
+      dictar: this.dictar,
+      confirmar: () => this.setState({ listen: 'idle' }),
+      corregir: () => this.setState({ listen: 'idle' }),
+      goHoy: () => this.go('hoy'), goCobranza: () => this.go('cobranza'), goMenu: () => this.go('menu'),
+      back: () => this.go('hoy'),
+      stockMas: () => this.setState(s => ({ stockPollos: s.stockPollos + 5 })),
+      stockMenos: () => this.setState(s => ({ stockPollos: Math.max(0, s.stockPollos - 5) }))
+    };
+  }
+}
+</script>
+</body>
+</html>

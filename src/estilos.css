@@ -1,0 +1,189 @@
+/*
+ * Don Pio — tokens y base.
+ *
+ * Sale de Nocturne, pero con la escala subida: el propio documento de diseño
+ * explica por qué. La densidad 0.7x del sistema no se lee a sol directo con las
+ * manos ocupadas, así que el texto base va a 17–20px, el dinero hasta 44px y
+ * ninguna zona táctil baja de 52px. Y se añaden tres colores de estado porque
+ * pendiente / parcial / pagado no se distingue en monocromo.
+ *
+ * La app es oscura y punto. No hay tema claro: se usa de madrugada y en la
+ * calle, y una pantalla clara a las 5 a.m. es un fogonazo en la cara.
+ */
+
+:root {
+  /* Superficies */
+  --fondo: #161826;
+  --superficie: #232532;
+  --hundido: #1b1d2c;
+  --linea: #2c2f3d;
+  --borde: #3f424d;
+
+  /* Texto, de más a menos presente */
+  --texto: #e9e9ed;
+  --texto-2: #b2b6ca;
+  --texto-3: #9397ab;
+  --texto-4: #75798c;
+  --texto-5: #595d6c;
+
+  /* Acento */
+  --acento: #9184d9;
+  --acento-claro: #b5abfc;
+  --acento-200: #e7e5fe;
+  --acento-300: #d2cefd;
+  --acento-700: #5d5294;
+  --acento-800: #423a6a;
+  --acento-900: #2b2741;
+
+  /* Estado. Un color, un significado; si se usan para otra cosa dejan de servir. */
+  --verde: #7bbf8f; /* pagado · cobrado · stock inicial */
+  --ambar: #e0a06a; /* lo que queda · deuda de días anteriores */
+  --ambar-señal: #d9b26a; /* parcial · sin señal */
+  --rojo: #e07a6a; /* pendiente · por cobrar */
+
+  /* Solo la tarjeta de caja del cierre. A escala de pantalla, no de interfaz. */
+  --seccion: #262a60;
+  --seccion-glow: #353b80;
+  --seccion-ghost: #4c5397;
+
+  /*
+   * Zonas seguras del teléfono. En Android moderno la app se dibuja de borde a
+   * borde, así que sin esto el encabezado queda debajo de la hora y la batería,
+   * y la barra de pestañas debajo de la barra de gestos.
+   */
+  --seguro-arriba: env(safe-area-inset-top, 0px);
+  --seguro-abajo: env(safe-area-inset-bottom, 0px);
+
+  --radio-sm: 10px;
+  --radio: 12px;
+  --radio-md: 14px;
+  --radio-lg: 16px;
+  --radio-xl: 20px;
+
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--fondo);
+  color: var(--texto);
+  font-family:
+    "Inter Variable", Inter, system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+input {
+  font: inherit;
+  color: inherit;
+}
+
+/* El foco de teclado es del acento, nunca el azul del navegador. */
+:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--acento-800);
+}
+
+/* Las tres animaciones del prototipo, tal cual. */
+@keyframes dpring {
+  0% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+}
+
+@keyframes dpup {
+  from {
+    transform: translateY(28px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* El cursor del campo activo al teclear el stock. */
+@keyframes dpcursor {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* El anillo que gira mientras la app entiende lo que se acaba de dictar. */
+@keyframes dpgira {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes dpbar {
+  0%,
+  100% {
+    transform: scaleY(0.25);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+/*
+ * Estado pulsado. En un teléfono no hay hover, y sin una respuesta al toque el
+ * repartidor no sabe si registró o no — que es justo el miedo que hace que
+ * mire la pantalla mientras maneja.
+ */
+.pulsable {
+  transition: background-color 90ms ease-out;
+}
+
+.pulsable:active {
+  background-color: var(--linea) !important;
+}
+
+.pulsable-acento:active {
+  background-color: var(--acento-800) !important;
+}
+
+/* Scroll sin barra visible: ocupa ancho que aquí hace falta. */
+.scroll {
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.scroll::-webkit-scrollbar {
+  display: none;
+}
