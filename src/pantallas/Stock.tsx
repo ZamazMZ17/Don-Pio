@@ -81,7 +81,10 @@ export function Stock({
         display: "flex",
         flexDirection: "column",
         minHeight: 0,
-        padding: "0 20px 24px",
+        // Sin barra de pestañas que ya traiga su propio --seguro-abajo, el
+        // botón de "ahora no" quedaba pegado al borde: en un teléfono con
+        // gestos, la barra del sistema lo tapaba o directamente robaba el toque.
+        padding: "0 20px calc(24px + var(--seguro-abajo))",
       }}
     >
       <div style={{ flex: "none", padding: "18px 0 0" }}>
