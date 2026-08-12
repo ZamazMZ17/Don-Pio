@@ -10,9 +10,9 @@ import {
   crearTienda,
   deudasPorTienda,
 } from "../db/tiendas";
-import { aCentimos, money } from "../lib/dinero";
+import { aCentimos, money, type Centimos } from "../lib/dinero";
 import { horaTxt, hoyISO, sumarDias } from "../lib/fecha";
-import { avisoGuardado } from "../lib/aviso";
+import { avisoAtencion, avisoGuardado } from "../lib/aviso";
 import { mediana } from "../tiendas/emparejar";
 import { normalizar, parecido } from "../tiendas/normalizar";
 import { Cabecera, S, Vacio } from "../ui/base";
@@ -31,6 +31,8 @@ export function Tiendas() {
   const [nombreEdit, setNombreEdit] = useState("");
   /** Qué tienda tiene armado el «¿seguro que la borro?», esperando confirmación. */
   const [borrando, setBorrando] = useState<number | null>(null);
+  /** Si justo ahora tenía saldo pendiente y no se pudo borrar, para avisarlo. */
+  const [noSePudo, setNoSePudo] = useState<{ id: number; deuda: Centimos } | null>(null);
   /** Las deudas viejas se fechan ayer: son de «antes», no de hoy. */
   const ayer = sumarDias(hoyISO(), -1);
 
@@ -41,6 +43,12 @@ export function Tiendas() {
     const id = setTimeout(() => setBorrando(null), 8000);
     return () => clearTimeout(id);
   }, [borrando]);
+
+  useEffect(() => {
+    if (noSePudo === null) return;
+    const id = setTimeout(() => setNoSePudo(null), 8000);
+    return () => clearTimeout(id);
+  }, [noSePudo]);
 
   const datos = useLiveQuery(async () => {
     const [tiendas, deudas] = await Promise.all([db.tiendas.toArray(), deudasPorTienda()]);
@@ -214,6 +222,7 @@ export function Tiendas() {
                   setMonto("");
                   setNombreEdit(t.nombre);
                   setBorrando(null);
+                  setNoSePudo(null);
                 }}
                 style={{ width: "100%" }}
               >
@@ -392,6 +401,18 @@ export function Tiendas() {
                       >
                         Salda su deuda para poder borrarla
                       </div>
+                    ) : noSePudo?.id === t.id ? (
+                      <div
+                        style={{
+                          fontSize: 13,
+                          color: "var(--rojo)",
+                          textAlign: "center",
+                          padding: "6px 0",
+                        }}
+                      >
+                        Justo ahora debe {money(noSePudo!.deuda)} de hoy — salda su cuenta en
+                        Cobranza para poder borrarla.
+                      </div>
                     ) : borrando === t.id ? (
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                         <div style={{ flex: 1, fontSize: 14, color: "var(--rojo)" }}>
@@ -400,10 +421,14 @@ export function Tiendas() {
                         <button
                           onClick={() => {
                             void borrarTienda(t.id!).then((r) => {
-                              if (!r.ok) return;
+                              setBorrando(null);
+                              if (!r.ok) {
+                                avisoAtencion();
+                                setNoSePudo({ id: t.id!, deuda: r.deuda });
+                                return;
+                              }
                               avisoGuardado();
                               setEditando(null);
-                              setBorrando(null);
                             });
                           }}
                           style={{

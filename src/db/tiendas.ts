@@ -167,15 +167,26 @@ export async function actualizarTienda(
 }
 
 /**
- * Borra una tienda del directorio. No se permite con una deuda abierta: esa
+ * Borra una tienda del directorio. No se permite con saldo pendiente, sea
+ * deuda de días ya cerrados o algo de hoy mismo que todavía no se cobró: esa
  * plata se volvería invisible en Cobranza, que solo mira tiendas que existen
- * — se perdería de vista en vez de cobrarse. Las entregas ya registradas se
- * quedan (la plata de esos días no se toca); en el historial pasan a
- * aparecer como «Sin nombre».
+ * — se perdería de vista en vez de cobrarse. (Los días de antes de hoy ya
+ * están cerrados a esta altura — `cerrarDiasPasados` corre al abrir la
+ * app — así que solo hoy puede tener una entrega todavía sin pasar por
+ * `deudas`.) Las entregas ya registradas se quedan (la plata de esos días no
+ * se toca); en el historial pasan a aparecer como «Sin nombre».
  */
 export async function borrarTienda(id: number): Promise<{ ok: true } | { ok: false; deuda: Centimos }> {
-  const deuda = await deudaDe(id);
-  if (deuda > 0) return { ok: false, deuda };
+  const [deuda, deHoy] = await Promise.all([
+    deudaDe(id),
+    db.entregas.where("[fecha+tiendaId]").equals([hoyISO(), id]).toArray(),
+  ]);
+  const pendienteHoy = deHoy.reduce(
+    (a, e) => a + Math.max(0, e.totalCalculado - e.totalCobrado - e.descuentoRedondeo),
+    0,
+  );
+  const total = deuda + pendienteHoy;
+  if (total > 0) return { ok: false, deuda: total };
   await db.tiendas.delete(id);
   return { ok: true };
 }
