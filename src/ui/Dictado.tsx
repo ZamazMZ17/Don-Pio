@@ -36,7 +36,8 @@ export function HojaEscuchando({
         background: "var(--superficie)",
         borderRadius: "var(--radio-lg)",
         padding: 18,
-        boxShadow: "0 0 0 1px var(--borde), 0 16px 40px rgba(0,0,0,.65)",
+        border: "1px solid var(--borde)",
+        boxShadow: "0 16px 40px rgba(0,0,0,.65)",
         animation: "dpup .22s ease-out",
       }}
     >
@@ -189,7 +190,8 @@ export function TarjetaConfirmacion({
         background: "var(--superficie)",
         borderRadius: "var(--radio-xl)",
         padding: "20px 18px 18px",
-        boxShadow: "0 0 0 1px var(--texto-5), 0 16px 40px rgba(0,0,0,.7)",
+        border: "1px solid var(--texto-5)",
+        boxShadow: "0 16px 40px rgba(0,0,0,.7)",
         animation: "dpup .24s ease-out",
         maxHeight: "78vh",
         overflowY: "auto",
@@ -629,7 +631,8 @@ export function HojaEscribir({
         background: "var(--superficie)",
         borderRadius: "var(--radio-lg)",
         padding: 18,
-        boxShadow: "0 0 0 1px var(--borde), 0 16px 40px rgba(0,0,0,.65)",
+        border: "1px solid var(--borde)",
+        boxShadow: "0 16px 40px rgba(0,0,0,.65)",
         animation: "dpup .22s ease-out",
       }}
     >

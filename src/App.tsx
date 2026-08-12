@@ -519,7 +519,7 @@ export default function App() {
                 padding: 16,
                 fontSize: 15,
                 color: "var(--ambar)",
-                boxShadow: "0 0 0 1px var(--borde)",
+                border: "1px solid var(--borde)",
               }}
             >
               {rec.error ?? grab.error}

@@ -10,7 +10,12 @@ export const S = {
   tarjeta: {
     background: "var(--superficie)",
     borderRadius: "var(--radio-md)",
-    boxShadow: "0 0 0 1px var(--linea)",
+    // `border`, no `box-shadow` de 0 de difuminado: en Android ese anillo
+    // duro sobre una esquina redondeada a veces sale con costuras — el
+    // borde se ve entrecortado en vez de parejo. Un borde de verdad no
+    // tiene ese problema, y como toda la app ya usa box-sizing: border-box,
+    // no le come nada al tamaño ni al padding de la tarjeta.
+    border: "1px solid var(--linea)",
   } as CSSProperties,
   rotulo: {
     fontSize: 12,

@@ -190,7 +190,10 @@ function Campo({
         minWidth: 0,
         borderRadius: "var(--radio-lg)",
         padding: "14px 16px 16px",
-        boxShadow: activo ? "0 0 0 2px var(--acento)" : "0 0 0 1px var(--linea)",
+        // Ancho fijo en los dos estados — si cambiara de 1px a 2px al
+        // activarse, el contenido saltaría un pixel al pasar de un campo a
+        // otro con box-sizing: border-box.
+        border: activo ? "2px solid var(--acento)" : "2px solid var(--linea)",
         background: activo ? "var(--acento-900)" : "var(--superficie)",
       }}
     >
