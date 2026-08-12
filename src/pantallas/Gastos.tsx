@@ -52,7 +52,7 @@ export function Gastos({ fecha, volver }: { fecha: DiaISO; volver: () => void })
         className="scroll"
         style={{
           flex: 1,
-          padding: "0 18px 40px",
+          padding: "0 18px calc(40px + var(--seguro-abajo))",
           display: "flex",
           flexDirection: "column",
           gap: 12,

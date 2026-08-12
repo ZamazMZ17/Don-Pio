@@ -129,7 +129,11 @@ export function Detalle({ entregaId, volver }: { entregaId: number; volver: () =
         className="scroll"
         style={{
           flex: 1,
-          padding: "0 18px 40px",
+          // Sin barra de pestañas (que ya trae su propio --seguro-abajo), una
+          // entrega corta que no llega a hacer scroll deja el botón de abajo
+          // pegado al borde, donde la barra de gestos de Android puede
+          // taparlo o robarle el toque.
+          padding: "0 18px calc(40px + var(--seguro-abajo))",
           display: "flex",
           flexDirection: "column",
           gap: 12,
