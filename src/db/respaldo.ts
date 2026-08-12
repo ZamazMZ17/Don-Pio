@@ -1,3 +1,4 @@
+import type { Table } from "dexie";
 import {
   db,
   type Ajuste,
@@ -70,10 +71,32 @@ function esRespaldo(x: unknown): x is Respaldo {
 }
 
 /**
- * Restaura un respaldo. No borra lo que ya haya en este teléfono: cada fila
- * se guarda por su clave tal cual venía, así que restaurar dos veces el mismo
- * archivo no duplica nada, y restaurar sobre un teléfono con datos propios los
- * mezcla en vez de perderlos.
+ * Guarda una fila del respaldo en su id original si ese id está libre en este
+ * teléfono, o si ya es de verdad la misma fila (misma `creada`, que no cambia
+ * nunca). Si el id ya es de otra fila con una `creada` distinta, la guarda
+ * como una fila nueva y devuelve el id que le tocó — así una tienda o entrega
+ * ajena nunca pisa una tuya solo porque el contador autoincremental de los dos
+ * teléfonos haya llegado por casualidad al mismo número.
+ */
+async function ponerOAgregar<T extends { id?: number; creada: number }>(
+  tabla: Table<T, number>,
+  fila: T,
+): Promise<number> {
+  const viejo = fila.id;
+  const local = viejo !== undefined ? await tabla.get(viejo) : undefined;
+  if (local === undefined || local.creada === fila.creada) {
+    return tabla.put(fila);
+  }
+  const { id: _id, ...resto } = fila;
+  return tabla.add(resto as T);
+}
+
+/**
+ * Restaura un respaldo. No borra lo que ya haya en este teléfono, y cada fila
+ * se guarda por su clave — restaurar dos veces el mismo archivo no duplica
+ * nada, y restaurar sobre un teléfono con datos propios los mezcla en vez de
+ * perderlos, sin que una tienda o entrega ajena pise una tuya por una
+ * coincidencia de id (ver `ponerOAgregar`).
  */
 export async function restaurarRespaldo(bruto: unknown): Promise<void> {
   if (!esRespaldo(bruto)) {
@@ -85,12 +108,45 @@ export async function restaurarRespaldo(bruto: unknown): Promise<void> {
     "rw",
     [db.tiendas, db.jornadas, db.entregas, db.pagos, db.deudas, db.gastos, db.ajustes],
     async () => {
-      await db.tiendas.bulkPut(datos.tiendas);
+      const idsTienda = new Map<number, number>();
+      for (const t of datos.tiendas) {
+        const nuevo = await ponerOAgregar(db.tiendas, t);
+        if (t.id !== undefined) idsTienda.set(t.id, nuevo);
+      }
+
+      const idsEntrega = new Map<number, number>();
+      for (const e of datos.entregas) {
+        const nuevo = await ponerOAgregar(db.entregas, {
+          ...e,
+          tiendaId: idsTienda.get(e.tiendaId) ?? e.tiendaId,
+        });
+        if (e.id !== undefined) idsEntrega.set(e.id, nuevo);
+      }
+
+      for (const p of datos.pagos) {
+        await ponerOAgregar(db.pagos, {
+          ...p,
+          tiendaId: idsTienda.get(p.tiendaId) ?? p.tiendaId,
+          entregaId: p.entregaId !== null ? (idsEntrega.get(p.entregaId) ?? p.entregaId) : null,
+        });
+      }
+
+      for (const d of datos.deudas) {
+        await ponerOAgregar(db.deudas, {
+          ...d,
+          tiendaId: idsTienda.get(d.tiendaId) ?? d.tiendaId,
+          entregaId: d.entregaId !== null ? (idsEntrega.get(d.entregaId) ?? d.entregaId) : null,
+        });
+      }
+
+      for (const g of datos.gastos) {
+        await ponerOAgregar(db.gastos, g);
+      }
+
+      // Una jornada es una fila por fecha, no por id: no hay dos versiones
+      // que mezclar para el mismo día, así que pisar con la del respaldo es
+      // lo correcto.
       await db.jornadas.bulkPut(datos.jornadas);
-      await db.entregas.bulkPut(datos.entregas);
-      await db.pagos.bulkPut(datos.pagos);
-      await db.deudas.bulkPut(datos.deudas);
-      await db.gastos.bulkPut(datos.gastos);
       await db.ajustes.bulkPut(datos.ajustes);
     },
   );
