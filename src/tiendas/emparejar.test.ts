@@ -184,6 +184,29 @@ describe("la hora desempata, pero nunca inventa", () => {
   });
 });
 
+describe("un nombre a medias no se confirma solo porque la tienda es nueva", () => {
+  it("una tienda recién creada a mano, sin historial, no 'respalda' un nombre parecido", () => {
+    // "Rosi" contra "Rosa": nombre a medias (ni calcado ni descartable). La
+    // tienda es de las que se agregan a mano desde Tiendas, sin una sola
+    // entrega encima — cero historial, no un historial flojo de verdad.
+    // `puntajeHora`/`puntajeSecuencia` devuelven 0.5 ("ni a favor ni en
+    // contra") justamente para no penalizarla frente a otras tiendas al
+    // ordenar candidatas, pero ese mismo neutral no puede colarse como si
+    // fuera "el contexto sí la respalda": sin ninguna entrega previa no hay
+    // nada que respalde nada, y confirmarla en automático le cargaría la
+    // entrega de "Rosi" a la cuenta de "Rosa".
+    const rosa = tienda(1, "Rosa");
+    const r = emparejar("Rosi", [rosa], ctx(500, 1));
+    expect(r.decision).toBe("ambiguo");
+  });
+
+  it("pero si el contexto sí respalda de verdad (aunque el nombre sea el mismo a medias), se confirma", () => {
+    const rosa = tienda(1, "Rosa", { minutos: [500, 500, 500], posiciones: [1, 1, 1] });
+    const r = emparejar("Rosi", [rosa], ctx(500, 1));
+    expect(r.decision).toBe("encontrada");
+  });
+});
+
 describe("★ dos clientas del mismo nombre en un mismo día", () => {
   it("si ya le dejó a esa Juanita, la siguiente es otra", () => {
     // «En la entrega 5 hay una Juanita y en la 35 hay otra Juanita, no son

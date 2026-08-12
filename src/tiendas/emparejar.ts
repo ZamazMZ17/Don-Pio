@@ -39,8 +39,18 @@ export const UMBRAL_NOMBRE = 0.62;
  */
 export const NOMBRE_SEGURO = 0.8;
 
-/** Hora o secuencia por debajo de esto no aportan nada a favor. */
-export const CONTEXTO_FLOJO = 0.3;
+/**
+ * Hora o secuencia que no llegan a esto no aportan nada a favor.
+ *
+ * Es el mismo valor «ni a favor ni en contra» que `puntajeHora`/
+ * `puntajeSecuencia` devuelven cuando la tienda no tiene historial todavía
+ * (ver sus comentarios). Tiene que ser así a propósito: una tienda recién
+ * creada a mano, sin una sola entrega encima, no puede «respaldar» un nombre
+ * a medias solo porque el neutral por falta de datos quede numéricamente por
+ * encima de algún piso arbitrario — eso sería justo lo contrario de lo que
+ * dice el comentario de abajo, «un contexto que tampoco la respalda».
+ */
+export const CONTEXTO_FLOJO = 0.5;
 
 /**
  * Si la primera y la segunda están más cerca que esto, no se elige: se
@@ -225,8 +235,8 @@ export function emparejar(
   // sin darla por segura. La tarjeta siempre deja crear una nueva.
   if (
     mejor.nombre < NOMBRE_SEGURO &&
-    mejor.hora < CONTEXTO_FLOJO &&
-    mejor.secuencia < CONTEXTO_FLOJO
+    mejor.hora <= CONTEXTO_FLOJO &&
+    mejor.secuencia <= CONTEXTO_FLOJO
   ) {
     return { decision: "ambiguo", mejor, candidatas, buscado };
   }
