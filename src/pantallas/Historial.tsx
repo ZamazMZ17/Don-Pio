@@ -27,11 +27,15 @@ export function Historial({ volver, abrirDia }: { volver: () => void; abrirDia: 
       deudaAbierta: deudas
         .filter((d) => !d.cerrada)
         .reduce((a, d) => a + (d.monto - d.saldado), 0),
+      // `porCobrarDelDia` es siempre 0 en un día ya cerrado — eso pasó a
+      // vivir como deuda. Para saber si ese día en concreto sigue debiendo
+      // hay que mirar si queda alguna deuda abierta que haya nacido ese día.
+      diasConDeudaAbierta: new Set(deudas.filter((d) => !d.cerrada).map((d) => d.fechaOrigen)),
     };
   }, []);
 
   if (!datos) return null;
-  const { semana, resumenes, dias, deudaAbierta } = datos;
+  const { semana, resumenes, dias, deudaAbierta, diasConDeudaAbierta } = datos;
 
   const maximo = Math.max(1, ...resumenes.map((r) => r.repartidoPollos));
   const repartidoSemana = resumenes.reduce((a, r) => a + r.repartidoPollos, 0);
@@ -128,7 +132,7 @@ export function Historial({ volver, abrirDia }: { volver: () => void; abrirDia: 
               <div style={{ fontSize: 17, fontWeight: 600 }}>{diaCorto(jornada.fecha)}</div>
               <div style={{ fontSize: 14, color: "var(--texto-3)", marginTop: 3 }}>
                 {resumen.repartidoPollos} pollos · {resumen.tiendas} tiendas
-                {resumen.porCobrarDelDia > 0 && " · quedó debiendo"}
+                {diasConDeudaAbierta.has(jornada.fecha) && " · quedó debiendo"}
               </div>
             </div>
             <div style={{ fontSize: 18, fontWeight: 600, color: "var(--verde)", flex: "none" }}>

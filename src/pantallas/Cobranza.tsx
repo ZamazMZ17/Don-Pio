@@ -95,8 +95,22 @@ export function Cobranza({
   if (!cuentas) return null;
 
   const faltan = cuentas.reduce((a, c) => a + c.total, 0);
-  const cobradas = Math.max(0, (total ?? 0) - cuentas.length);
-  const deTotal = total ?? cuentas.length;
+  /*
+   * «Cobradas X de Y» cuenta entregas de hoy, no tiendas: `cuentas` mezcla
+   * tiendas de solo-deuda-vieja (sin nada de hoy) con las de hoy, y una
+   * tienda con dos entregas hoy es una sola fila ahí. Contar por
+   * `cuentas.length` directamente infla o desinfla el progreso. Se cuenta
+   * en cambio cuántas entregas de hoy siguen con saldo.
+   */
+  const idsPendientesHoy = new Set(
+    cuentas.flatMap((c) =>
+      c.entregas
+        .filter((e) => e.totalCalculado - e.totalCobrado - e.descuentoRedondeo > 0)
+        .map((e) => e.id!),
+    ),
+  );
+  const cobradas = Math.max(0, (total ?? 0) - idsPendientesHoy.size);
+  const deTotal = total ?? 0;
   const progreso = deTotal > 0 ? (cobradas / deTotal) * 100 : 0;
 
   const cerrar = () => {

@@ -102,7 +102,7 @@ intérprete que lo dictado.
 | **Detalle de día** | Un día cerrado, entrega por entrega |
 | **Ajustes** | Hora de cierre, redondeo, sonido, respaldo, y la API key de Gemini |
 | **Cargar stock** | «¿Con cuánto sales hoy?», con la sugerencia aprendida por día de semana |
-| **Menú** | Cuadrícula de 6 fichas, detrás de la pestaña «Más» |
+| **Menú** | Cuadrícula de 7 fichas, detrás de la pestaña «Más» |
 
 ---
 
