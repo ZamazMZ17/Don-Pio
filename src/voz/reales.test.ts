@@ -81,6 +81,17 @@ const CASOS: Caso[] = [
   // ── El reconocedor pega dos números sin punto ni «con» de por medio ──
   // «35.30» dicho con una pausa sale transcrito «3530», pegado.
   { dicho: "Calacho un pollo 3530 soles", cliente: "Calacho", pollos: 1, total: 35.3 },
+
+  // ── El precio dicho sin «a», solo con «el/por kilo» ───────────────────
+  { dicho: "Rosa 2 pollos 5 kilos 9.50 el kilo", cliente: "Rosa", pollos: 2, kg: 5, precio: 9.5 },
+  { dicho: "Rosa 2 pollos 5 kilos 9.50 por kilo", cliente: "Rosa", pollos: 2, kg: 5, precio: 9.5 },
+
+  // ── Palabras sueltas después del nombre que no deben pegársele ────────
+  { dicho: "Rosa total 42 soles, 2 pollos", cliente: "Rosa", pollos: 2, total: 42 },
+  { dicho: "Rosa son 42 soles de 2 pollos", cliente: "Rosa", pollos: 2, total: 42 },
+
+  // ── «no se pesó», la otra forma de decir «sin pesar» ──────────────────
+  { dicho: "Rosa 3 pollos no se pesó 27 soles", cliente: "Rosa", pollos: 3, total: 27 },
 ];
 
 describe("dictados reales de un día de reparto", () => {
@@ -122,5 +133,12 @@ describe("cobros y deudas dictados en la calle", () => {
     expect(i.cliente).toBe("Carmen");
     expect(i.pollos).toBe(0);
     expect(i.intencion).toBe("abono_deuda");
+  });
+
+  it("«depositó» no se le queda pegado al nombre", () => {
+    const i = interpretarLocal("Rosa deposito 30 soles");
+    expect(i.cliente).toBe("Rosa");
+    expect(i.intencion).toBe("registrar_pago");
+    expect(i.monto).toBe(30);
   });
 });

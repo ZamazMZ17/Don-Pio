@@ -49,7 +49,11 @@ function juntar(entero: string, ...dec: (string | undefined)[]): number {
  */
 function pesos(t: string): number[] {
   const re = new RegExp(
-    String.raw`(${N})\s*(?:kilos?|kg)\b(?:\s+(?:con\s+|y\s+)?(\d{1,3})\b)?`,
+    // El `(?![.,]\d)` es lo que impide que «5 kilos 9.50 el kilo» —el precio
+    // dicho sin «a»— se coma el «9» como si fueran gramos de la primera
+    // pesada: sin él, «5 kilos 9.50» salía 5.900 kg en vez de 5, y el precio
+    // se perdía entero.
+    String.raw`(${N})\s*(?:kilos?|kg)\b(?:\s+(?:con\s+|y\s+)?(\d{1,3})\b(?![.,]\d))?`,
     "g",
   );
   const out: number[] = [];
@@ -106,13 +110,28 @@ interface Precio {
  * se calla. Exigir «el kilo» dejaba sin precio la mitad de las entregas de un
  * día real. También llega como «a 970», como «a 9:40» —el teclado lo escribe
  * como si fuera una hora— y como «a 9 soles con 30».
+ *
+ * Sin «a» delante, solo se reconoce si dice «el kilo» o «por kilo» de frente
+ * («9.50 el kilo»): ese anuncio no se confunde con un peso porque un peso
+ * nunca lleva «el»/«por» antes de «kilo», así que es seguro.
  */
 function precioKilo(t: string): Precio | null {
-  const m = t.match(new RegExp(String.raw`\ba\s+(\d+)(?:\s*soles?)?` + CENTS));
-  if (!m) return null;
-  const valor = juntar(m[1], m[2], m[3], m[4]);
-  // Fuera del rango de un kilo de pollo no es un precio: será otra cosa.
-  return valor >= 3 && valor <= 40 ? { valor, texto: m[0] } : null;
+  const conA = t.match(new RegExp(String.raw`\ba\s+(\d+)(?:\s*soles?)?` + CENTS));
+  if (conA) {
+    const valor = juntar(conA[1], conA[2], conA[3], conA[4]);
+    // Fuera del rango de un kilo de pollo no es un precio: será otra cosa.
+    if (valor >= 3 && valor <= 40) return { valor, texto: conA[0] };
+  }
+
+  const sinA = t.match(
+    new RegExp(String.raw`(\d+)` + CENTS + String.raw`\s*(?:soles?\s+)?(?:el|por)\s+kilos?\b`),
+  );
+  if (sinA) {
+    const valor = juntar(sinA[1], sinA[2], sinA[3], sinA[4]);
+    if (valor >= 3 && valor <= 40) return { valor, texto: sinA[0] };
+  }
+
+  return null;
 }
 
 /**
@@ -140,7 +159,7 @@ function total(t: string, precio: Precio | null): number | null {
 
 /** Palabras que marcan que el nombre ya terminó y empiezan los datos. */
 const CORTE =
-  /^(?:me|pag[oóa]|pagaron|pagó|dio|entreg[oó]|abon[oó]|cancel[oó]|sin|debe|deb[ií]a|lo)$/i;
+  /^(?:me|pag[oóa]|pagaron|pagó|dio|entreg[oó]|abon[oó]|cancel[oó]|deposit[oó]|sin|debe|deb[ií]a|lo|total|son)$/i;
 
 /**
  * El nombre es lo que va antes del primer dato.
@@ -217,7 +236,7 @@ export function interpretarLocal(transcripcion: string): Intencion {
     // nombra sin cantidad («y el pecho para la Rosa») es uno.
     pechos:
       primerEntero(t, new RegExp(String.raw`(${N})\s*pech`)) || (/\bpech/.test(t) ? 1 : 0),
-    sinPesar: /\bsin\s+pesar\b/.test(t),
+    sinPesar: /\bsin\s+pesar\b|\bno\s+se\s+pes[oó]\b/.test(t),
     notas: /\blo\s+de\s+siempre\b/.test(t) ? "lo de siempre" : "",
   };
 
