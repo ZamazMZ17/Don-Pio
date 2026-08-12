@@ -36,8 +36,8 @@ export function useTiendas() {
 }
 
 /**
- * Un reloj que solo avanza cada minuto. Suficiente para el encabezado, y no
- * repinta la lista sesenta veces por minuto mientras él maneja.
+ * Un reloj que solo avanza cada 30 segundos. Suficiente para el encabezado, y
+ * no repinta la lista sesenta veces por minuto mientras él maneja.
  */
 export function useReloj(): Date {
   const [ahora, setAhora] = useState(() => new Date());
