@@ -189,3 +189,29 @@ export async function ligarAEntrega(dictadoId: number, entregaId: number): Promi
 export async function descartarDictado(dictadoId: number): Promise<void> {
   await db.dictados.update(dictadoId, { estado: "descartado" });
 }
+
+/** Cuántos días se guarda el audio de un dictado ya resuelto antes de soltarlo. */
+const DIAS_AUDIO = 3;
+
+/**
+ * Suelta el audio de los dictados ya resueltos hace unos días.
+ *
+ * El audio solo sirve una vez, en el intento inicial con Gemini: ni el
+ * reintento de la cola (que manda solo el texto, ver `cola.ts`) ni ninguna
+ * pantalla lo vuelven a leer. Guardarlo para siempre solo llena el teléfono
+ * — con 50 y pico dictados al día, en unas semanas serían miles de audios
+ * sin ningún uso. El texto, que es lo que de verdad hay que conservar, no
+ * se toca nunca.
+ */
+export async function limpiarAudiosViejos(): Promise<number> {
+  const limite = Date.now() - DIAS_AUDIO * 24 * 60 * 60 * 1000;
+  const viejos = await db.dictados
+    .where("estado")
+    .anyOf("procesado", "descartado")
+    .filter((d) => d.creada < limite && d.audioBlob !== undefined)
+    .toArray();
+
+  for (const d of viejos) await db.dictados.update(d.id!, { audioBlob: undefined });
+  return viejos.length;
+}
+

@@ -28,6 +28,7 @@ import {
   interpretar,
   interpretarAudio,
   ligarAEntrega,
+  limpiarAudiosViejos,
   type Interpretacion,
 } from "./voz/interpretar";
 import { duracion, useGrabadora } from "./voz/grabacion";
@@ -110,6 +111,7 @@ export default function App() {
    */
   useEffect(() => {
     void cerrarDiasPasados(fecha);
+    void limpiarAudiosViejos();
   }, [fecha]);
 
   /**
