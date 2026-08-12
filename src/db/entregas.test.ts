@@ -438,6 +438,29 @@ describe("cobrar", () => {
     expect(money((await cuentasPendientes(HOY))[0].total)).toBe("S/ 0.40");
   });
 
+  it("el redondeo también se perdona cuando cae en deuda vieja pura, sin entregas hoy", async () => {
+    // Pasa por una tienda solo a cobrar lo de antes, sin dejarle nada hoy.
+    const t = await crearTienda("Restaurante Central");
+    await db.deudas.add({
+      tiendaId: t.id!,
+      entregaId: null,
+      fechaOrigen: AYER,
+      monto: aCentimos(50),
+      saldado: 0,
+      cerrada: 0,
+      creada: Date.now(),
+    });
+
+    await registrarCobro(t.id!, aCentimos(49.6), { fecha: HOY, aceptarRedondeo: true });
+
+    // Antes, el perdón solo se buscaba entre las entregas de hoy: como no
+    // había ninguna, los 0.40 no se aplicaban en ningún lado y la deuda
+    // quedaba abierta para siempre por una fracción de sol.
+    const deuda = (await db.deudas.toArray())[0];
+    expect(deuda.cerrada).toBe(1);
+    expect(await cuentasPendientes(HOY)).toHaveLength(0);
+  });
+
   it("no perdona como redondeo lo que es una deuda de verdad", async () => {
     const t = await crearTienda("Doña Elsa");
     await registrarEntrega(

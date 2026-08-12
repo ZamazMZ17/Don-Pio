@@ -356,5 +356,28 @@ export async function registrarCobro(
       });
       porPerdonar -= perdona;
     }
+
+    /*
+     * Si todavía queda por perdonar, es que el resto cayó en la deuda vieja,
+     * no en lo de hoy — pasa cuando esa tienda no tiene entregas hoy y solo se
+     * le está cobrando lo de antes. Sin esto, el redondeo se aceptaba en la
+     * pantalla pero no se aplicaba en ningún lado: la deuda se quedaba abierta
+     * por unos centavos para siempre. `saldado` no tiene un campo de
+     * descuento propio como las entregas; se perdona igual que se salda —
+     * subiendo `saldado` — y se cierra al llegar a `monto`.
+     */
+    for (const d of abiertas) {
+      if (porPerdonar <= 0) break;
+      const actual = await db.deudas.get(d.id!);
+      if (!actual || actual.cerrada) continue;
+      const falta = actual.monto - actual.saldado;
+      if (falta <= 0) continue;
+      const perdona = Math.min(porPerdonar, falta, TOPE_REDONDEO);
+      await db.deudas.update(d.id!, {
+        saldado: actual.saldado + perdona,
+        cerrada: actual.saldado + perdona >= actual.monto ? 1 : 0,
+      });
+      porPerdonar -= perdona;
+    }
   });
 }
