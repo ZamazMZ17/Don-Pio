@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Pencil, Trash2 } from "lucide-react";
 import { db } from "../db/db";
@@ -65,6 +65,14 @@ export function Detalle({ entregaId, volver }: { entregaId: number; volver: () =
   const [nuevaTanda, setNuevaTanda] = useState("");
   const [renombrando, setRenombrando] = useState(false);
   const [nombreEdit, setNombreEdit] = useState("");
+  /** Un solo toque no puede borrar una entrega — a veces ya tiene plata cobrada. */
+  const [borrando, setBorrando] = useState(false);
+
+  useEffect(() => {
+    if (!borrando) return;
+    const id = setTimeout(() => setBorrando(false), 8000);
+    return () => clearTimeout(id);
+  }, [borrando]);
 
   const datos = useLiveQuery(async () => {
     const entrega = await db.entregas.get(entregaId);
@@ -473,23 +481,48 @@ export function Detalle({ entregaId, volver }: { entregaId: number; volver: () =
 
         <BotonPrincipal onClick={volver}>Listo</BotonPrincipal>
 
-        <button
-          onClick={() => {
-            void borrarEntrega(entregaId);
-            volver();
-          }}
-          style={{
-            height: 52,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 8,
-            color: "var(--texto-4)",
-            fontSize: 15,
-          }}
-        >
-          <Trash2 size={17} /> Borrar esta entrega
-        </button>
+        {borrando ? (
+          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 4px" }}>
+            <div style={{ flex: 1, fontSize: 14, color: "var(--rojo)" }}>
+              {e.totalCobrado > 0
+                ? `¿Borrar? Se pierde también ${money(e.totalCobrado)} ya cobrado.`
+                : "¿Borrar esta entrega? No se puede deshacer."}
+            </div>
+            <button
+              onClick={() => {
+                void borrarEntrega(entregaId);
+                volver();
+              }}
+              style={{
+                flex: "none",
+                height: 44,
+                padding: "0 16px",
+                borderRadius: "var(--radio)",
+                border: "1.5px solid var(--rojo)",
+                color: "var(--rojo)",
+                fontSize: 15,
+                fontWeight: 600,
+              }}
+            >
+              Sí, borrar
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setBorrando(true)}
+            style={{
+              height: 52,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              color: "var(--texto-4)",
+              fontSize: 15,
+            }}
+          >
+            <Trash2 size={17} /> Borrar esta entrega
+          </button>
+        )}
       </div>
     </div>
   );
