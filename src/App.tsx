@@ -384,6 +384,13 @@ export default function App() {
       ir("historial");
       return true;
     }
+    // Se abre solo desde Menú, y su propio botón «volver» ya lleva ahí — el
+    // atrás de Android tiene que coincidir, o la misma pantalla sale a un
+    // sitio distinto según cuál de los dos botones se toque.
+    if (pantalla === "gastos") {
+      ir("menu");
+      return true;
+    }
     if (!RAIZ.includes(pantalla)) {
       const previa = pila.current.pop() ?? "hoy";
       setPantalla(previa);
