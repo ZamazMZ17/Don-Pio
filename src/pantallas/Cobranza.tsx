@@ -191,16 +191,8 @@ export function Cobranza({
         className="scroll"
         style={{
           flex: 1,
-          padding: "14px 18px 20px",
-          /*
-           * La barra de pestañas y el micrófono flotan encima, fuera del
-           * flujo — así que un padding normal no alcanza: solo despeja
-           * cuando ya se hizo scroll hasta el final. Con pocas tarjetas, que
-           * ni piden scroll, el micrófono tapaba igual el botón de abajo.
-           * Con margin en vez de padding, el propio cuadro de scroll deja de
-           * ocupar esa franja, así que nunca hay nada debajo del micrófono.
-           */
-          marginBottom: "calc(190px + var(--seguro-abajo))",
+          // Hueco para la barra de pestañas y el micrófono, que flotan encima.
+          padding: "14px 18px 230px",
           display: "flex",
           flexDirection: "column",
           gap: 10,

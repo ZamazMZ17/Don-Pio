@@ -205,16 +205,9 @@ export function Hoy({
         className="scroll"
         style={{
           flex: 1,
-          padding: "14px 18px 20px",
-          /*
-           * La barra de pestañas y el micrófono flotan encima, fuera del
-           * flujo — un padding no alcanza: solo despeja una vez que ya se
-           * hizo scroll hasta el final, y con pocas entregas (que ni piden
-           * scroll) el micrófono tapaba igual el monto de la última. Con
-           * margin en vez de padding, el propio cuadro de scroll deja de
-           * ocupar esa franja, así que nunca hay nada debajo del micrófono.
-           */
-          marginBottom: "calc(190px + var(--seguro-abajo))",
+          // Hueco para la barra de pestañas y el micrófono, que flotan encima:
+          // sin él, el micrófono tapa el monto de la última entrega.
+          padding: "14px 18px 250px",
           display: "flex",
           flexDirection: "column",
           gap: 10,
