@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../db/db";
 import { leerJornada, resumenDe } from "../db/jornada";
@@ -5,7 +6,7 @@ import { deudasPorTienda } from "../db/tiendas";
 import { estadoDe, COLOR_ESTADO, TEXTO_ESTADO } from "../dominio/calculo";
 import { diaCorto, diaLargo, type DiaISO } from "../lib/fecha";
 import { kgCorto, money } from "../lib/dinero";
-import { useAjuste } from "../lib/ganchos";
+import { useAjuste, useHolguraMic } from "../lib/ganchos";
 import { ChevronRight, Sparkles } from "lucide-react";
 import { guardarAjuste, CLAVE_API, CLAVE_ORDEN } from "../voz/ajustes";
 import { S, Vacio } from "../ui/base";
@@ -58,6 +59,17 @@ export function Hoy({
 
     return { resumen, entregas, porId, deudas, jornada, soloCobro };
   }, [fecha]);
+
+  // Antes del `if` que puede cortar el render: los hooks no pueden ser
+  // condicionales. `?? 0` es solo para tener algo estable mientras `datos`
+  // todavía no llegó — la medición de verdad ocurre después, ya con datos.
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const holguraMic = useHolguraMic(
+    scrollRef,
+    190,
+    250,
+    (datos?.entregas.length ?? 0) + (datos?.soloCobro.size ?? 0),
+  );
 
   if (!datos) return null;
   const { resumen, entregas, porId, deudas, jornada, soloCobro } = datos;
@@ -202,12 +214,18 @@ export function Hoy({
 
       {/* Lista tipo agenda */}
       <div
+        ref={scrollRef}
         className="scroll"
         style={{
           flex: 1,
           // Hueco para la barra de pestañas y el micrófono, que flotan encima:
           // sin él, el micrófono tapa el monto de la última entrega.
           padding: "14px 18px 250px",
+          // Con pocas entregas —que ni piden scroll— ese padding de abajo
+          // nunca llega a verse, y el micrófono tapa igual la última tarjeta
+          // desde el primer vistazo. Con muchas, el diseño de siempre ya
+          // funciona bien y esto no le toca nada (ver useHolguraMic).
+          marginBottom: holguraMic,
           display: "flex",
           flexDirection: "column",
           gap: 10,

@@ -158,6 +158,29 @@ export async function deudasPorTienda(): Promise<Map<number, Centimos>> {
   return m;
 }
 
+/**
+ * Lo que debe cada tienda ahora mismo, sumando deuda de días cerrados **y**
+ * lo pendiente de una entrega de hoy — a diferencia de `deudasPorTienda()`,
+ * que a propósito solo mira lo viejo (Hoy la usa para el «+ que debía de
+ * antes», que necesita quedar aparte del total de hoy).
+ *
+ * Para el directorio de Tiendas: «Al día» ahí no puede decir que sí cuando
+ * en realidad hay una entrega de hoy todavía sin cobrar.
+ */
+export async function saldoTotalPorTienda(): Promise<Map<number, Centimos>> {
+  const [deudas, deHoy] = await Promise.all([
+    deudasPorTienda(),
+    db.entregas.where("fecha").equals(hoyISO()).toArray(),
+  ]);
+  const m = new Map(deudas);
+  for (const e of deHoy) {
+    const pendiente = e.totalCalculado - e.totalCobrado - e.descuentoRedondeo;
+    if (pendiente <= 0) continue;
+    m.set(e.tiendaId, (m.get(e.tiendaId) ?? 0) + pendiente);
+  }
+  return m;
+}
+
 export async function actualizarTienda(
   id: number,
   cambios: Partial<Tienda>,

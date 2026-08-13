@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type RefObject } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../db/db";
 import { CLAVE_TEMA, leerAjuste } from "../voz/ajustes";
@@ -53,6 +53,65 @@ export function useTema(): void {
     mq.addEventListener("change", aplicar);
     return () => mq.removeEventListener("change", aplicar);
   }, [tema]);
+}
+
+/**
+ * Cuánto margen extra hace falta reservar al final de una lista con scroll
+ * para que el micrófono flotante nunca tape el último botón — pero **solo
+ * cuando de verdad hace falta**.
+ *
+ * El padding de abajo del cuadro de scroll (230-250px) ya despeja el
+ * micrófono una vez que se hizo scroll hasta el fondo. El problema es una
+ * lista corta que no llega a pedir scroll: ahí ese padding nunca se ve, y el
+ * micrófono cae encima del último botón desde el primer vistazo.
+ *
+ * Ya se probó reservar ese espacio siempre, con `margin-bottom` fijo en el
+ * cuadro de scroll — y encogía también las listas largas que nunca tuvieron
+ * el problema, y en un Android de verdad eso cortaba tarjetas a la mitad
+ * (ver CLAUDE.md §7 bis). Esta versión mide antes de decidir: si el
+ * contenido ya necesita scroll, no toca nada — el diseño que ya funcionaba
+ * bien queda exactamente igual. Solo reserva margen cuando el contenido, sin
+ * reservarlo, cabría entero sin pedir scroll.
+ *
+ * La medición no puede depender de su propio resultado: `scrollHeight` (lo
+ * que ocupa el contenido) y la posición del borde de arriba del elemento no
+ * cambian por su propio `margin-bottom`, así que no hay vuelta atrás que
+ * haga oscilar el cálculo.
+ *
+ * `scrollHeight` ya incluye el padding-bottom fijo que cada pantalla trae de
+ * antes (230-250px) — hay que restarlo para saber dónde termina de verdad la
+ * última tarjeta, no dónde termina el padding que la sigue.
+ */
+export function useHolguraMic(
+  ref: RefObject<HTMLElement | null>,
+  huellaPx: number,
+  paddingYaReservadoPx: number,
+  dep: unknown,
+): string {
+  const [haceFalta, setHaceFalta] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const medir = () => {
+      const disponible = window.innerHeight - el.getBoundingClientRect().top;
+      const contenidoSinPadding = el.scrollHeight - paddingYaReservadoPx;
+      // Si el contenido de verdad (sin el padding de seguridad) ya cabría
+      // entero en la pantalla — sin pedir scroll por su cuenta — es una
+      // lista corta: ahí es donde el micrófono puede tapar algo desde el
+      // primer vistazo, y vale la pena reservarle su espacio de verdad. Si
+      // ya es lo bastante larga como para pedir scroll con o sin el
+      // micrófono de por medio, no hay nada que tocar: el padding de
+      // siempre despeja al llegar al fondo, como ya venía funcionando.
+      setHaceFalta(contenidoSinPadding <= disponible);
+    };
+    medir();
+    window.addEventListener("resize", medir);
+    return () => window.removeEventListener("resize", medir);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dep]);
+
+  return haceFalta ? `calc(${huellaPx}px + var(--seguro-abajo))` : "0px";
 }
 
 /** Las tiendas, ordenadas por la ruta que la app fue aprendiendo. */

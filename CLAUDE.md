@@ -210,16 +210,24 @@ una tienda existente en silencio: **el emparejamiento siempre se muestra antes d
 - **Las zonas seguras** (`--seguro-arriba` / `--seguro-abajo`) no son opcionales: Android
   dibuja de borde a borde y sin ellas el encabezado queda bajo la hora y la barra bajo los
   gestos.
-- **Ya se probó `margin-bottom` en vez de `padding-bottom` para despejar el micrófono
-  flotante de Hoy y Cobranza — y se deshizo.** El problema real: con pocas entregas (que
-  ni piden scroll), el micrófono tapaba el botón de abajo desde el primer vistazo, porque
-  el `padding-bottom` del cuadro de scroll solo ayuda una vez que ya se hizo scroll hasta
-  el fondo. Cambiarlo a `margin-bottom` (para que el cuadro de scroll dejara de ocupar esa
-  franja) se veía bien en un navegador de escritorio, pero en el teléfono de verdad metía
-  una franja de color de fondo, del ancho del hueco reservado, cortando tarjetas a la mitad
-  — peor que el problema que se quería arreglar. Se volvió al `padding-bottom` de siempre
-  (230px en Cobranza, 250px en Hoy). Si se retoma este problema, probar primero en un
-  teléfono de verdad, no solo en Playwright.
+- **El micrófono flotante puede tapar el último botón de Hoy y Cobranza — pero solo hay
+  que arreglarlo para listas cortas.** El `padding-bottom` del cuadro de scroll (230px
+  Cobranza, 250px Hoy) despeja el micrófono, pero solo **una vez que ya se hizo scroll
+  hasta el fondo**: con pocas entregas, que ni piden scroll, ese padding nunca llega a
+  verse y el micrófono tapa el botón de abajo desde el primer vistazo.
+
+  El primer intento fue ponerle `margin-bottom` fijo al cuadro de scroll, siempre — se veía
+  bien en Playwright, pero en el teléfono de verdad **encogía también las listas largas que
+  nunca tuvieron el problema**, y con muchas entregas eso cortaba tarjetas a la mitad al
+  hacer scroll. Peor que el bug original.
+
+  La solución que quedó (`useHolguraMic` en `lib/ganchos.ts`, usada por Hoy.tsx y
+  Cobranza.tsx) **mide antes de decidir**: solo reserva ese margen cuando el contenido real
+  —sin contar el padding de seguridad— ya cabría entero en la pantalla sin pedir scroll. Si
+  la lista es lo bastante larga como para necesitar scroll de todas formas, no le toca nada:
+  el diseño de siempre queda exactamente igual, que es el caso que se rompió la primera vez.
+  Ojo con la matemática si se toca: `scrollHeight` **incluye** el padding-bottom fijo, hay
+  que restarlo antes de comparar contra el alto disponible, o el cálculo sale al revés.
 - **Un ícono dentro de una columna flex, sin `flexShrink: 0`, se puede aplastar.** Pasó en
   las fichas del Menú: en pantallas angostas, la ficha con el subtítulo más largo («Gastos»)
   envuelve a dos líneas, la cuadrícula le da menos alto del que el contenido necesita, y sin

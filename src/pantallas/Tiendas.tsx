@@ -9,6 +9,7 @@ import {
   cerrarDeudas,
   crearTienda,
   deudasPorTienda,
+  saldoTotalPorTienda,
 } from "../db/tiendas";
 import { aCentimos, money, type Centimos } from "../lib/dinero";
 import { horaTxt, hoyISO, sumarDias } from "../lib/fecha";
@@ -51,12 +52,16 @@ export function Tiendas() {
   }, [noSePudo]);
 
   const datos = useLiveQuery(async () => {
-    const [tiendas, deudas] = await Promise.all([db.tiendas.toArray(), deudasPorTienda()]);
-    return { tiendas, deudas };
+    const [tiendas, deudas, saldos] = await Promise.all([
+      db.tiendas.toArray(),
+      deudasPorTienda(),
+      saldoTotalPorTienda(),
+    ]);
+    return { tiendas, deudas, saldos };
   }, []);
 
   if (!datos) return null;
-  const { tiendas, deudas } = datos;
+  const { tiendas, deudas, saldos } = datos;
 
   const q = normalizar(busca);
   const lista = (
@@ -115,14 +120,17 @@ export function Tiendas() {
         <button
           aria-label="Nueva tienda"
           onClick={() => setAgregando((v) => !v)}
-          className="pulsable-acento"
+          className="pulsable"
           style={{
+            // El directorio se construye solo desde los dictados — agregar
+            // a mano es el camino secundario, así que no compite en peso
+            // visual con la barra de búsqueda ni con los botones de acento.
             flex: "none",
             width: 52,
             height: 52,
             borderRadius: "var(--radio)",
-            border: "1.5px solid var(--acento)",
-            color: "var(--acento-300)",
+            border: "1.5px solid var(--borde)",
+            color: "var(--texto-2)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -200,7 +208,13 @@ export function Tiendas() {
         )}
 
         {lista.map((t) => {
-          const saldo = deudas.get(t.id!) ?? 0;
+          // Deuda vieja: la que de verdad se puede «dar por saldada» desde
+          // acá (eso solo perdona la tabla `deudas`, nunca lo de hoy). El
+          // total de arriba y el candado de borrado, en cambio, tienen que
+          // contar también lo de hoy — si no, «Al día» podía mentir con una
+          // entrega de hoy todavía sin cobrar.
+          const saldoVieja = deudas.get(t.id!) ?? 0;
+          const saldoTotal = saldos.get(t.id!) ?? 0;
           const hora = mediana(t.minutos);
 
           const meta: string[] = [];
@@ -243,10 +257,10 @@ export function Tiendas() {
                       fontSize: 16,
                       fontWeight: 600,
                       flex: "none",
-                      color: saldo ? "var(--rojo)" : "var(--verde)",
+                      color: saldoTotal ? "var(--rojo)" : "var(--verde)",
                     }}
                   >
-                    {saldo ? money(saldo) : "Al día"}
+                    {saldoTotal ? money(saldoTotal) : "Al día"}
                   </div>
                 </div>
                 <div style={{ fontSize: 14, color: "var(--texto-3)", textAlign: "left" }}>
@@ -362,7 +376,7 @@ export function Tiendas() {
                     </button>
                   </div>
 
-                  {saldo > 0 && (
+                  {saldoVieja > 0 && (
                     <button
                       onClick={() => {
                         void cerrarDeudas(t.id!).then(() => {
@@ -379,7 +393,7 @@ export function Tiendas() {
                         textAlign: "center",
                       }}
                     >
-                      Dar por saldada su deuda de {money(saldo)}
+                      Dar por saldada su deuda de {money(saldoVieja)}
                     </button>
                   )}
 
@@ -390,7 +404,7 @@ export function Tiendas() {
                       borderTop: "1px solid var(--borde)",
                     }}
                   >
-                    {saldo > 0 ? (
+                    {saldoTotal > 0 ? (
                       <div
                         style={{
                           fontSize: 13,

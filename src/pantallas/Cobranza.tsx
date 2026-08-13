@@ -5,7 +5,7 @@ import { repartirPago, TOPE_REDONDEO } from "../dominio/calculo";
 import { aCentimos, money } from "../lib/dinero";
 import { diaCorto, type DiaISO } from "../lib/fecha";
 import { avisoGuardado } from "../lib/aviso";
-import { useAjuste } from "../lib/ganchos";
+import { useAjuste, useHolguraMic } from "../lib/ganchos";
 import { CLAVE_ORDEN_COBRANZA, guardarAjuste } from "../voz/ajustes";
 import { S, Vacio } from "../ui/base";
 import { Teclado } from "../ui/Teclado";
@@ -91,6 +91,12 @@ export function Cobranza({
     async () => (await db.entregas.where("fecha").equals(fecha).toArray()).length,
     [fecha],
   );
+
+  // Antes del `if` que puede cortar el render: los hooks no pueden ser
+  // condicionales. `?? 0` es solo para tener algo estable mientras `cuentas`
+  // todavía no llegó — la medición de verdad ocurre después, ya con datos.
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const holguraMic = useHolguraMic(scrollRef, 190, 230, cuentas?.length ?? 0);
 
   if (!cuentas) return null;
 
@@ -188,11 +194,17 @@ export function Cobranza({
       </div>
 
       <div
+        ref={scrollRef}
         className="scroll"
         style={{
           flex: 1,
           // Hueco para la barra de pestañas y el micrófono, que flotan encima.
           padding: "14px 18px 230px",
+          // Con pocas cuentas —que ni piden scroll— ese padding nunca llega a
+          // verse, y el micrófono tapa igual la última tarjeta desde el
+          // primer vistazo. Con muchas, el diseño de siempre ya funciona
+          // bien y esto no le toca nada (ver useHolguraMic).
+          marginBottom: holguraMic,
           display: "flex",
           flexDirection: "column",
           gap: 10,

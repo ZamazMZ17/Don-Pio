@@ -1,7 +1,7 @@
 import "fake-indexeddb/auto";
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "./db";
-import { agregarDeuda, borrarTienda, crearTienda } from "./tiendas";
+import { agregarDeuda, borrarTienda, crearTienda, saldoTotalPorTienda } from "./tiendas";
 import { registrarEntrega } from "./entregas";
 import { aCentimos, aGramos } from "../lib/dinero";
 import { hoyISO, sumarDias } from "../lib/fecha";
@@ -72,5 +72,53 @@ describe("borrarTienda", () => {
 
     expect(r.ok).toBe(true);
     expect(await db.tiendas.get(t.id!)).toBeUndefined();
+  });
+});
+
+describe("saldoTotalPorTienda", () => {
+  it("suma lo pendiente de hoy, no solo la deuda de días cerrados", async () => {
+    // El caso que "Al día" mentía: sin deuda vieja, pero con una entrega de
+    // hoy todavía sin cobrar, el directorio la mostraba como si no debiera
+    // nada.
+    const t = await crearTienda("Recién repartida hoy");
+    await registrarEntrega(
+      { tiendaId: t.id!, pollos: 2, tandas: [aGramos(5)], precioKg: aCentimos(9) },
+      ctx,
+      { fecha: hoyISO() },
+    );
+
+    const saldos = await saldoTotalPorTienda();
+
+    expect(saldos.get(t.id!)).toBeGreaterThan(0);
+  });
+
+  it("suma deuda vieja y lo de hoy juntas, no una u otra", async () => {
+    const t = await crearTienda("Debe de antes y de hoy");
+    await agregarDeuda(t.id!, aCentimos(30), sumarDias(hoyISO(), -1));
+    await registrarEntrega(
+      { tiendaId: t.id!, pollos: 2, tandas: [aGramos(5)], precioKg: aCentimos(9) },
+      ctx,
+      { fecha: hoyISO() },
+    );
+
+    const saldos = await saldoTotalPorTienda();
+
+    // 5 kg a 9 soles el kilo = 45 soles de hoy, más los 30 de antes.
+    expect(saldos.get(t.id!)).toBe(aCentimos(30) + aCentimos(45));
+  });
+
+  it("no cuenta una entrega de hoy ya cobrada", async () => {
+    const t = await crearTienda("Ya pagó hoy");
+    const id = await registrarEntrega(
+      { tiendaId: t.id!, pollos: 2, tandas: [aGramos(5)], precioKg: aCentimos(9) },
+      ctx,
+      { fecha: hoyISO() },
+    );
+    const e = await db.entregas.get(id);
+    await db.entregas.update(id, { totalCobrado: e!.totalCalculado, estadoPago: "pagado" });
+
+    const saldos = await saldoTotalPorTienda();
+
+    expect(saldos.get(t.id!) ?? 0).toBe(0);
   });
 });
