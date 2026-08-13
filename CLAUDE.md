@@ -70,7 +70,10 @@ Reglas que no se rompen:
   Cada token de color mantiene su rol en los dos temas (ver `src/estilos.css`,
   bloque `:root[data-theme="claro"]`) — no es el oscuro con los valores invertidos,
   los verdes/ámbares/rojos pastel del oscuro se recalcularon más saturados para
-  leerse sobre blanco.
+  leerse sobre blanco. El claro es **crema, no blanco frío**: pedido explícito del
+  dueño. El acento morado se dejó frío a propósito — el contraste con la base
+  cálida es lo que lo hace notarse, igual que ya pasaba con verde/ámbar/rojo sobre
+  el gris de fondo.
 - Un color, un significado. El ámbar es «lo que falta»; si se usa para otra cosa deja
   de funcionar como señal — en los dos temas.
 - **Íconos de `lucide-react`, nunca emojis.** El prototipo usa glifos unicode

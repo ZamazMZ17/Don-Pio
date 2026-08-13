@@ -46,7 +46,7 @@ export function useTema(): void {
       document.documentElement.dataset.theme = claro ? "claro" : "oscuro";
       // El navegador tiñe la barra de direcciones con esto en modo PWA; sin
       // actualizarlo quedaba oscuro aunque la app ya hubiera pasado a claro.
-      metaColor?.setAttribute("content", claro ? "#f2f1f6" : "#161826");
+      metaColor?.setAttribute("content", claro ? "#f3ecdd" : "#161826");
     };
     aplicar();
     if (tema !== "sistema") return;

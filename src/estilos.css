@@ -78,23 +78,29 @@
 }
 
 /*
- * Modo claro. Mismos roles, valores recalculados para leerse sobre blanco —
- * ver la nota de arriba. `data-theme` lo pone `useTema()` (lib/ganchos.ts)
- * según el ajuste de Ajustes: "claro" a mano, o "sistema" siguiendo
- * `prefers-color-scheme` del teléfono.
+ * Modo claro — crema, no blanco frío. Mismos roles, valores recalculados
+ * para leerse sobre un fondo cálido — ver la nota de arriba. `data-theme` lo
+ * pone `useTema()` (lib/ganchos.ts) según el ajuste de Ajustes: "claro" a
+ * mano, o "sistema" siguiendo `prefers-color-scheme` del teléfono.
+ *
+ * El acento (morado) se deja frío a propósito: es la misma identidad de
+ * marca del oscuro, y un acento frío sobre una base cálida es el contraste
+ * que lo hace notarse — igual que ya pasaba con el verde/ámbar/rojo de
+ * estado sobre el gris cálido de fondo. Lo que cambia de "blanco" a "crema"
+ * es la escala neutra: fondo, superficie, hundido, línea, borde y texto.
  */
 :root[data-theme="claro"] {
-  --fondo: #f2f1f6;
-  --superficie: #ffffff;
-  --hundido: #ececf1;
-  --linea: #e1dfe8;
-  --borde: #cac7d6;
+  --fondo: #f3ecdd;
+  --superficie: #fffcf5;
+  --hundido: #ece2cc;
+  --linea: #e3d7bd;
+  --borde: #cbb996;
 
-  --texto: #1d1c24;
-  --texto-2: #47454f;
-  --texto-3: #68656f;
-  --texto-4: #7d7a89;
-  --texto-5: #98959f;
+  --texto: #2b2419;
+  --texto-2: #5c4f3a;
+  --texto-3: #7d6f57;
+  --texto-4: #93876d;
+  --texto-5: #ac9f85;
 
   --acento: #7d6fd6;
   --acento-claro: #5b48c6;
