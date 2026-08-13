@@ -64,9 +64,15 @@ Tokens exactos en `src/estilos.css`. Los de estado:
 
 Reglas que no se rompen:
 
-- **La app es oscura y punto.** No hay tema claro: se usa de madrugada.
+- **Por defecto la app es oscura.** Se usa de madrugada, y una actualización no le
+  puede cambiar la pantalla sin que él lo pida. El modo claro existe (Ajustes →
+  Apariencia: Oscuro/Claro/Sistema), pero **nunca es el arranque por defecto**.
+  Cada token de color mantiene su rol en los dos temas (ver `src/estilos.css`,
+  bloque `:root[data-theme="claro"]`) — no es el oscuro con los valores invertidos,
+  los verdes/ámbares/rojos pastel del oscuro se recalcularon más saturados para
+  leerse sobre blanco.
 - Un color, un significado. El ámbar es «lo que falta»; si se usa para otra cosa deja
-  de funcionar como señal.
+  de funcionar como señal — en los dos temas.
 - **Íconos de `lucide-react`, nunca emojis.** El prototipo usa glifos unicode
   (`▤ ↩ ☷ ⋯ 🎙`) porque era un mockup; en Android cada fabricante los dibuja distinto.
 - Tipografía **Inter**, cargada localmente con `@fontsource-variable`. A las 5 a.m. no
@@ -100,7 +106,7 @@ intérprete que lo dictado.
 | **Tiendas** | El directorio que se construyó solo |
 | **Historial** | Días cerrados y la semana |
 | **Detalle de día** | Un día cerrado, entrega por entrega |
-| **Ajustes** | Hora de cierre, redondeo, sonido, respaldo, y la API key de Gemini |
+| **Ajustes** | Apariencia (oscuro/claro/sistema), hora de cierre, redondeo, sonido, respaldo, y la API key de Gemini |
 | **Cargar stock** | «¿Con cuánto sales hoy?», con la sugerencia aprendida por día de semana |
 | **Menú** | Cuadrícula de 7 fichas, detrás de la pestaña «Más» |
 
@@ -201,6 +207,25 @@ una tienda existente en silencio: **el emparejamiento siempre se muestra antes d
 - **Las zonas seguras** (`--seguro-arriba` / `--seguro-abajo`) no son opcionales: Android
   dibuja de borde a borde y sin ellas el encabezado queda bajo la hora y la barra bajo los
   gestos.
+- **El `padding-bottom` no despeja un flotante si la lista es corta.** En Hoy y Cobranza,
+  el micrófono flota fuera del flujo con `position: absolute`, así que el cuadro de scroll
+  cree que tiene toda la pantalla disponible. Un padding grande al final del contenido solo
+  ayuda **una vez que ya se hizo scroll hasta el fondo** — con pocas entregas, que ni piden
+  scroll, el micrófono tapaba igual el botón de abajo desde el primer vistazo. La solución
+  es `margin-bottom` en el propio cuadro de scroll (reserva espacio real dentro del reparto
+  flex), no más `padding-bottom` (solo estira lo que hay que recorrer para llegar a verlo).
+- **Un ícono dentro de una columna flex, sin `flexShrink: 0`, se puede aplastar.** Pasó en
+  las fichas del Menú: en pantallas angostas, la ficha con el subtítulo más largo («Gastos»)
+  envuelve a dos líneas, la cuadrícula le da menos alto del que el contenido necesita, y sin
+  protección el ícono se encoge para hacerle sitio al texto en vez del texto ceder. Cualquier
+  ícono que conviva con texto de largo variable en una columna necesita `flexShrink: 0`.
+- **`box-shadow: 0 0 0 Npx color` como sustituto de un borde se ve entrecortado en Android.**
+  Un anillo dúro (sin difuminado) sobre una esquina redondeada es un caso conocido de
+  costuras de renderizado en algunos Android/Skia — invisible en un navegador de escritorio,
+  visible a simple vista en el teléfono. Usar `border` de verdad; como toda la app ya tiene
+  `box-sizing: border-box`, no le come nada al padding. (Si además hace falta una sombra
+  difuminada, esa sí sigue siendo `box-shadow`, por separado — el problema es solo el anillo
+  sin difuminado.)
 
 ---
 

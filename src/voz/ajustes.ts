@@ -29,6 +29,12 @@ export const CLAVE_MODO_TECLADO = "modoTeclado";
  * ayudar, insistir es estorbar.
  */
 export const CLAVE_STOCK_OFRECIDO = "stockOfrecido";
+/**
+ * "oscuro" | "claro" | "sistema". Por defecto **oscuro**, no "sistema": la
+ * app siempre fue oscura y una actualización no le puede cambiar la pantalla
+ * a la que ya está acostumbrado sin que él lo pida — ver estilos.css.
+ */
+export const CLAVE_TEMA = "tema";
 
 /** Hasta qué hora tiene sentido preguntar por el stock del día. */
 export const HORA_TOPE_STOCK = 11;

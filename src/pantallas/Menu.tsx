@@ -52,7 +52,15 @@ export function Menu({ ir }: { ir: (p: never) => void }) {
               gap: 16,
             }}
           >
-            <Icono size={26} color="var(--acento-claro)" strokeWidth={2} />
+            <Icono
+              size={26}
+              color="var(--acento-claro)"
+              strokeWidth={2}
+              // En pantallas angostas, una ficha con subtítulo largo (Gastos)
+              // envuelve a dos líneas y aprieta la altura disponible; sin
+              // esto el ícono se dejaba encoger hasta quedar aplastado.
+              style={{ flexShrink: 0 }}
+            />
             <div>
               <div style={{ fontSize: 18, fontWeight: 600, lineHeight: 1.2 }}>{label}</div>
               <div style={{ fontSize: 13, color: "var(--texto-3)", marginTop: 4 }}>{sub}</div>

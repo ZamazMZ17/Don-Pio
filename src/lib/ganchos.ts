@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../db/db";
-import { leerAjuste } from "../voz/ajustes";
+import { CLAVE_TEMA, leerAjuste } from "../voz/ajustes";
 
 /**
  * Un ajuste como estado de React, con su valor por defecto. Se relee solo
@@ -23,6 +23,36 @@ export function useAjuste(clave: string, defecto = ""): string {
 export function useAjusteBool(clave: string, defecto = false): boolean {
   const v = useAjuste(clave, defecto ? "1" : "0");
   return v === "1";
+}
+
+export type Tema = "oscuro" | "claro" | "sistema";
+
+/**
+ * Aplica el tema elegido al elemento raíz, vía `data-theme` (estilos.css
+ * define los tokens de `[data-theme="claro"]`; sin el atributo es oscuro).
+ *
+ * "Sistema" sigue `prefers-color-scheme` del teléfono y se actualiza solo si
+ * lo cambia mientras la app sigue abierta — nadie tiene que reabrirla para
+ * que se note.
+ */
+export function useTema(): void {
+  const tema = useAjuste(CLAVE_TEMA, "oscuro") as Tema;
+
+  useEffect(() => {
+    const metaColor = document.querySelector('meta[name="theme-color"]');
+    const mq = window.matchMedia("(prefers-color-scheme: light)");
+    const aplicar = () => {
+      const claro = tema === "claro" || (tema === "sistema" && mq.matches);
+      document.documentElement.dataset.theme = claro ? "claro" : "oscuro";
+      // El navegador tiñe la barra de direcciones con esto en modo PWA; sin
+      // actualizarlo quedaba oscuro aunque la app ya hubiera pasado a claro.
+      metaColor?.setAttribute("content", claro ? "#f2f1f6" : "#161826");
+    };
+    aplicar();
+    if (tema !== "sistema") return;
+    mq.addEventListener("change", aplicar);
+    return () => mq.removeEventListener("change", aplicar);
+  }, [tema]);
 }
 
 /** Las tiendas, ordenadas por la ruta que la app fue aprendiendo. */

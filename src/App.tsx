@@ -10,7 +10,7 @@ import { contextoDeRuta, crearTienda, identificar } from "./db/tiendas";
 import { aCentimos, aGramos } from "./lib/dinero";
 import { hoyISO, type DiaISO } from "./lib/fecha";
 import { avisoAtencion, avisoEntendido, avisoEscuchando, avisoGuardado, configurarAviso } from "./lib/aviso";
-import { useAjuste, useAjusteBool } from "./lib/ganchos";
+import { useAjuste, useAjusteBool, useTema } from "./lib/ganchos";
 import { useBotonAtras } from "./lib/atras";
 import {
   CLAVE_API,
@@ -89,6 +89,7 @@ export default function App() {
   const enLinea = useConexion();
   // La cola se revisa sola al volver la señal; ya no se enseña en pantalla.
   useCola();
+  useTema();
   const sonido = useAjusteBool(CLAVE_SONIDO, true);
 
   // Las dos juntas en una consulta para que resuelvan a la vez: si el ajuste

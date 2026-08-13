@@ -7,8 +7,22 @@
  * ninguna zona táctil baja de 52px. Y se añaden tres colores de estado porque
  * pendiente / parcial / pagado no se distingue en monocromo.
  *
- * La app es oscura y punto. No hay tema claro: se usa de madrugada y en la
- * calle, y una pantalla clara a las 5 a.m. es un fogonazo en la cara.
+ * Por defecto la app sigue siendo oscura — se usa de madrugada y en la calle,
+ * y un fogonazo blanco a las 5 a.m. es justo lo que se quería evitar. El modo
+ * claro existe como algo que él elige a propósito desde Ajustes (o que sigue
+ * al tema del teléfono si así lo prefiere), nunca como el arranque por
+ * defecto: instalar una versión nueva no le puede cambiar la pantalla a la
+ * que ya está acostumbrado sin que lo pida.
+ *
+ * El claro no es el oscuro con los colores invertidos a lo bruto: cada token
+ * mantiene su **rol** (superficie encima de fondo, texto-2 menos presente que
+ * texto, un ámbar que se lee como ámbar) pero con los valores recalculados
+ * para leerse bien sobre blanco — los verdes/ámbares/rojos pastel del oscuro
+ * se ven lavados como texto sobre una tarjeta blanca, así que en claro son
+ * más saturados. Las relaciones "sutiles a propósito" (una línea divisoria,
+ * una superficie hundida) se mantienen igual de sutiles que en el oscuro: se
+ * comprobó que ninguna de esas dos pasa un contraste alto ni en la versión
+ * original, así que aquí tampoco hacía falta.
  */
 
 :root {
@@ -61,6 +75,45 @@
   --radio-xl: 20px;
 
   color-scheme: dark;
+}
+
+/*
+ * Modo claro. Mismos roles, valores recalculados para leerse sobre blanco —
+ * ver la nota de arriba. `data-theme` lo pone `useTema()` (lib/ganchos.ts)
+ * según el ajuste de Ajustes: "claro" a mano, o "sistema" siguiendo
+ * `prefers-color-scheme` del teléfono.
+ */
+:root[data-theme="claro"] {
+  --fondo: #f2f1f6;
+  --superficie: #ffffff;
+  --hundido: #ececf1;
+  --linea: #e1dfe8;
+  --borde: #cac7d6;
+
+  --texto: #1d1c24;
+  --texto-2: #47454f;
+  --texto-3: #68656f;
+  --texto-4: #7d7a89;
+  --texto-5: #98959f;
+
+  --acento: #7d6fd6;
+  --acento-claro: #5b48c6;
+  --acento-200: #2f2566;
+  --acento-300: #4335a0;
+  --acento-700: #9683e8;
+  --acento-800: #ded7f9;
+  --acento-900: #eeecfc;
+
+  --verde: #1a8a52;
+  --ambar: #a5601f;
+  --ambar-señal: #9c7422;
+  --rojo: #c03b28;
+
+  --seccion: #f5f4fa;
+  --seccion-glow: #ded4f5;
+  --seccion-ghost: #a89bd6;
+
+  color-scheme: light;
 }
 
 * {

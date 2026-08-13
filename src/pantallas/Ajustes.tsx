@@ -12,11 +12,12 @@ import {
   CLAVE_REDONDEO,
   CLAVE_SONIDO,
   CLAVE_STOCK_DEFECTO,
+  CLAVE_TEMA,
   MODELO_POR_DEFECTO,
   guardarAjuste,
 } from "../voz/ajustes";
 import { pendientes, procesarCola } from "../voz/cola";
-import { useAjuste, useAjusteBool } from "../lib/ganchos";
+import { useAjuste, useAjusteBool, type Tema } from "../lib/ganchos";
 import { hoyISO } from "../lib/fecha";
 import { avisoAtencion, avisoGuardado } from "../lib/aviso";
 import { esNativo } from "../lib/plataforma";
@@ -34,6 +35,7 @@ export function Ajustes({ volver }: { volver: () => void }) {
   const modoTeclado = useAjusteBool(CLAVE_MODO_TECLADO, true);
   const redondeo = useAjusteBool(CLAVE_REDONDEO);
   const sonido = useAjusteBool(CLAVE_SONIDO, true);
+  const tema = useAjuste(CLAVE_TEMA, "oscuro") as Tema;
 
   const enCola = useLiveQuery(() => pendientes(), []) ?? 0;
   const tiendas = useLiveQuery(() => db.tiendas.count(), []) ?? 0;
@@ -123,6 +125,46 @@ export function Ajustes({ volver }: { volver: () => void }) {
           gap: 8,
         }}
       >
+        {/* Apariencia */}
+        <div style={{ ...S.tarjeta, borderRadius: 12, padding: 16 }}>
+          <div style={{ ...S.rotulo, marginBottom: 12 }}>Apariencia</div>
+          <div style={{ display: "flex", gap: 8 }}>
+            {(
+              [
+                ["oscuro", "Oscuro"],
+                ["claro", "Claro"],
+                ["sistema", "Sistema"],
+              ] as const
+            ).map(([valor, label]) => (
+              <button
+                key={valor}
+                onClick={() => void guardarAjuste(CLAVE_TEMA, valor)}
+                className="pulsable"
+                style={{
+                  flex: 1,
+                  height: 48,
+                  borderRadius: "var(--radio)",
+                  border: `1.5px solid ${tema === valor ? "var(--acento)" : "var(--borde)"}`,
+                  background: tema === valor ? "var(--acento-900)" : "transparent",
+                  color: tema === valor ? "var(--acento-300)" : "var(--texto-2)",
+                  fontSize: 15,
+                  fontWeight: tema === valor ? 600 : 400,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <div style={{ fontSize: 13, color: "var(--texto-4)", marginTop: 10, lineHeight: 1.5 }}>
+            {tema === "sistema"
+              ? "Sigue el tema que tenga puesto el teléfono."
+              : "La app arranca así siempre, sin importar el tema del teléfono."}
+          </div>
+        </div>
+
         {/* La IA */}
         <div style={{ ...S.tarjeta, borderRadius: 12, padding: 16 }}>
           <div style={{ ...S.rotulo, marginBottom: 4 }}>Gemini</div>
@@ -406,7 +448,9 @@ function Valor({
         onChange={(e) => onCambio(e.target.value)}
         style={{
           flex: "none",
-          width: 108,
+          // 108 se quedaba corto para "07:30 PM" — el reloj nativo del
+          // navegador le comía la "M" al ícono del reloj.
+          width: 124,
           height: 48,
           textAlign: "center",
           borderRadius: "var(--radio-sm)",
