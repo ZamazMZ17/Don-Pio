@@ -192,11 +192,12 @@ export function Hoy({
             <div>
               {resumen.stockPollos > 0 ? resumen.restantePiernas : resumen.repartidoPiernas} piernas
             </div>
-            {resumen.repartidoPechos > 0 && (
-              <div>
-                {resumen.repartidoPechos} {resumen.repartidoPechos === 1 ? "pecho" : "pechos"}
-              </div>
-            )}
+            {/* Siempre visible, igual que piernas — no solo cuando hay
+                pollos partidos, para que se vea de un vistazo que la
+                cuenta sigue en cero y no que falta por cargar. */}
+            <div>
+              {resumen.repartidoPechos} {resumen.repartidoPechos === 1 ? "pecho" : "pechos"}
+            </div>
             {resumen.pechosLibres > 0 && (
               <div style={{ color: "var(--ambar)" }}>{resumen.pechosLibres} pechos libres</div>
             )}
