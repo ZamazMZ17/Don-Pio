@@ -377,19 +377,27 @@ export default function App() {
       cerrarCobro.current?.();
       return true;
     }
+    // Estos tres van con `setPantalla` directo, no con `ir()`: son reglas
+    // fijas de qué hace el atrás en cada pantalla, no una navegación que
+    // haya que recordar. `ir()` apila el origen cuando no es una pestaña
+    // raíz — y como "dia" y "gastos" tampoco lo son, quedaba un "dia" o un
+    // "gastos" quemado en la pila. La siguiente vez que el atrás cayera en
+    // la rama genérica de abajo (por ejemplo, saliendo de Historial) lo
+    // sacaba de ahí en vez de mandar a Hoy, y Historial-Dia quedaba dando
+    // vueltas entre las dos sin salir nunca.
     if (pantalla === "detalle") {
-      ir("hoy");
+      setPantalla("hoy");
       return true;
     }
     if (pantalla === "dia") {
-      ir("historial");
+      setPantalla("historial");
       return true;
     }
     // Se abre solo desde Menú, y su propio botón «volver» ya lleva ahí — el
     // atrás de Android tiene que coincidir, o la misma pantalla sale a un
     // sitio distinto según cuál de los dos botones se toque.
     if (pantalla === "gastos") {
-      ir("menu");
+      setPantalla("menu");
       return true;
     }
     if (!RAIZ.includes(pantalla)) {
