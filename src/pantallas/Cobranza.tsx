@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type MutableRefObject } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
+import { Search } from "lucide-react";
 import { cuentasPendientes, registrarCobro } from "../db/entregas";
 import { repartirPago, TOPE_REDONDEO } from "../dominio/calculo";
 import { aCentimos, money } from "../lib/dinero";
@@ -7,6 +8,7 @@ import { diaCorto, type DiaISO } from "../lib/fecha";
 import { avisoGuardado } from "../lib/aviso";
 import { useAjuste, useHolguraMic } from "../lib/ganchos";
 import { CLAVE_ORDEN_COBRANZA, guardarAjuste } from "../voz/ajustes";
+import { normalizar, parecido } from "../tiendas/normalizar";
 import { S, Vacio } from "../ui/base";
 import { Teclado } from "../ui/Teclado";
 import { db } from "../db/db";
@@ -28,6 +30,9 @@ export function Cobranza({
 }) {
   const [abierta, setAbierta] = useState<number | null>(null);
   const [monto, setMonto] = useState("");
+  /** El texto del buscador. En el retorno con muchas cuentas, encontrar una
+   *  tienda concreta a mano es lento; escribir dos letras la trae de una. */
+  const [busca, setBusca] = useState("");
   const orden = useAjuste(CLAVE_ORDEN_COBRANZA, "retorno") as "retorno" | "ruta";
   /** Qué tienda tiene el «me pagó todo» armado, esperando confirmación. */
   const [confirmando, setConfirmando] = useState<number | null>(null);
@@ -96,9 +101,26 @@ export function Cobranza({
   // condicionales. `?? 0` es solo para tener algo estable mientras `cuentas`
   // todavía no llegó — la medición de verdad ocurre después, ya con datos.
   const scrollRef = useRef<HTMLDivElement | null>(null);
-  const holguraMic = useHolguraMic(scrollRef, 190, 230, cuentas?.length ?? 0);
+  // La medida se rehace cuando cambia la cantidad de cuentas **o** el texto del
+  // buscador: al filtrar, la lista visible se acorta y el hueco del micrófono
+  // vuelve a decidirse.
+  const holguraMic = useHolguraMic(scrollRef, 190, 230, `${cuentas?.length ?? 0}:${busca}`);
 
   if (!cuentas) return null;
+
+  /*
+   * El buscador solo se muestra cuando la lista es lo bastante larga como para
+   * que valga la pena: con pocas cuentas se ve todo de un vistazo y una barra
+   * de búsqueda solo le robaría alto al encabezado, que aquí ya carga el título,
+   * el progreso y lo que falta. El umbral se mide sobre la lista completa —no la
+   * filtrada— para que el buscador no desaparezca en cuanto se escribe y quede
+   * solo una coincidencia.
+   */
+  const hayBuscador = cuentas.length > 6;
+  const q = hayBuscador ? normalizar(busca) : "";
+  const visibles = q
+    ? cuentas.filter((c) => parecido(q, c.tienda.nombreNorm) > 0.55)
+    : cuentas;
 
   const faltan = cuentas.reduce((a, c) => a + c.total, 0);
   /*
@@ -193,6 +215,37 @@ export function Cobranza({
         </div>
       </div>
 
+      {hayBuscador && (
+        <div style={{ flex: "none", padding: "12px 18px 4px" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              background: "var(--superficie)",
+              borderRadius: "var(--radio)",
+              padding: "0 14px",
+              height: 50,
+            }}
+          >
+            <Search size={19} color="var(--texto-4)" style={{ flex: "none" }} />
+            <input
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              placeholder="Buscar una tienda"
+              style={{
+                flex: 1,
+                background: "none",
+                border: "none",
+                outline: "none",
+                fontSize: 17,
+                minWidth: 0,
+              }}
+            />
+          </div>
+        </div>
+      )}
+
       <div
         ref={scrollRef}
         className="scroll"
@@ -216,8 +269,11 @@ export function Cobranza({
             sub="Cuando registres entregas sin pagar, aparecerán aquí en el orden de tu ruta."
           />
         )}
+        {cuentas.length > 0 && visibles.length === 0 && (
+          <Vacio titulo="Ninguna coincide" sub="Prueba con otra forma del nombre." />
+        )}
 
-        {cuentas.map((c) => {
+        {visibles.map((c) => {
           const estaAbierta = abierta === c.tienda.id;
           const porConfirmar = confirmando === c.tienda.id;
           const centimos = aCentimos(Number(monto.replace(",", ".")) || 0);
