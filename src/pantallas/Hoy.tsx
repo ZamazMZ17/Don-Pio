@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, type ReactNode } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { db, type Tienda } from "../db/db";
+import { db, type Entrega, type Tienda } from "../db/db";
 import { leerJornada, resumenDe } from "../db/jornada";
 import { deudasPorTienda } from "../db/tiendas";
 import { estadoDe, COLOR_ESTADO, TEXTO_ESTADO } from "../dominio/calculo";
@@ -303,7 +303,12 @@ export function Hoy({
         }}
       >
         {modo === "ruta" && (
-          <RutaLista tiendas={tiendas} entregas={entregas} onTocar={registrarEnTienda} />
+          <RutaLista
+            tiendas={tiendas}
+            entregas={entregas}
+            onTocar={registrarEnTienda}
+            abrir={abrir}
+          />
         )}
         {modo === "agenda" && (
           <>
@@ -578,15 +583,24 @@ function RutaLista({
   tiendas,
   entregas,
   onTocar,
+  abrir,
 }: {
   tiendas: Tienda[];
-  entregas: { tiendaId: number; totalCalculado: number }[];
+  entregas: Entrega[];
+  /** Tocar una tienda **sin** entrega hoy: abre la tarjeta para registrarla. */
   onTocar: (t: Tienda) => void;
+  /** Tocar una **ya entregada**: abre su Detalle para editar cantidades y precio. */
+  abrir: (entregaId: number) => void;
 }) {
-  // Cuánto se le dejó hoy a cada tienda (0 = todavía no).
+  // Lo de hoy de cada tienda: el total dejado (suma) y la última entrega, que
+  // es la que se abre a editar al tocarla. Casi siempre es una sola; si dejó
+  // dos veces el mismo día, se edita la más reciente (la de mayor orden).
   const hechoHoy = new Map<number, number>();
+  const ultimaDe = new Map<number, Entrega>();
   for (const e of entregas) {
     hechoHoy.set(e.tiendaId, (hechoHoy.get(e.tiendaId) ?? 0) + e.totalCalculado);
+    const prev = ultimaDe.get(e.tiendaId);
+    if (!prev || e.orden > prev.orden) ultimaDe.set(e.tiendaId, e);
   }
 
   // En orden de ruta; las que aún no tienen parada aprendida, al final.
@@ -607,7 +621,8 @@ function RutaLista({
   return (
     <>
       {orden.map((t) => {
-        const hecho = hechoHoy.has(t.id!);
+        const ultima = ultimaDe.get(t.id!);
+        const hecho = ultima !== undefined;
         const total = hechoHoy.get(t.id!) ?? 0;
         const hora = mediana(t.minutos);
         const meta: string[] = [];
@@ -619,7 +634,10 @@ function RutaLista({
         return (
           <button
             key={t.id}
-            onClick={() => onTocar(t)}
+            // Ya entregada → abre su Detalle para editar cantidades y precio
+            // (el precio por kilo casi siempre varía). Sin entregar → la
+            // tarjeta para registrarla.
+            onClick={() => (ultima ? abrir(ultima.id!) : onTocar(t))}
             className="pulsable"
             style={{
               ...S.tarjeta,
