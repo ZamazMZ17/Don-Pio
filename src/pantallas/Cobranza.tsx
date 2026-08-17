@@ -427,7 +427,16 @@ export function Cobranza({
                     </button>
                     <button
                       className="pulsable-acento"
-                      onClick={() => cobrar(c.tienda.id!, c.total, false)}
+                      // `c.total` ya viene redondeado a monedas de 10 céntimos
+                      // (`aCobrar`): cuando él dice «me pagó todo», paga eso, y
+                      // el resto por debajo de la moneda —los pocos céntimos que
+                      // ninguna moneda puede cubrir— es el redondeo a favor del
+                      // cliente que el modelo ya da por perdonado. Con
+                      // `aceptarRedondeo` se registra como descuento en vez de
+                      // quedar como una deuda de S/ 0.05 imposible de cobrar,
+                      // que reaparecía cada día en esta misma lista con «A
+                      // cobrar S/ 0.00».
+                      onClick={() => cobrar(c.tienda.id!, c.total, true)}
                       style={{
                         flex: 1.5,
                         height: 58,

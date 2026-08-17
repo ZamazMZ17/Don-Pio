@@ -240,6 +240,16 @@ una tienda existente en silencio: **el emparejamiento siempre se muestra antes d
   `box-sizing: border-box`, no le come nada al padding. (Si además hace falta una sombra
   difuminada, esa sí sigue siendo `box-shadow`, por separado — el problema es solo el anillo
   sin difuminado.)
+- **«Me pagó todo» tenía que perdonar el resto por debajo de la moneda, y no lo hacía.** El
+  botón cobraba `c.total`, que ya viene redondeado a monedas de 10 céntimos (`aCobrar`), pero
+  pasaba `aceptarRedondeo: false`. Los pocos céntimos que sobran —los que ninguna moneda puede
+  cubrir, el redondeo a favor del cliente que el modelo ya da por perdonado— quedaban sin
+  perdonar. Al cerrar el día se volvían una `deuda` de S/ 0.05, y al día siguiente reaparecía
+  en Cobranza con **«A cobrar S/ 0.00»**: imposible de cobrar (cobrar cero no hace nada) y
+  colgada para siempre. Dos arreglos: el botón ahora pasa `aceptarRedondeo: true` (raíz, no
+  nacen más migajas), y `cuentasPendientes()` no lista una cuenta cuyo `aCobrar(saldo)` sea 0
+  (limpia las que ya existían). El umbral mira el **saldo entero**, no cada deuda suelta:
+  tres migajas de 4 céntimos sí suman una moneda y esa sí se cobra.
 
 ---
 

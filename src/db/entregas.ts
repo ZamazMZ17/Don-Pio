@@ -231,14 +231,21 @@ export async function cuentasPendientes(
       .sort((a, b) => (a.fechaOrigen < b.fechaOrigen ? -1 : 1));
     const deuda = abiertas.reduce((a, d) => a + (d.monto - d.saldado), 0);
 
-    if (delDia + deuda <= 0) continue;
+    // Hacia abajo a los 10 céntimos: es lo que se puede pagar con monedas.
+    const total = aCobrar(delDia + deuda);
+    // Si lo que queda —sumando todo— no llega ni a una moneda de 10 céntimos,
+    // no hay nada que cobrar: mostrarla con «A cobrar S/ 0.00» solo estorba y
+    // no se puede saldar cobrando (cobrar S/ 0 no hace nada). Son migajas de
+    // redondeo que el modelo ya da por perdonadas. Se mira el saldo entero, no
+    // cada deuda suelta: tres migajas de 4 céntimos sí suman una moneda y esa
+    // sí se cobra.
+    if (total <= 0) continue;
     cuentas.push({
       tienda,
       delDia,
       deuda,
       deudaDesde: abiertas[0]?.fechaOrigen ?? null,
-      // Hacia abajo a los 10 céntimos: es lo que se puede pagar con monedas.
-      total: aCobrar(delDia + deuda),
+      total,
       entregas: suyas,
     });
   }

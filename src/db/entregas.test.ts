@@ -560,6 +560,76 @@ describe("cobrar", () => {
   });
 });
 
+describe("migajas de redondeo por debajo de la moneda", () => {
+  it("«me pagó todo» perdona el resto por debajo de la moneda y no lo deja como deuda", async () => {
+    // 5 kg a 9.01 el kilo = 45.05. En monedas solo se pueden cobrar 45.00,
+    // y los 5 céntimos que sobran no los cubre ninguna moneda: son el redondeo
+    // a favor del cliente que el modelo ya da por perdonado.
+    const t = await crearTienda("Restaurante");
+    await registrarEntrega(
+      { tiendaId: t.id!, pollos: 5, peso: aGramos(5), precioKg: aCentimos(9.01) },
+      ctx(1),
+      { fecha: HOY },
+    );
+
+    const [c] = await cuentasPendientes(HOY);
+    expect(money(c.total)).toBe("S/ 45.00");
+
+    // Es exactamente lo que hace el botón «Me pagó todo»: cobra c.total
+    // (ya redondeado) aceptando el redondeo.
+    await registrarCobro(t.id!, c.total, { fecha: HOY, aceptarRedondeo: true });
+
+    const e = (await db.entregas.toArray())[0];
+    expect(money(e.totalCalculado)).toBe("S/ 45.05"); // el cálculo exacto vive
+    expect(money(e.totalCobrado)).toBe("S/ 45.00");
+    expect(money(e.descuentoRedondeo)).toBe("S/ 0.05");
+    expect(e.estadoPago).toBe("pagado");
+    expect(await cuentasPendientes(HOY)).toHaveLength(0);
+
+    // Y al cerrar el día no nace ninguna deuda de 5 céntimos que reaparezca
+    // mañana con «A cobrar S/ 0.00».
+    await cerrarDia(HOY, null, null);
+    expect(await db.deudas.toArray()).toHaveLength(0);
+  });
+
+  it("una deuda por debajo de una moneda no aparece en cobranza: no hay nada que cobrar", async () => {
+    const t = await crearTienda("Julia Pariahuanca");
+    await db.deudas.add({
+      tiendaId: t.id!,
+      entregaId: null,
+      fechaOrigen: AYER,
+      monto: 4, // S/ 0.04
+      saldado: 0,
+      cerrada: 0,
+      creada: Date.now(),
+    });
+
+    // aCobrar la baja a S/ 0.00: cobrarla no haría nada, así que no se lista.
+    expect(await cuentasPendientes(HOY)).toHaveLength(0);
+  });
+
+  it("varias migajas que juntas sí llegan a una moneda sí se cobran", async () => {
+    const t = await crearTienda("Bodega Sarita");
+    for (let i = 0; i < 3; i++) {
+      await db.deudas.add({
+        tiendaId: t.id!,
+        entregaId: null,
+        fechaOrigen: AYER,
+        monto: 4, // tres de 4 = 12 céntimos
+        saldado: 0,
+        cerrada: 0,
+        creada: Date.now(),
+      });
+    }
+
+    // El umbral mira el saldo entero, no cada deuda suelta: 12 céntimos sí dan
+    // una moneda de 10.
+    const cuentas = await cuentasPendientes(HOY);
+    expect(cuentas).toHaveLength(1);
+    expect(money(cuentas[0].total)).toBe("S/ 0.10");
+  });
+});
+
 describe("cerrar el día", () => {
   it("lo que quedó sin cobrar pasa a deuda de la tienda", async () => {
     const t = await crearTienda("Don Julio Ramírez");
