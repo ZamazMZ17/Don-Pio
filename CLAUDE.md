@@ -153,12 +153,14 @@ una tienda existente en silencio: **el emparejamiento siempre se muestra antes d
 - **Precio base del día + diferencia por tienda.** Hay días que el precio por kilo sube o
   baja para todos. En «¿Con cuánto sales?» se pone el **precio base del día**
   (`Jornada.precioBaseKg`) y cada tienda guarda cuánto más o menos cobra respecto de él
-  (`Tienda.precioOffsetKg`, puede ser negativo: «dos puntos más», «uno menos»). El precio que
-  se muestra ya puesto en cada entrega es `precioEfectivoKg` = base + diferencia; si la tienda
-  aún no tiene diferencia aprendida se respeta su precio absoluto de siempre (migración
-  suave), y sin base fijada todo sigue como antes. La diferencia se **aprende sola** al
-  registrar: si un día con base 9.50 se le cobra 9.70, su offset queda en +0.20, y cuando el
-  base cambie otro día su precio se recalcula solo. Todo editable en cada entrega.
+  (`Tienda.precioOffsetKg`, puede ser negativo: «dos puntos más», «uno menos»). **Con base
+  fijado, el base manda para todas**: el precio que se muestra ya puesto en cada entrega es
+  `precioEfectivoKg` = base + diferencia (0 si aún no se le conoce), así que poner el base en
+  8.80 baja a todas a 8.80 salvo a las que ya se les aprendió una diferencia — que es lo que
+  se espera al cambiar el precio del día. Sin base fijado se usa el precio absoluto de siempre
+  (`precioKgDefecto`). La diferencia se **aprende sola** al registrar: si un día con base 9.50
+  se le cobra 9.70, su offset queda en +0.20, y cuando el base cambie otro día su precio se
+  recalcula solo. Todo editable en cada entrega.
 - **El peso son tandas**, una lista de pesadas que se suman. Se pueden agregar después.
 - **Entregas sin pesar** (clientes de confianza): usa total dictado o precio acordado.
 - **Las deudas viven en la tienda, no en el día.** Al cobrar se salda día + deuda en un

@@ -99,6 +99,12 @@ async function intentar<T>(config: ConfigIA, opciones: Opciones): Promise<T> {
           // Bajo a propósito: aquí no se quiere creatividad, se quiere que
           // saque los mismos números todas las veces.
           temperature: 0.1,
+          // Sin «pensar» antes de responder. Los modelos flash traen el
+          // razonamiento previo activado por defecto, y aquí no hace falta —
+          // es sacar nombre, cantidades y peso de una frase, no resolver nada—:
+          // apagarlo (`thinkingBudget: 0`) le quita los segundos que tardaba en
+          // llenar la tarjeta después de dictar, que era la queja.
+          thinkingConfig: { thinkingBudget: 0 },
         },
       }),
       signal: opciones.senal,

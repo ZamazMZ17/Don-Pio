@@ -1,7 +1,43 @@
-import { useEffect, useState, type RefObject } from "react";
+import { useCallback, useEffect, useLayoutEffect, useState, type RefObject } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../db/db";
 import { CLAVE_TEMA, leerAjuste } from "../voz/ajustes";
+
+/**
+ * Dónde estaba el scroll de cada lista, para no perder el sitio.
+ *
+ * Vive a nivel de módulo a propósito: sobrevive a que la pantalla se
+ * re-renderice —o se desmonte y vuelva— tras cobrar, editar o crear algo, que
+ * era lo que devolvía la lista al principio de todo cada vez.
+ */
+const memoriaScroll: Record<string, number> = {};
+
+/**
+ * Recuerda y restaura la posición del scroll de un contenedor.
+ *
+ * Devuelve el manejador para `onScroll` (guarda la posición sin parar) y
+ * restaura la guardada tras cada cambio de `dep` —normalmente los datos de la
+ * lista—, justo después de re-renderizar y antes de pintar, así el salto al
+ * inicio no llega a verse. Como se guarda en cada scroll, restaurar tras un
+ * cambio de datos cae siempre en la última posición del dedo: es un no-op
+ * mientras se desplaza y solo corrige el reinicio cuando algo reordena la lista.
+ */
+export function useMemoriaScroll(
+  ref: RefObject<HTMLElement | null>,
+  clave: string,
+  dep: unknown,
+): () => void {
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (el) el.scrollTop = memoriaScroll[clave] ?? 0;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clave, dep]);
+
+  return useCallback(() => {
+    const el = ref.current;
+    if (el) memoriaScroll[clave] = el.scrollTop;
+  }, [ref, clave]);
+}
 
 /**
  * Un ajuste como estado de React, con su valor por defecto. Se relee solo

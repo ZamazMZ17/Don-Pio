@@ -6,7 +6,7 @@ import { repartirPago, TOPE_REDONDEO } from "../dominio/calculo";
 import { aCentimos, money } from "../lib/dinero";
 import { diaCorto, type DiaISO } from "../lib/fecha";
 import { avisoGuardado } from "../lib/aviso";
-import { useAjuste, useHolguraMic } from "../lib/ganchos";
+import { useAjuste, useHolguraMic, useMemoriaScroll } from "../lib/ganchos";
 import { CLAVE_ORDEN_COBRANZA, guardarAjuste } from "../voz/ajustes";
 import { normalizar, parecido } from "../tiendas/normalizar";
 import { S, Vacio } from "../ui/base";
@@ -105,6 +105,8 @@ export function Cobranza({
   // buscador: al filtrar, la lista visible se acorta y el hueco del micrófono
   // vuelve a decidirse.
   const holguraMic = useHolguraMic(scrollRef, 190, 230, `${cuentas?.length ?? 0}:${busca}`);
+  // No perder el sitio al cobrar: la lista se rehace y volvía al principio.
+  const guardarScroll = useMemoriaScroll(scrollRef, "cobranza", cuentas);
 
   if (!cuentas) return null;
 
@@ -256,6 +258,7 @@ export function Cobranza({
 
       <div
         ref={scrollRef}
+        onScroll={guardarScroll}
         className="scroll"
         style={{
           flex: 1,

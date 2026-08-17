@@ -102,21 +102,21 @@ export async function cerrarDeudas(tiendaId: number): Promise<void> {
 }
 
 /**
- * El precio por kilo que le toca hoy a una tienda: si hay **precio base del
- * día** y ya se le conoce su diferencia, es base + offset; si no, su precio
- * absoluto de siempre; y si tampoco lo tiene, el base pelado. Es lo que se
- * muestra ya puesto en la tarjeta de entrega — editable, claro.
+ * El precio por kilo que le toca hoy a una tienda.
+ *
+ * **Si hay precio base del día, el base manda para todas**: es base + la
+ * diferencia de la tienda (offset, 0 si aún no se conoce). Así, poner el base
+ * en 8.80 baja a todas a 8.80 salvo a las que ya se les aprendió que pagan
+ * más o menos — que es justo lo que se espera al cambiar el precio del día.
+ * Sin base fijado se usa su precio absoluto de siempre (comportamiento previo).
+ * Editable en la tarjeta, y lo que se edite se aprende como su diferencia.
  */
 export function precioEfectivoKg(
   tienda: Pick<Tienda, "precioKgDefecto" | "precioOffsetKg"> | undefined,
   precioBaseKg: Centimos,
 ): Centimos {
-  if (!tienda) return precioBaseKg > 0 ? precioBaseKg : 0;
-  if (precioBaseKg > 0 && tienda.precioOffsetKg != null) {
-    return Math.max(0, precioBaseKg + tienda.precioOffsetKg);
-  }
-  if (tienda.precioKgDefecto > 0) return tienda.precioKgDefecto;
-  return precioBaseKg > 0 ? precioBaseKg : 0;
+  if (precioBaseKg > 0) return Math.max(0, precioBaseKg + (tienda?.precioOffsetKg ?? 0));
+  return tienda?.precioKgDefecto ?? 0;
 }
 
 /**

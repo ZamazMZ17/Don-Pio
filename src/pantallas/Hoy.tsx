@@ -605,11 +605,20 @@ function RutaLista({
     if (!prev || e.orden > prev.orden) ultimaDe.set(e.tiendaId, e);
   }
 
-  // En orden de ruta; las que aún no tienen parada aprendida, al final.
+  // El orden lo mandan los **días recientes**, no el promedio de todo el
+  // historial: si la ruta cambió, tiene que notarse ya. Se toma la parada
+  // media de las dos últimas veces que pasó por cada tienda; las que aún no
+  // tienen parada quedan al final. Ya entregada hoy, su parada de hoy es la
+  // que vale, para que la lista siga el recorrido real del día.
   const sinRuta = 99999;
-  const orden = [...tiendas].sort(
-    (a, b) => (a.ordenRuta || sinRuta) - (b.ordenRuta || sinRuta),
-  );
+  const paradaDe = (t: Tienda): number => {
+    const hoy = ultimaDe.get(t.id!);
+    if (hoy) return hoy.orden;
+    const recientes = t.posiciones.slice(-2);
+    if (recientes.length > 0) return recientes.reduce((a, b) => a + b, 0) / recientes.length;
+    return t.ordenRuta > 0 ? t.ordenRuta : sinRuta;
+  };
+  const orden = [...tiendas].sort((a, b) => paradaDe(a) - paradaDe(b));
 
   if (tiendas.length === 0) {
     return (

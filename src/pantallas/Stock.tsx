@@ -117,7 +117,10 @@ export function Stock({
           flex: 1,
           display: "flex",
           flexDirection: "column",
-          justifyContent: "center",
+          // Alineado arriba, no centrado: con la tarjeta de precio añadida, en
+          // pantallas cortas el contenido no cabía y `justify-content: center`
+          // recortaba el tope (los pollos) sin dejar subir el scroll. Arriba
+          // siempre se ve entero y baja con scroll si hace falta.
           gap: 14,
           padding: "16px 0",
         }}

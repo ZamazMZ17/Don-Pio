@@ -94,10 +94,12 @@ describe("precio base del día y diferencia por tienda", () => {
     expect(precioEfectivoKg(t, aCentimos(9.8))).toBe(aCentimos(10));
   });
 
-  it("con base pero sin diferencia aún, respeta su precio absoluto (migración)", () => {
-    // Tienda vieja con precio absoluto y sin offset: no se le baja al base a secas.
+  it("con base fijado, el base manda aunque la tienda tenga precio absoluto viejo", () => {
+    // Poner el precio del día baja a todas a ese precio salvo a las que ya
+    // tienen una diferencia aprendida. La de 9.70 sin offset pasa a cobrar el
+    // base, no su viejo absoluto: es lo que se espera al cambiar el precio.
     const t = { precioKgDefecto: aCentimos(9.7), precioOffsetKg: undefined };
-    expect(precioEfectivoKg(t, aCentimos(9.5))).toBe(aCentimos(9.7));
+    expect(precioEfectivoKg(t, aCentimos(8.8))).toBe(aCentimos(8.8));
   });
 
   it("una entrega con base aprende la diferencia de la tienda", async () => {

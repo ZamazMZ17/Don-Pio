@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Plus, Search, Trash2 } from "lucide-react";
 import { db } from "../db/db";
+import { useMemoriaScroll } from "../lib/ganchos";
 import {
   actualizarTienda,
   agregarDeuda,
@@ -59,6 +60,11 @@ export function Tiendas() {
     ]);
     return { tiendas, deudas, saldos };
   }, []);
+
+  // No perder el sitio al crear, editar o borrar: la lista se rehace y volvía
+  // al principio. El hook va antes del `return` que corta el render.
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const guardarScroll = useMemoriaScroll(scrollRef, "tiendas", datos);
 
   if (!datos) return null;
   const { tiendas, deudas, saldos } = datos;
@@ -186,6 +192,8 @@ export function Tiendas() {
       )}
 
       <div
+        ref={scrollRef}
+        onScroll={guardarScroll}
         className="scroll"
         style={{
           flex: 1,
