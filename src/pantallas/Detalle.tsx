@@ -3,6 +3,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { Pencil, Trash2 } from "lucide-react";
 import { db } from "../db/db";
 import {
+  agregarTanda as agregarTandaDB,
   borrarEntrega,
   cobrarEntrega,
   editarEntrega,
@@ -108,7 +109,9 @@ export function Detalle({ entregaId, volver }: { entregaId: number; volver: () =
   const agregarTanda = () => {
     const n = Number(nuevaTanda.replace(",", "."));
     if (!Number.isFinite(n) || n <= 0) return;
-    cambiarTandas([...e.tandas, aGramos(n)]);
+    // La función de la base se encarga de que, si había un peso de una sola
+    // pesada, ese peso quede como primera tanda en vez de perderse.
+    void agregarTandaDB(entregaId, aGramos(n));
     setNuevaTanda("");
   };
 

@@ -285,6 +285,14 @@ una tienda existente en silencio: **el emparejamiento siempre se muestra antes d
   montado el nodo conserva su scroll solo, y pisarlo pelearía con el dedo cuando entra un cobro
   nuevo. La vista de ruta además **no se reordena** al registrar (orden de ruta fijo), para que
   el sitio no se mueva bajo el dedo.
+- **Agregar una tanda a una entrega de una sola pesada borraba el peso.** La mayoría de
+  entregas se guardan con `peso` y sin `tandas` (una pesada, escrita como total). En el
+  Detalle, «Agregar» otra pesada hacía `[...e.tandas, nueva]` = `[nueva]`, y como el peso se
+  recalcula desde las tandas cuando las hay, los kilos ya pesados se perdían y el total se
+  descuadraba. El peso de esa única pesada **ya es la primera tanda**: `agregarTanda()`
+  (en `entregas.ts`, no en la pantalla) siembra la lista con `[e.peso]` antes de sumar la
+  nueva cuando no había tandas. Cualquier función que convierta un `peso` suelto en `tandas`
+  tiene que arrastrar el peso que ya estaba, nunca arrancar de cero.
 - **En Hoy, entregas y cobros sueltos son una sola lista ordenada, no dos bloques.** Los
   cobros sueltos —pasar solo a cobrar deuda vieja, sin dejar nada hoy— se pintaban fijos
   arriba y el botón de orden solo movía las entregas: se veía primero lo ya cobrado y recién

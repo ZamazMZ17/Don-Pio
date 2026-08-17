@@ -2,6 +2,7 @@ import "fake-indexeddb/auto";
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "./db";
 import {
+  agregarTanda,
   cuentasPendientes,
   editarEntrega,
   fijarPeso,
@@ -557,6 +558,56 @@ describe("cobrar", () => {
 
     const cuentas = await cuentasPendientes(HOY, "ruta");
     expect(cuentas.map((c) => c.tienda.nombre)).toEqual(["Bodega Milagros", "Doña Elsa"]);
+  });
+});
+
+describe("agregar tandas de peso a una entrega", () => {
+  it("una entrega de una sola pesada conserva ese peso como primera tanda", async () => {
+    // El caso del bug: se registró con `peso` y sin `tandas` (lo más común).
+    const t = await crearTienda("Peso suelto");
+    const id = await registrarEntrega(
+      { tiendaId: t.id!, pollos: 3, peso: aGramos(8), precioKg: aCentimos(9) },
+      ctx(1),
+      { fecha: HOY },
+    );
+    let e = await db.entregas.get(id);
+    expect(e!.tandas).toEqual([]);
+    expect(e!.peso).toBe(aGramos(8));
+
+    // Al agregar una segunda pesada, la de 8 kg NO se pierde: queda de primera.
+    await agregarTanda(id, aGramos(3));
+
+    e = await db.entregas.get(id);
+    expect(e!.tandas).toEqual([aGramos(8), aGramos(3)]);
+    expect(e!.peso).toBe(aGramos(11));
+    // Total recalculado sobre los 11 kg, no sobre los 3 de la tanda nueva.
+    expect(money(e!.totalCalculado)).toBe("S/ 99.00");
+  });
+
+  it("cuando ya hay tandas, solo se añade la nueva al final", async () => {
+    const t = await crearTienda("Con tandas");
+    const id = await registrarEntrega(
+      { tiendaId: t.id!, pollos: 2, tandas: [aGramos(5), aGramos(4)], precioKg: aCentimos(9) },
+      ctx(1),
+      { fecha: HOY },
+    );
+    await agregarTanda(id, aGramos(3));
+    const e = await db.entregas.get(id);
+    expect(e!.tandas).toEqual([aGramos(5), aGramos(4), aGramos(3)]);
+    expect(e!.peso).toBe(aGramos(12));
+  });
+
+  it("sin peso previo, la primera tanda arranca la lista normal", async () => {
+    const t = await crearTienda("Sin peso");
+    const id = await registrarEntrega(
+      { tiendaId: t.id!, pollos: 1, sinPesar: true, totalDictado: aCentimos(40) },
+      ctx(1),
+      { fecha: HOY },
+    );
+    await agregarTanda(id, aGramos(6));
+    const e = await db.entregas.get(id);
+    expect(e!.tandas).toEqual([aGramos(6)]);
+    expect(e!.peso).toBe(aGramos(6));
   });
 });
 

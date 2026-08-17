@@ -142,6 +142,23 @@ export async function fijarPeso(id: number, peso: Gramos): Promise<void> {
   await editarEntrega(id, { peso: Math.max(0, peso), tandas: [] });
 }
 
+/**
+ * Suma una pesada a una entrega.
+ *
+ * Si la entrega tenía un peso de **una sola pesada** —guardado en `peso`, sin
+ * `tandas`, que es lo más frecuente—, ese peso ya cuenta como la primera tanda:
+ * la nueva se le suma, no lo reemplaza. Antes, agregar la segunda pesada
+ * convertía la lista vacía en `[nueva]` y el peso se recalculaba solo desde ahí,
+ * borrando lo que ya se había pesado y descuadrando el total.
+ */
+export async function agregarTanda(id: number, tanda: Gramos): Promise<void> {
+  if (tanda <= 0) return;
+  const e = await db.entregas.get(id);
+  if (!e) return;
+  const base = e.tandas.length === 0 && e.peso > 0 ? [e.peso] : e.tandas;
+  await editarEntrega(id, { tandas: [...base, tanda] });
+}
+
 export async function borrarEntrega(id: number): Promise<void> {
   await db.transaction("rw", db.entregas, db.pagos, async () => {
     await db.pagos.where("entregaId").equals(id).delete();
