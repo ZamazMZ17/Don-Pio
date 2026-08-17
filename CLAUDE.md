@@ -250,6 +250,16 @@ una tienda existente en silencio: **el emparejamiento siempre se muestra antes d
   nacen más migajas), y `cuentasPendientes()` no lista una cuenta cuyo `aCobrar(saldo)` sea 0
   (limpia las que ya existían). El umbral mira el **saldo entero**, no cada deuda suelta:
   tres migajas de 4 céntimos sí suman una moneda y esa sí se cobra.
+- **Un botón que en el navegador funciona y en el teléfono «no responde» suele ser una zona
+  táctil por debajo de 52px, no un fallo de lógica.** Pasó con el botón que cambia el orden de
+  la lista en Hoy y Cobranza («Por ruta ⇅» / «Del último ⇅»): tenía `padding: 6`, medía ~28px
+  de alto, y el dedo no lo acertaba a la intemperie. En pruebas no se veía porque un
+  `.click()` —o un clic de ratón— cae al píxel exacto del centro y **siempre** acierta; el
+  dedo no. Es el mismo aviso del bug de `pointer-events`: hay cosas que solo se ven con un
+  toque de verdad. La cura es el mínimo de 52px de §4; para no engordar la fila, se consigue
+  con `minHeight: 52` + `margin` negativo (el área que se toca crece, el dibujo no; las
+  tarjetas que vienen después en el DOM tapan cualquier desborde hacia abajo, así que no le
+  roban el toque a la primera de la lista).
 
 ---
 

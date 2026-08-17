@@ -178,7 +178,15 @@ export function Cobranza({
               fontSize: 13,
               color: "var(--acento-claro)",
               fontWeight: 500,
-              padding: 6,
+              // Mismo objetivo táctil de 52px que el orden de Hoy (§4). Antes
+              // medía ~28px y el dedo no lo acertaba en el teléfono. El margen
+              // negativo deja la fila igual de compacta.
+              minHeight: 52,
+              display: "inline-flex",
+              alignItems: "center",
+              whiteSpace: "nowrap",
+              padding: "0 10px",
+              margin: "-14px -6px",
               flex: "none",
             }}
           >

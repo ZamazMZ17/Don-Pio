@@ -247,7 +247,22 @@ export function Hoy({
             onClick={() =>
               void guardarAjuste(CLAVE_ORDEN, SIGUIENTE[orden as keyof typeof SIGUIENTE] ?? "ruta")
             }
-            style={{ fontSize: 13, color: "var(--acento-claro)", fontWeight: 500, padding: 6 }}
+            style={{
+              fontSize: 13,
+              color: "var(--acento-claro)",
+              fontWeight: 500,
+              // Zona táctil de 52px (§4: nada táctil por debajo de eso). Con
+              // `padding: 6` medía ~28px de alto y en el teléfono el dedo no lo
+              // acertaba —«no responde al tocar»—, aunque un clic al centro en
+              // el navegador siempre le daba. El margen negativo mantiene la
+              // fila compacta: el área que se toca crece, el dibujo no.
+              minHeight: 52,
+              display: "inline-flex",
+              alignItems: "center",
+              whiteSpace: "nowrap",
+              padding: "0 10px",
+              margin: "-14px -6px",
+            }}
           >
             {ETIQUETA[orden as keyof typeof ETIQUETA] ?? "Por ruta ⇅"}
           </button>
