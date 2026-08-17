@@ -260,6 +260,14 @@ una tienda existente en silencio: **el emparejamiento siempre se muestra antes d
   con `minHeight: 52` + `margin` negativo (el área que se toca crece, el dibujo no; las
   tarjetas que vienen después en el DOM tapan cualquier desborde hacia abajo, así que no le
   roban el toque a la primera de la lista).
+- **En Hoy, entregas y cobros sueltos son una sola lista ordenada, no dos bloques.** Los
+  cobros sueltos —pasar solo a cobrar deuda vieja, sin dejar nada hoy— se pintaban fijos
+  arriba y el botón de orden solo movía las entregas: se veía primero lo ya cobrado y recién
+  después lo entregado hoy, dijera «del primero» o «del último», y parecía que el orden «no
+  reordena». La clave es darles a los dos tipos una **misma llave de orden**: `creada` (cuándo
+  pasó), que para una entrega es su secuencia de ruta y para un cobro es cuándo lo cobró.
+  «Por pendientes» ordena por lo que falta cobrar, y un cobro suelto (falta 0) cae al fondo
+  con las entregas ya pagadas.
 
 ---
 

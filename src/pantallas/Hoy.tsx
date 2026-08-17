@@ -51,10 +51,16 @@ export function Hoy({
      */
     const pagos = await db.pagos.where("fecha").equals(fecha).toArray();
     const conEntrega = new Set(entregas.map((e) => e.tiendaId));
-    const soloCobro = new Map<number, number>();
+    const soloCobro = new Map<number, { monto: number; creada: number }>();
     for (const p of pagos) {
       if (conEntrega.has(p.tiendaId)) continue;
-      soloCobro.set(p.tiendaId, (soloCobro.get(p.tiendaId) ?? 0) + p.monto);
+      const prev = soloCobro.get(p.tiendaId);
+      soloCobro.set(p.tiendaId, {
+        monto: (prev?.monto ?? 0) + p.monto,
+        // El más reciente de sus cobros de hoy: sirve para colocarlo en el
+        // mismo orden que las entregas, como una actividad más del día.
+        creada: Math.max(prev?.creada ?? 0, p.creada),
+      });
     }
 
     return { resumen, entregas, porId, deudas, jornada, soloCobro };
@@ -74,14 +80,38 @@ export function Hoy({
   if (!datos) return null;
   const { resumen, entregas, porId, deudas, jornada, soloCobro } = datos;
 
-  const lista = [...entregas].sort((a, b) => {
-    if (orden === "pendientes") {
-      const falta = (x: (typeof entregas)[number]) =>
-        x.totalCalculado - x.totalCobrado - x.descuentoRedondeo;
-      return falta(b) - falta(a);
-    }
+  /*
+   * Entregas y cobros sueltos van en **una sola lista ordenada**. Antes los
+   * cobros —pasar solo a cobrar lo de días anteriores, sin dejar nada hoy— se
+   * pintaban siempre fijos arriba, y el botón de orden solo movía las entregas
+   * de abajo: se veía primero lo ya cobrado y recién después lo entregado hoy,
+   * dijera «del primero» o «del último». Ahora todo comparte el mismo orden,
+   * por `creada` —cuándo pasó—, que para una entrega es su secuencia de ruta y
+   * para un cobro es cuándo lo cobró.
+   */
+  type Fila =
+    | { tipo: "entrega"; e: (typeof entregas)[number]; creada: number; falta: number }
+    | { tipo: "cobro"; tiendaId: number; monto: number; creada: number };
+  const filas: Fila[] = [
+    ...entregas.map(
+      (e): Fila => ({
+        tipo: "entrega",
+        e,
+        creada: e.creada,
+        falta: e.totalCalculado - e.totalCobrado - e.descuentoRedondeo,
+      }),
+    ),
+    ...[...soloCobro.entries()].map(
+      ([tiendaId, { monto, creada }]): Fila => ({ tipo: "cobro", tiendaId, monto, creada }),
+    ),
+  ];
+  const faltaDe = (f: Fila) => (f.tipo === "entrega" ? f.falta : 0);
+  filas.sort((a, b) => {
+    // «Por pendientes»: primero lo que más falta cobrar. Un cobro suelto ya no
+    // tiene nada pendiente, así que cae al fondo, con las entregas ya pagadas.
+    if (orden === "pendientes") return faltaDe(b) - faltaDe(a) || b.creada - a.creada;
     // `retorno`: del último al primero, como cuando vuelve cobrando.
-    return orden === "retorno" ? b.orden - a.orden : a.orden - b.orden;
+    return orden === "retorno" ? b.creada - a.creada : a.creada - b.creada;
   });
 
   const SIGUIENTE = { ruta: "retorno", retorno: "pendientes", pendientes: "ruta" } as const;
@@ -90,8 +120,6 @@ export function Hoy({
     retorno: "Del último ⇅",
     pendientes: "Por pendientes ⇅",
   } as const;
-
-  const cobrosSueltos = [...soloCobro.entries()];
 
   const porCobrarTotal =
     resumen.porCobrarDelDia + [...deudas.values()].reduce((a, b) => a + b, 0);
@@ -240,9 +268,7 @@ export function Hoy({
             padding: "0 4px 2px",
           }}
         >
-          <div style={{ ...S.rotulo, fontSize: 13 }}>
-            Hoy · {entregas.length + cobrosSueltos.length}
-          </div>
+          <div style={{ ...S.rotulo, fontSize: 13 }}>Hoy · {filas.length}</div>
           <button
             onClick={() =>
               void guardarAjuste(CLAVE_ORDEN, SIGUIENTE[orden as keyof typeof SIGUIENTE] ?? "ruta")
@@ -304,50 +330,55 @@ export function Hoy({
           </button>
         )}
 
-        {cobrosSueltos.map(([tiendaId, monto]) => (
-          <div
-            key={`cobro-${tiendaId}`}
-            style={{
-              ...S.tarjeta,
-              borderRadius: 14,
-              padding: "16px 16px 15px",
-              display: "flex",
-              gap: 14,
-              alignItems: "center",
-            }}
-          >
-            <div
-              style={{
-                width: 14,
-                height: 14,
-                borderRadius: "50%",
-                flex: "none",
-                background: "var(--verde)",
-              }}
-            />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 20, fontWeight: 600, lineHeight: 1.2, marginBottom: 4 }}>
-                {porId.get(tiendaId)?.nombre ?? "Sin nombre"}
-              </div>
-              <div style={{ fontSize: 14, color: "var(--texto-3)" }}>
-                Sin entrega · solo cobro
-              </div>
-            </div>
-            <div style={{ textAlign: "right", flex: "none" }}>
-              <div style={{ fontSize: 20, fontWeight: 600, lineHeight: 1.2 }}>{money(monto)}</div>
-              <div style={{ fontSize: 13, marginTop: 3, color: "var(--verde)" }}>Cobrado</div>
-            </div>
-          </div>
-        ))}
-
-        {lista.length === 0 && cobrosSueltos.length === 0 && (
+        {filas.length === 0 && (
           <Vacio
             titulo="Todavía no has entregado nada hoy"
             sub="Pulsa el micrófono y dile a quién le dejaste, cuántos pollos y cuánto pesaron."
           />
         )}
 
-        {lista.map((e) => {
+        {filas.map((fila) => {
+          if (fila.tipo === "cobro") {
+            const { tiendaId, monto } = fila;
+            return (
+              <div
+                key={`cobro-${tiendaId}`}
+                style={{
+                  ...S.tarjeta,
+                  borderRadius: 14,
+                  padding: "16px 16px 15px",
+                  display: "flex",
+                  gap: 14,
+                  alignItems: "center",
+                }}
+              >
+                <div
+                  style={{
+                    width: 14,
+                    height: 14,
+                    borderRadius: "50%",
+                    flex: "none",
+                    background: "var(--verde)",
+                  }}
+                />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 20, fontWeight: 600, lineHeight: 1.2, marginBottom: 4 }}>
+                    {porId.get(tiendaId)?.nombre ?? "Sin nombre"}
+                  </div>
+                  <div style={{ fontSize: 14, color: "var(--texto-3)" }}>
+                    Sin entrega · solo cobro
+                  </div>
+                </div>
+                <div style={{ textAlign: "right", flex: "none" }}>
+                  <div style={{ fontSize: 20, fontWeight: 600, lineHeight: 1.2 }}>
+                    {money(monto)}
+                  </div>
+                  <div style={{ fontSize: 13, marginTop: 3, color: "var(--verde)" }}>Cobrado</div>
+                </div>
+              </div>
+            );
+          }
+          const e = fila.e;
           const tienda = porId.get(e.tiendaId);
           const cobrado = e.totalCobrado + e.descuentoRedondeo;
           const estado = estadoDe(e.totalCalculado, cobrado);
@@ -438,7 +469,7 @@ export function Hoy({
           );
         })}
 
-        {lista.length > 0 && (
+        {filas.length > 0 && (
           <div
             style={{
               textAlign: "center",
