@@ -1,14 +1,15 @@
-import { useRef } from "react";
+import { useLayoutEffect, useRef, type ReactNode } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "../db/db";
+import { db, type Tienda } from "../db/db";
 import { leerJornada, resumenDe } from "../db/jornada";
 import { deudasPorTienda } from "../db/tiendas";
 import { estadoDe, COLOR_ESTADO, TEXTO_ESTADO } from "../dominio/calculo";
-import { diaCorto, diaLargo, type DiaISO } from "../lib/fecha";
+import { mediana } from "../tiendas/emparejar";
+import { diaCorto, diaLargo, horaTxt, type DiaISO } from "../lib/fecha";
 import { kgCorto, money } from "../lib/dinero";
 import { useAjuste, useHolguraMic } from "../lib/ganchos";
-import { ChevronRight, Sparkles } from "lucide-react";
-import { guardarAjuste, CLAVE_API, CLAVE_ORDEN } from "../voz/ajustes";
+import { ChevronRight, Plus, Sparkles } from "lucide-react";
+import { guardarAjuste, CLAVE_API, CLAVE_ORDEN, CLAVE_MODO_HOY } from "../voz/ajustes";
 import { S, Vacio } from "../ui/base";
 // Importado como módulo, no referenciado por ruta absoluta: es el único
 // sitio de la app que pinta una imagen suelta, y `/icono-192.png` a pelo no
@@ -20,19 +21,32 @@ import logo from "../assets/logo.png";
  * La pantalla principal. Todo el estado del día sin desplazar: con cuánto
  * salió, cuánto le queda, cuánto lleva cobrado y cuánto le falta.
  */
+/**
+ * Dónde estaba el scroll de cada modo, por si sale a otra pantalla y vuelve.
+ * Vive fuera del componente a propósito: así sobrevive a que Hoy se
+ * desmonte al abrir el Detalle y se vuelva a montar al regresar, que era lo
+ * que devolvía la lista al principio de todo. Uno por modo: la agenda y la
+ * ruta tienen su propio recorrido.
+ */
+const memoriaScroll: Record<string, number> = { agenda: 0, ruta: 0 };
+
 export function Hoy({
   fecha,
   abrir,
   abrirStock,
   abrirAjustes,
+  registrarEnTienda,
 }: {
   fecha: DiaISO;
   abrir: (entregaId: number) => void;
   abrirStock: () => void;
   abrirAjustes: () => void;
+  /** Abre la tarjeta de entrega tocando una tienda en la vista de ruta. */
+  registrarEnTienda: (tienda: Tienda) => void;
 }) {
   const conIA = useAjuste(CLAVE_API) !== "";
   const orden = useAjuste(CLAVE_ORDEN, "ruta");
+  const modo = useAjuste(CLAVE_MODO_HOY, "agenda");
 
   const datos = useLiveQuery(async () => {
     const [resumen, entregas, tiendas, deudas, jornada] = await Promise.all([
@@ -63,7 +77,7 @@ export function Hoy({
       });
     }
 
-    return { resumen, entregas, porId, deudas, jornada, soloCobro };
+    return { resumen, entregas, tiendas, porId, deudas, jornada, soloCobro };
   }, [fecha]);
 
   // Antes del `if` que puede cortar el render: los hooks no pueden ser
@@ -74,11 +88,23 @@ export function Hoy({
     scrollRef,
     190,
     250,
-    (datos?.entregas.length ?? 0) + (datos?.soloCobro.size ?? 0),
+    `${modo}:${(datos?.entregas.length ?? 0) + (datos?.soloCobro.size ?? 0)}:${datos?.tiendas.length ?? 0}`,
   );
 
+  // Devolver el scroll a donde estaba: al montar (volviendo de otra pantalla)
+  // y al cambiar de modo. Solo cuando ya hay datos, o mediría sobre el vacío.
+  // No se re-ejecuta en cada actualización de `datos` a propósito: mientras
+  // sigue montado, el propio nodo conserva su scroll y no hay que tocarlo —
+  // pisarlo pelearía con el dedo cuando llega un cobro nuevo.
+  const hayDatos = !!datos;
+  useLayoutEffect(() => {
+    const el = scrollRef.current;
+    if (el) el.scrollTop = memoriaScroll[modo] ?? 0;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modo, hayDatos]);
+
   if (!datos) return null;
-  const { resumen, entregas, porId, deudas, jornada, soloCobro } = datos;
+  const { resumen, entregas, tiendas, porId, deudas, jornada, soloCobro } = datos;
 
   /*
    * Entregas y cobros sueltos van en **una sola lista ordenada**. Antes los
@@ -241,9 +267,25 @@ export function Hoy({
         </div>
       </div>
 
+      {/*
+        Agenda (lo ya hecho) o Ruta (todos los clientes, para ir tocando). Fija
+        arriba, siempre visible: no se va con el scroll de la lista.
+      */}
+      <div style={{ flex: "none", padding: "10px 18px 2px", display: "flex", gap: 8 }}>
+        <ModoBtn activo={modo === "agenda"} onClick={() => void guardarAjuste(CLAVE_MODO_HOY, "agenda")}>
+          Agenda
+        </ModoBtn>
+        <ModoBtn activo={modo === "ruta"} onClick={() => void guardarAjuste(CLAVE_MODO_HOY, "ruta")}>
+          Ruta
+        </ModoBtn>
+      </div>
+
       {/* Lista tipo agenda */}
       <div
         ref={scrollRef}
+        onScroll={(e) => {
+          memoriaScroll[modo] = e.currentTarget.scrollTop;
+        }}
         className="scroll"
         style={{
           flex: 1,
@@ -260,6 +302,11 @@ export function Hoy({
           gap: 10,
         }}
       >
+        {modo === "ruta" && (
+          <RutaLista tiendas={tiendas} entregas={entregas} onTocar={registrarEnTienda} />
+        )}
+        {modo === "agenda" && (
+          <>
         <div
           style={{
             display: "flex",
@@ -481,8 +528,155 @@ export function Hoy({
             {diaLargo(fecha)}
           </div>
         )}
+          </>
+        )}
       </div>
     </div>
+  );
+}
+
+/** Un botón del interruptor Agenda / Ruta. Objetivo táctil de 52px. */
+function ModoBtn({
+  activo,
+  onClick,
+  children,
+}: {
+  activo: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="pulsable"
+      style={{
+        flex: 1,
+        height: 44,
+        borderRadius: "var(--radio)",
+        border: activo ? "1.5px solid var(--acento)" : "1.5px solid var(--borde)",
+        background: activo ? "var(--acento-900)" : "transparent",
+        color: activo ? "var(--acento-200)" : "var(--texto-3)",
+        fontSize: 15,
+        fontWeight: activo ? 600 : 500,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+/**
+ * La vista de ruta: **todos** los clientes en el orden en que se suele repartir,
+ * para tocar cada uno y registrarle la entrega sin dictar. Los que ya se
+ * atendieron hoy quedan marcados, en su sitio de siempre: la lista no se
+ * reordena al registrar, para que el dedo no pierda dónde iba.
+ */
+function RutaLista({
+  tiendas,
+  entregas,
+  onTocar,
+}: {
+  tiendas: Tienda[];
+  entregas: { tiendaId: number; totalCalculado: number }[];
+  onTocar: (t: Tienda) => void;
+}) {
+  // Cuánto se le dejó hoy a cada tienda (0 = todavía no).
+  const hechoHoy = new Map<number, number>();
+  for (const e of entregas) {
+    hechoHoy.set(e.tiendaId, (hechoHoy.get(e.tiendaId) ?? 0) + e.totalCalculado);
+  }
+
+  // En orden de ruta; las que aún no tienen parada aprendida, al final.
+  const sinRuta = 99999;
+  const orden = [...tiendas].sort(
+    (a, b) => (a.ordenRuta || sinRuta) - (b.ordenRuta || sinRuta),
+  );
+
+  if (tiendas.length === 0) {
+    return (
+      <Vacio
+        titulo="Todavía no hay clientes"
+        sub="Se van creando solos al dictar, o agrega uno con el botón + de aquí abajo."
+      />
+    );
+  }
+
+  return (
+    <>
+      {orden.map((t) => {
+        const hecho = hechoHoy.has(t.id!);
+        const total = hechoHoy.get(t.id!) ?? 0;
+        const hora = mediana(t.minutos);
+        const meta: string[] = [];
+        if (t.ordenRuta) meta.push(`parada ${t.ordenRuta}`);
+        if (hora !== null) meta.push(horaTxt(Math.round(hora)));
+        if (t.pesa && t.precioKgDefecto) meta.push(`${(t.precioKgDefecto / 100).toFixed(2)}/kg`);
+        else if (!t.pesa) meta.push("sin pesar");
+
+        return (
+          <button
+            key={t.id}
+            onClick={() => onTocar(t)}
+            className="pulsable"
+            style={{
+              ...S.tarjeta,
+              borderRadius: 14,
+              padding: "15px 16px",
+              display: "flex",
+              gap: 14,
+              alignItems: "center",
+              width: "100%",
+              // Lo ya hecho se apaga un poco: la vista es «qué me falta».
+              opacity: hecho ? 0.62 : 1,
+            }}
+          >
+            <div
+              style={{
+                width: 14,
+                height: 14,
+                borderRadius: "50%",
+                flex: "none",
+                background: hecho ? "var(--verde)" : "transparent",
+                border: hecho ? "none" : "2px solid var(--texto-5)",
+              }}
+            />
+            <div style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
+              <div style={{ fontSize: 19, fontWeight: 600, lineHeight: 1.2, marginBottom: 3 }}>
+                {t.nombre}
+              </div>
+              <div style={{ fontSize: 13, color: "var(--texto-3)" }}>
+                {meta.length ? meta.join(" · ") : "sin ruta todavía"}
+              </div>
+            </div>
+            {hecho ? (
+              <div style={{ textAlign: "right", flex: "none" }}>
+                <div style={{ fontSize: 18, fontWeight: 600, lineHeight: 1.2 }}>{money(total)}</div>
+                <div style={{ fontSize: 12, marginTop: 2, color: "var(--verde)" }}>entregado</div>
+              </div>
+            ) : (
+              <div
+                style={{
+                  flex: "none",
+                  width: 40,
+                  height: 40,
+                  borderRadius: "50%",
+                  border: "1.5px solid var(--borde)",
+                  color: "var(--texto-3)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Plus size={22} />
+              </div>
+            )}
+          </button>
+        );
+      })}
+    </>
   );
 }
 

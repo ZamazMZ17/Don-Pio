@@ -12,6 +12,12 @@ export const CLAVE_REDONDEO = "redondeoAbajo";
 export const CLAVE_SONIDO = "avisoSonido";
 export const CLAVE_ORDEN = "ordenLista";
 /**
+ * Cómo se ve la pantalla Hoy: "agenda" (lo ya hecho, como siempre) o "ruta"
+ * (todos los clientes en orden de ruta, para ir tocando y registrando de uno
+ * en uno). Por defecto "agenda": es la vista de siempre.
+ */
+export const CLAVE_MODO_HOY = "modoHoy";
+/**
  * Cómo se ordena la cobranza. Por defecto `retorno`: **del último al primero**,
  * porque reparte de ida y cobra de vuelta, así que la última tienda a la que le
  * dejó es la primera que se vuelve a encontrar.

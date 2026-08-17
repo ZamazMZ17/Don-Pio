@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { LayoutList, MoreHorizontal, Store, Undo2 } from "lucide-react";
 
-import { db } from "./db/db";
+import { db, type Tienda } from "./db/db";
 import { cerrarDiasPasados, guardarStock, leerJornada } from "./db/jornada";
 import { registrarEntrega } from "./db/entregas";
 import { registrarCobro } from "./db/entregas";
@@ -14,6 +14,7 @@ import { useAjuste, useAjusteBool, useTema } from "./lib/ganchos";
 import { useBotonAtras } from "./lib/atras";
 import {
   CLAVE_API,
+  CLAVE_MODO_HOY,
   CLAVE_MODO_TECLADO,
   CLAVE_SONIDO,
   CLAVE_STOCK_OFRECIDO,
@@ -33,8 +34,8 @@ import {
 } from "./voz/interpretar";
 import { duracion, useGrabadora } from "./voz/grabacion";
 import { useReconocedor } from "./voz/reconocimiento";
-import type { Contexto } from "./tiendas/emparejar";
-import type { Intencion } from "./voz/intencion";
+import type { Candidata, Contexto } from "./tiendas/emparejar";
+import { intencionVacia, type Intencion } from "./voz/intencion";
 
 import { Hoy } from "./pantallas/Hoy";
 import { Detalle } from "./pantallas/Detalle";
@@ -48,6 +49,7 @@ import { Ajustes } from "./pantallas/Ajustes";
 import { Menu } from "./pantallas/Menu";
 import { Gastos } from "./pantallas/Gastos";
 import {
+  BotonMas,
   BotonMic,
   HojaEscribir,
   HojaEscuchando,
@@ -91,6 +93,8 @@ export default function App() {
   useCola();
   useTema();
   const sonido = useAjusteBool(CLAVE_SONIDO, true);
+  /** "agenda" (lo ya hecho) o "ruta" (todos los clientes para ir tocando). */
+  const modoHoy = useAjuste(CLAVE_MODO_HOY, "agenda");
 
   // Las dos juntas en una consulta para que resuelvan a la vez: si el ajuste
   // llegara después, la pantalla de stock alcanzaría a saltar igualmente.
@@ -295,7 +299,9 @@ export default function App() {
           ctx,
           { fecha, dictado: i.cliente },
         );
-        await ligarAEntrega(propuesta.dictadoId, entregaId);
+        // Solo si vino de un dictado: en la vista de ruta se registra tocando
+        // la tienda, sin dictado que ligar.
+        if (propuesta.dictadoId !== undefined) await ligarAEntrega(propuesta.dictadoId, entregaId);
       }
 
       avisoGuardado();
@@ -303,6 +309,56 @@ export default function App() {
     },
     [propuesta, fecha],
   );
+
+  /**
+   * Abrir la tarjeta de entrega **tocando una tienda** en la vista de ruta, sin
+   * dictar. Se arma una propuesta «manual» ya apuntada a esa tienda: la misma
+   * tarjeta de confirmación de siempre, pero sin transcripción ni «¿es esta?».
+   */
+  const registrarEnTienda = useCallback((tienda: Tienda) => {
+    const candidata: Candidata = {
+      tienda,
+      yaHoy: false,
+      puntaje: 1,
+      nombre: 1,
+      hora: 0,
+      secuencia: 0,
+      distintivo: "",
+    };
+    setEscribiendo(false);
+    setPropuesta({
+      manual: true,
+      transcripcion: "",
+      intencion: {
+        ...intencionVacia(),
+        intencion: "nueva_entrega",
+        cliente: tienda.nombre,
+        pollos: 1,
+        sinPesar: tienda.pesa === 0,
+      },
+      emparejamiento: {
+        decision: "encontrada",
+        mejor: candidata,
+        candidatas: [candidata],
+        buscado: tienda.nombreNorm,
+      },
+    });
+  }, []);
+
+  /**
+   * El botón «+» de la vista de ruta: registrar a alguien que todavía no está
+   * en el directorio. Abre la misma tarjeta en blanco; al confirmar con el
+   * nombre escrito, `confirmar` crea la tienda y registra la entrega de una vez.
+   */
+  const abrirNuevaEnRuta = useCallback(() => {
+    setEscribiendo(false);
+    setPropuesta({
+      manual: true,
+      transcripcion: "",
+      intencion: { ...intencionVacia(), intencion: "nueva_entrega", pollos: 1 },
+      emparejamiento: { decision: "nueva", candidatas: [], buscado: "" },
+    });
+  }, []);
 
   const elegirOtra = useCallback(
     (tiendaId: number) => {
@@ -318,7 +374,7 @@ export default function App() {
   );
 
   const descartar = useCallback(() => {
-    if (propuesta) void descartarDictado(propuesta.dictadoId);
+    if (propuesta?.dictadoId !== undefined) void descartarDictado(propuesta.dictadoId);
     setPropuesta(null);
   }, [propuesta]);
 
@@ -453,6 +509,7 @@ export default function App() {
           }}
           abrirStock={() => setPantalla("stock")}
           abrirAjustes={() => ir("ajustes")}
+          registrarEnTienda={registrarEnTienda}
         />
       )}
       {pantalla === "cobranza" && (
@@ -563,13 +620,18 @@ export default function App() {
             los dos abrían lo mismo: dos botones para una acción solo hacen
             dudar cuál tocar.
           */}
-          {flotantes && (
-            <BotonMic
-              escuchando={dictando}
-              procesando={pensando}
-              onClick={() => void dictar()}
-            />
-          )}
+          {/*
+            En la vista de ruta no se dicta: se registra tocando cada tienda,
+            así que el micrófono deja su sitio al «+» para agregar a alguien que
+            todavía no está en el directorio. En Cobranza o en la agenda de Hoy,
+            el micrófono de siempre.
+          */}
+          {flotantes &&
+            (pantalla === "hoy" && modoHoy === "ruta" ? (
+              <BotonMas onClick={abrirNuevaEnRuta} />
+            ) : (
+              <BotonMic escuchando={dictando} procesando={pensando} onClick={() => void dictar()} />
+            ))}
         </div>
       )}
     </div>

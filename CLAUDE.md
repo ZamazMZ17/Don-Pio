@@ -102,7 +102,7 @@ intérprete que lo dictado.
 
 | Pantalla | Para qué |
 |---|---|
-| **Hoy** | Encabezado con las cuatro cifras (salí con → me quedan · cobrado · por cobrar) y la lista de entregas tipo agenda, con punto de color por estado |
+| **Hoy** | Encabezado con las cuatro cifras (salí con → me quedan · cobrado · por cobrar) y, con un interruptor **Agenda / Ruta**: *Agenda* es la lista de lo ya hecho hoy, tipo agenda, con punto de color por estado; *Ruta* es **todos** los clientes en orden de ruta para ir tocando y registrando de uno en uno (la misma tarjeta de confirmación del dictado), con un **+** en lugar del micrófono para dar de alta a alguien que no está en el directorio |
 | **Detalle de entrega** | Cantidades con +/−, tandas de peso que se suman solas, precio por kilo, total en grande, pago y saldo, y la deuda anterior arriba |
 | **Cobranza** | El modo del retorno: solo tiendas con saldo, con la cuenta ya sacada (día + deuda). Ordenada **del último al primero** por defecto: reparte de ida y cobra de vuelta, así que la última tienda a la que dejó es la primera que reencuentra |
 | **Cierre del día** | «Deberías tener S/ X en la caja» para cuadrar contra la plata física |
@@ -260,6 +260,22 @@ una tienda existente en silencio: **el emparejamiento siempre se muestra antes d
   con `minHeight: 52` + `margin` negativo (el área que se toca crece, el dibujo no; las
   tarjetas que vienen después en el DOM tapan cualquier desborde hacia abajo, así que no le
   roban el toque a la primera de la lista).
+- **La vista de ruta reutiliza la tarjeta del dictado, no la duplica.** Tocar una tienda (o el
+  botón +) arma una `Propuesta` «manual» ya apuntada a esa tienda y la manda por el mismo
+  `TarjetaConfirmacion` / `confirmar` / `editarPropuesta` de siempre. Dos detalles que lo hacen
+  posible: `Propuesta.dictadoId` es **opcional** (tocando no hubo dictado que ligar, así que
+  `ligarAEntrega`/`descartarDictado` se saltan si falta), y el flag `manual` oculta la
+  transcripción y el «¿es esta?» (ya sabemos a quién, la tocó él). El + en blanco confirma con
+  el nombre escrito y `confirmar` crea la tienda y registra de una vez, como el «cliente nuevo»
+  del dictado.
+- **El scroll de Hoy se recuerda fuera del componente, o «se devuelve al inicio».** Hoy se
+  desmonta al abrir el Detalle y se vuelve a montar al regresar; su scroll interno se perdía y
+  la lista saltaba arriba del todo. La posición vive en un objeto a nivel de módulo
+  (`memoriaScroll`, uno por modo), se guarda en `onScroll` y se restaura en un `useLayoutEffect`
+  al montar y al cambiar de modo — **no** en cada actualización de `datos`: mientras sigue
+  montado el nodo conserva su scroll solo, y pisarlo pelearía con el dedo cuando entra un cobro
+  nuevo. La vista de ruta además **no se reordena** al registrar (orden de ruta fijo), para que
+  el sitio no se mueva bajo el dedo.
 - **En Hoy, entregas y cobros sueltos son una sola lista ordenada, no dos bloques.** Los
   cobros sueltos —pasar solo a cobrar deuda vieja, sin dejar nada hoy— se pintaban fijos
   arriba y el botón de orden solo movía las entregas: se veía primero lo ya cobrado y recién

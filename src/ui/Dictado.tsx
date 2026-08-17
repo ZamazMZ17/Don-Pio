@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Keyboard, Mic, Square } from "lucide-react";
+import { Keyboard, Mic, Plus, Square } from "lucide-react";
 import type { Candidata, Emparejamiento } from "../tiendas/emparejar";
 import type { Intencion } from "../voz/intencion";
 import { aCentimos, aGramos, money } from "../lib/dinero";
@@ -138,9 +138,18 @@ export interface Propuesta {
   intencion: Intencion;
   emparejamiento: Emparejamiento;
   transcripcion: string;
-  /** La fila de `dictados` de la que salió, para poder ligarla o descartarla. */
-  dictadoId: number;
+  /**
+   * La fila de `dictados` de la que salió, para poder ligarla o descartarla.
+   * Falta cuando la entrega se registró **tocando** una tienda en la vista de
+   * ruta (o el botón +), no dictándola: ahí no hubo dictado que rastrear.
+   */
+  dictadoId?: number;
   aviso?: string;
+  /**
+   * Registrada tocando una tienda de la ruta, no dictada. La tarjeta oculta la
+   * transcripción y el «¿es esta?»: ya sabemos a quién, la tocó él mismo.
+   */
+  manual?: boolean;
 }
 
 /**
@@ -306,34 +315,37 @@ export function TarjetaConfirmacion({
               marginBottom: 8,
             }}
           />
-          <button
-            onClick={() => setEligiendo(true)}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              width: "100%",
-              flexWrap: "wrap",
-            }}
-          >
-          <div
-            style={{
-              fontSize: 12,
-              padding: "4px 9px",
-              borderRadius: 99,
-              border: "1px solid var(--acento-700)",
-              color: "var(--acento-claro)",
-              flex: "none",
-            }}
-          >
-            {em.decision === "nueva" ? "cliente nuevo" : "¿es esta?"}
-          </div>
-          {em.mejor && nombreNuevo.trim() !== em.mejor.tienda.nombre && (
-            <div style={{ fontSize: 12, color: "var(--ambar)", flex: "none" }}>
-              se guardará como cliente nuevo
-            </div>
+          {/* Tocada desde la ruta ya sabemos quién es: no se ofrece re-elegir. */}
+          {!propuesta.manual && (
+            <button
+              onClick={() => setEligiendo(true)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                width: "100%",
+                flexWrap: "wrap",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 12,
+                  padding: "4px 9px",
+                  borderRadius: 99,
+                  border: "1px solid var(--acento-700)",
+                  color: "var(--acento-claro)",
+                  flex: "none",
+                }}
+              >
+                {em.decision === "nueva" ? "cliente nuevo" : "¿es esta?"}
+              </div>
+              {em.mejor && nombreNuevo.trim() !== em.mejor.tienda.nombre && (
+                <div style={{ fontSize: 12, color: "var(--ambar)", flex: "none" }}>
+                  se guardará como cliente nuevo
+                </div>
+              )}
+            </button>
           )}
-          </button>
         </div>
       )}
 
@@ -518,17 +530,19 @@ export function TarjetaConfirmacion({
         </button>
       </div>
 
-      <div
-        style={{
-          textAlign: "center",
-          fontSize: 13,
-          color: "var(--texto-4)",
-          marginTop: 12,
-          lineHeight: 1.5,
-        }}
-      >
-        «{propuesta.transcripcion}»
-      </div>
+      {!propuesta.manual && propuesta.transcripcion && (
+        <div
+          style={{
+            textAlign: "center",
+            fontSize: 13,
+            color: "var(--texto-4)",
+            marginTop: 12,
+            lineHeight: 1.5,
+          }}
+        >
+          «{propuesta.transcripcion}»
+        </div>
+      )}
     </div>
   );
 }
@@ -802,6 +816,41 @@ export function BotonMic({
         />
       )}
       <Mic size={34} strokeWidth={2} style={{ opacity: procesando ? 0.35 : 1 }} />
+    </button>
+  );
+}
+
+/**
+ * El botón «+» de la vista de ruta: agrega a alguien que todavía no está en el
+ * directorio y abre su tarjeta de entrega. Ocupa el mismo sitio que el
+ * micrófono —abajo a la derecha, 84px— porque hace su papel en esta vista: es
+ * la forma de sumar una entrega cuando no se dicta.
+ */
+export function BotonMas({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      aria-label="Agregar un cliente que no está en la lista"
+      style={{
+        position: "absolute",
+        // Igual que el micrófono: la capa padre no deja pasar los toques salvo
+        // que cada hijo lo pida.
+        pointerEvents: "auto",
+        right: 18,
+        bottom: "calc(106px + var(--seguro-abajo))",
+        width: 84,
+        height: 84,
+        borderRadius: "50%",
+        background: "var(--acento-900)",
+        border: "2px solid var(--acento)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        boxShadow: "0 10px 30px rgba(0,0,0,.6)",
+        color: "var(--acento-200)",
+      }}
+    >
+      <Plus size={38} strokeWidth={2.2} />
     </button>
   );
 }
