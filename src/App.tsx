@@ -26,10 +26,11 @@ import { useCola, useConexion } from "./voz/cola";
 import {
   descartarDictado,
   hayInternet,
-  interpretar,
   interpretarAudio,
+  interpretarYa,
   ligarAEntrega,
   limpiarAudiosViejos,
+  refinar,
   type Interpretacion,
 } from "./voz/interpretar";
 import { duracion, useGrabadora } from "./voz/grabacion";
@@ -168,17 +169,47 @@ export default function App() {
     [fecha, jornada],
   );
 
+  /**
+   * De un texto escrito a la tarjeta, **sin hacerle esperar la red**.
+   *
+   * El parser local llena la tarjeta al instante y Gemini la repasa después,
+   * ya con la tarjeta en pantalla. Antes se esperaba a Gemini antes de enseñar
+   * nada y el teléfono se quedaba parado varios segundos con el dedo encima
+   * del botón. Mientras dura el repaso, la tarjeta lo dice en pequeño.
+   */
   const procesar = useCallback(
     async (texto: string) => {
       setEscribiendo(false);
       setPensando(true);
+      let base: Awaited<ReturnType<typeof interpretarYa>>;
       try {
-        await proponer(await interpretar(texto));
+        base = await interpretarYa(texto);
+        await proponer(base.puedeRefinar ? { ...base, aviso: "afinando…" } : base);
       } finally {
         setPensando(false);
       }
+      if (!base.puedeRefinar) return;
+
+      const mejor = await refinar(base.dictadoId, texto);
+      // El repaso solo pisa la tarjeta si sigue siendo la misma y él no la ha
+      // tocado: lo que acaba de corregir a mano manda sobre lo que diga la IA.
+      // `cargar_stock` se queda fuera: eso no se confirma en tarjeta.
+      if (!mejor || mejor.intencion === "cargar_stock") {
+        setPropuesta((actual) =>
+          actual && actual.dictadoId === base.dictadoId && actual.aviso === "afinando…"
+            ? { ...actual, aviso: undefined }
+            : actual,
+        );
+        return;
+      }
+      const { resultado } = await identificar(mejor.cliente, fecha);
+      setPropuesta((actual) => {
+        if (!actual || actual.dictadoId !== base.dictadoId || actual.editadaAMano) return actual;
+        if (resultado.decision === "ambiguo" || resultado.decision === "nueva") avisoAtencion();
+        return { ...actual, intencion: mejor, emparejamiento: resultado, aviso: undefined };
+      });
     },
-    [proponer],
+    [proponer, fecha],
   );
 
   /**
@@ -371,6 +402,8 @@ export default function App() {
       setPropuesta({
         ...propuesta,
         emparejamiento: { ...propuesta.emparejamiento, decision: "encontrada", mejor: candidata },
+        // Eligió tienda a mano: el repaso de la IA ya no puede cambiársela.
+        editadaAMano: true,
       });
     },
     [propuesta],
@@ -385,7 +418,11 @@ export default function App() {
   const editarPropuesta = useCallback(
     (cambios: Partial<Intencion>) => {
       setPropuesta((actual) =>
-        actual ? { ...actual, intencion: { ...actual.intencion, ...cambios } } : actual,
+        actual
+          ? // Lo que corrige a mano manda: el repaso de la IA, que llega
+            // después, ya no le pisa estos campos.
+            { ...actual, intencion: { ...actual.intencion, ...cambios }, editadaAMano: true }
+          : actual,
       );
     },
     [],

@@ -295,6 +295,15 @@ una tienda existente en silencio: **el emparejamiento siempre se muestra antes d
   (en `entregas.ts`, no en la pantalla) siembra la lista con `[e.peso]` antes de sumar la
   nueva cuando no había tandas. Cualquier función que convierta un `peso` suelto en `tandas`
   tiene que arrastrar el peso que ya estaba, nunca arrancar de cero.
+- **La tarjeta no espera a Gemini: sale con el parser local y se afina después.** Al pulsar
+  «Continuar» se esperaba la respuesta de la IA antes de enseñar nada, y el teléfono se
+  quedaba parado varios segundos con el dedo encima del botón. Ahora `interpretarYa()` llena
+  la tarjeta al instante (~200 ms, solo parser local, sin red) y `refinar()` la corrige cuando
+  Gemini responde, con un «afinando…» discreto mientras tanto. Tres cuidados: el repaso solo
+  pisa la tarjeta si **sigue siendo la misma** (`dictadoId`) y **él no la ha tocado**
+  (`editadaAMano`, que ponen `editarPropuesta` y `elegirOtra`) — lo que corrige a mano manda
+  sobre la IA; y la llamada lleva `AbortSignal.timeout` (§`TOPE_REPASO_MS`), o una petición
+  colgada dejaba el «afinando…» para siempre.
 - **En Hoy, entregas y cobros sueltos son una sola lista ordenada, no dos bloques.** Los
   cobros sueltos —pasar solo a cobrar deuda vieja, sin dejar nada hoy— se pintaban fijos
   arriba y el botón de orden solo movía las entregas: se veía primero lo ya cobrado y recién

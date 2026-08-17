@@ -53,13 +53,24 @@ export async function guardarDictado(
   });
 }
 
+/**
+ * Hasta cuánto se espera a que Gemini repase un dictado escrito.
+ *
+ * Pasado ese tiempo se corta y se queda lo del parser local, que ya está en
+ * pantalla: el dictado queda `pendiente` y la cola lo repasa luego. Sin este
+ * tope, una petición colgada dejaba la tarjeta diciendo «afinando…» para
+ * siempre.
+ */
+const TOPE_REPASO_MS = 8000;
+
 /** Le pide a Gemini que estructure el texto. Lanza si no puede. */
-export async function conGemini(transcripcion: string): Promise<Intencion> {
+export async function conGemini(transcripcion: string, senal?: AbortSignal): Promise<Intencion> {
   const config = await configuracionIA();
   const nombres = (await db.tiendas.toArray()).map((t) => t.nombre);
   const bruto = await pedirJSON<Record<string, unknown>>(config, {
     prompt: promptDe(transcripcion, nombres),
     esquema: ESQUEMA_INTENCION,
+    senal,
   });
   return sanear(bruto);
 }
@@ -130,6 +141,88 @@ export async function interpretarAudio(
   }
 }
 
+/** Deja anotado en el dictado lo que se entendió y de dónde salió. */
+async function anotarDictado(
+  dictadoId: number,
+  intencion: Intencion,
+  origen: "gemini" | "local",
+  error?: string,
+  pendiente = true,
+): Promise<void> {
+  await db.dictados.update(dictadoId, {
+    intencion: intencion.intencion,
+    json: JSON.stringify(intencion),
+    origen,
+    // `local` queda pendiente solo si hay algo que esperar: la cola lo
+    // repasará con Gemini cuando vuelva la señal.
+    estado: origen === "gemini" || !pendiente ? "procesado" : "pendiente",
+    error,
+  });
+}
+
+/**
+ * Lo que el parser local saca **al instante**, ya guardado y sin tocar la red.
+ *
+ * Es lo que llena la tarjeta en cuanto él pulsa «Continuar»: esperar a Gemini
+ * antes de enseñar nada dejaba la pantalla parada varios segundos con el
+ * teléfono en la mano. Gemini repasa después, con `refinar`.
+ *
+ * `puedeRefinar` dice si vale la pena ese repaso: sin key no hay nada que
+ * esperar y lo del parser es la respuesta final.
+ */
+export async function interpretarYa(
+  transcripcion: string,
+  extra: { audioBlob?: Blob; duracionMs?: number } = {},
+): Promise<Interpretacion & { puedeRefinar: boolean }> {
+  const dictadoId = await guardarDictado(transcripcion, extra);
+  const local = interpretarLocal(transcripcion);
+  const config = await configuracionIA();
+
+  const conKey = !!config.apiKey;
+  const conRed = hayInternet();
+  // Sin key, lo del parser es definitivo: dejarlo «pendiente» solo llenaría
+  // la cola para siempre. Sin señal sí queda pendiente, para repasarlo luego.
+  await anotarDictado(
+    dictadoId,
+    local,
+    "local",
+    undefined,
+    conKey && conRed ? true : !conKey ? false : true,
+  );
+
+  return {
+    intencion: local,
+    origen: "local",
+    dictadoId,
+    transcripcion,
+    aviso: !conKey ? "Sin API key" : !conRed ? "Sin señal" : undefined,
+    puedeRefinar: conKey && conRed,
+  };
+}
+
+/**
+ * Repasa con Gemini un dictado que ya está en pantalla y devuelve lo que
+ * entendió, o `null` si no se pudo (sin red, error, o tardó demasiado).
+ *
+ * Nunca lanza: si falla, lo del parser local se queda como está y el dictado
+ * sigue `pendiente` para que la cola lo reintente.
+ */
+export async function refinar(
+  dictadoId: number,
+  transcripcion: string,
+): Promise<Intencion | null> {
+  try {
+    const remota = await conGemini(transcripcion, AbortSignal.timeout(TOPE_REPASO_MS));
+    await anotarDictado(dictadoId, remota, "gemini");
+    return remota;
+  } catch (e) {
+    const aviso = e instanceof Error ? e.message : "No se pudo consultar la IA";
+    const dictado = await db.dictados.get(dictadoId);
+    if (dictado) await db.dictados.update(dictadoId, { error: aviso });
+    return null;
+  }
+}
+
 export async function interpretar(
   transcripcion: string,
   extra: { audioBlob?: Blob; duracionMs?: number } = {},
@@ -138,22 +231,12 @@ export async function interpretar(
   const local = interpretarLocal(transcripcion);
   const config = await configuracionIA();
 
-  const anotar = async (
+  const anotar = (
     intencion: Intencion,
     origen: "gemini" | "local",
     error?: string,
     pendiente = true,
-  ) => {
-    await db.dictados.update(dictadoId, {
-      intencion: intencion.intencion,
-      json: JSON.stringify(intencion),
-      origen,
-      // `local` queda pendiente solo si hay algo que esperar: la cola lo
-      // repasará con Gemini cuando vuelva la señal.
-      estado: origen === "gemini" || !pendiente ? "procesado" : "pendiente",
-      error,
-    });
-  };
+  ) => anotarDictado(dictadoId, intencion, origen, error, pendiente);
 
   if (!config.apiKey) {
     // Sin key no hay nada que repasar: lo del parser es la respuesta final, y

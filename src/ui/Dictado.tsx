@@ -150,6 +150,11 @@ export interface Propuesta {
    * transcripción y el «¿es esta?»: ya sabemos a quién, la tocó él mismo.
    */
   manual?: boolean;
+  /**
+   * Ya la corrigió a mano. El repaso de Gemini, que llega después de que la
+   * tarjeta está en pantalla, **no puede pisar** lo que él acaba de escribir.
+   */
+  editadaAMano?: boolean;
 }
 
 /**
