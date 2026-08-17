@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type MutableRefObject } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Search } from "lucide-react";
 import { cuentasPendientes, registrarCobro } from "../db/entregas";
-import { repartirPago, TOPE_REDONDEO } from "../dominio/calculo";
+import { descripcionEntrega, repartirPago, TOPE_REDONDEO } from "../dominio/calculo";
 import { aCentimos, money } from "../lib/dinero";
 import { diaCorto, type DiaISO } from "../lib/fecha";
 import { avisoGuardado } from "../lib/aviso";
@@ -290,6 +290,20 @@ export function Cobranza({
           const centimos = aCentimos(Number(monto.replace(",", ".")) || 0);
           const reparto = repartirPago(centimos, c.deuda, c.delDia);
 
+          // Qué se le está cobrando de hoy: los datos de la entrega, con su
+          // precio, para no cobrar a ciegas. Solo las que aún deben algo; si
+          // dejó dos veces, se resume. Sin nada de hoy, la línea «Deuda del X»
+          // de abajo ya dice que es de un día anterior.
+          const pendientesHoy = c.entregas.filter(
+            (e) => e.totalCalculado - e.totalCobrado - e.descuentoRedondeo > 0,
+          );
+          const descHoy =
+            pendientesHoy.length === 1
+              ? descripcionEntrega(pendientesHoy[0])
+              : pendientesHoy.length > 1
+                ? `${pendientesHoy.length} entregas de hoy`
+                : null;
+
           return (
             <div key={c.tienda.id} style={{ ...S.tarjeta, padding: "13px 14px" }}>
               <div
@@ -314,6 +328,12 @@ export function Cobranza({
                   </div>
                 )}
               </div>
+
+              {descHoy && (
+                <div style={{ fontSize: 13, color: "var(--texto-3)", marginTop: -3, marginBottom: 8 }}>
+                  {descHoy}
+                </div>
+              )}
 
               {c.delDia > 0 && (
                 <div

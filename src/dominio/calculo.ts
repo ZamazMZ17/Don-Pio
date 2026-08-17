@@ -1,6 +1,27 @@
 import type { Centimos, Gramos } from "../lib/dinero";
-import { totalDePeso } from "../lib/dinero";
-import type { EstadoPago } from "../db/db";
+import { kgCorto, totalDePeso } from "../lib/dinero";
+import type { EstadoPago, Entrega } from "../db/db";
+
+/**
+ * Los datos de una entrega en una línea: «3 pollos · 7.7 kg · 8.80/kg». Se usa
+ * igual en la agenda de Hoy, en la vista de ruta y en Cobranza, para que lo
+ * entregado se lea igual en todas.
+ */
+export function descripcionEntrega(
+  e: Pick<Entrega, "pollos" | "pechos" | "piernas" | "peso" | "precioKg">,
+): string {
+  // Singular de verdad: «1 pollos» se lee a error de la app.
+  const cuantos = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
+  const partes: string[] = [];
+  if (e.pollos) partes.push(cuantos(e.pollos, "pollo", "pollos"));
+  if (e.pechos) partes.push(cuantos(e.pechos, "pecho", "pechos"));
+  if (e.piernas) partes.push(cuantos(e.piernas, "pierna", "piernas"));
+  if (partes.length === 0) partes.push("sin cantidad");
+  // Sin peso no se enseña «0.0 kg · 0.00/kg»: eso parece un error de la app,
+  // no una entrega de trato cerrado.
+  partes.push(e.peso > 0 ? `${kgCorto(e.peso)} · ${(e.precioKg / 100).toFixed(2)}/kg` : "sin pesar");
+  return partes.join(" · ");
+}
 
 /**
  * Las reglas de cálculo del negocio, sin nada de React ni de base de datos.

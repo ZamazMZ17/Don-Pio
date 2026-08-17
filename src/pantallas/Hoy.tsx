@@ -3,10 +3,10 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db, type Entrega, type Tienda } from "../db/db";
 import { leerJornada, resumenDe } from "../db/jornada";
 import { deudasPorTienda } from "../db/tiendas";
-import { estadoDe, COLOR_ESTADO, TEXTO_ESTADO } from "../dominio/calculo";
+import { descripcionEntrega, estadoDe, COLOR_ESTADO, TEXTO_ESTADO } from "../dominio/calculo";
 import { mediana } from "../tiendas/emparejar";
 import { diaCorto, diaLargo, horaTxt, type DiaISO } from "../lib/fecha";
-import { kgCorto, money } from "../lib/dinero";
+import { money } from "../lib/dinero";
 import { useAjuste, useHolguraMic } from "../lib/ganchos";
 import { ChevronRight, Plus, Sparkles } from "lucide-react";
 import { guardarAjuste, CLAVE_API, CLAVE_ORDEN, CLAVE_MODO_HOY } from "../voz/ajustes";
@@ -522,24 +522,6 @@ export function Hoy({
       </div>
     </div>
   );
-}
-
-/**
- * Los datos de una entrega en una línea: «3 pollos · 7.7 kg · 8.80/kg». Igual
- * en la agenda y en la ruta, para que lo entregado se lea igual en las dos.
- */
-function descripcionEntrega(e: Entrega): string {
-  // Singular de verdad: «1 pollos» se lee a error de la app.
-  const cuantos = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
-  const partes: string[] = [];
-  if (e.pollos) partes.push(cuantos(e.pollos, "pollo", "pollos"));
-  if (e.pechos) partes.push(cuantos(e.pechos, "pecho", "pechos"));
-  if (e.piernas) partes.push(cuantos(e.piernas, "pierna", "piernas"));
-  if (partes.length === 0) partes.push("sin cantidad");
-  // Sin peso no se enseña «0.0 kg · 0.00/kg»: eso parece un error de la app,
-  // no una entrega de trato cerrado.
-  partes.push(e.peso > 0 ? `${kgCorto(e.peso)} · ${(e.precioKg / 100).toFixed(2)}/kg` : "sin pesar");
-  return partes.join(" · ");
 }
 
 /** Un botón del interruptor Agenda / Ruta. Objetivo táctil de 52px. */
