@@ -8,8 +8,8 @@ import { mediana } from "../tiendas/emparejar";
 import { diaCorto, diaLargo, horaTxt, type DiaISO } from "../lib/fecha";
 import { money } from "../lib/dinero";
 import { useAjuste, useHolguraMic } from "../lib/ganchos";
-import { ChevronRight, Plus, Sparkles } from "lucide-react";
-import { guardarAjuste, CLAVE_API, CLAVE_ORDEN, CLAVE_MODO_HOY } from "../voz/ajustes";
+import { Plus } from "lucide-react";
+import { guardarAjuste, CLAVE_ORDEN, CLAVE_MODO_HOY } from "../voz/ajustes";
 import { S, Vacio } from "../ui/base";
 // Importado como módulo, no referenciado por ruta absoluta: es el único
 // sitio de la app que pinta una imagen suelta, y `/icono-192.png` a pelo no
@@ -34,17 +34,14 @@ export function Hoy({
   fecha,
   abrir,
   abrirStock,
-  abrirAjustes,
   registrarEnTienda,
 }: {
   fecha: DiaISO;
   abrir: (entregaId: number) => void;
   abrirStock: () => void;
-  abrirAjustes: () => void;
   /** Abre la tarjeta de entrega tocando una tienda en la vista de ruta. */
   registrarEnTienda: (tienda: Tienda) => void;
 }) {
-  const conIA = useAjuste(CLAVE_API) !== "";
   const orden = useAjuste(CLAVE_ORDEN, "ruta");
   const modo = useAjuste(CLAVE_MODO_HOY, "agenda");
 
@@ -178,13 +175,24 @@ export function Hoy({
             />
             <div style={{ fontSize: 22, fontWeight: 600 }}>{diaCorto(fecha)}</div>
           </div>
-          <div
-            style={{
-              fontSize: 14,
-              color: jornada.estado === "cerrada" ? "var(--texto-4)" : "var(--texto-3)",
-            }}
-          >
-            jornada {jornada.estado}
+          {/*
+            «jornada» con un punto: verde mientras está abierta, rojo cuando ya
+            se cerró. Se lee de un vistazo y sin leer, que es de lo que se trata
+            con el teléfono en una mano.
+          */}
+          <div style={{ display: "flex", alignItems: "center", gap: 7, flex: "none" }}>
+            <span style={{ fontSize: 14, color: "var(--texto-3)" }}>jornada</span>
+            <span
+              aria-label={`jornada ${jornada.estado}`}
+              style={{
+                width: 11,
+                height: 11,
+                borderRadius: "50%",
+                flex: "none",
+                background:
+                  jornada.estado === "cerrada" ? "var(--rojo)" : "var(--verde)",
+              }}
+            />
           </div>
         </div>
 
@@ -197,7 +205,11 @@ export function Hoy({
           onClick={abrirStock}
           style={{
             display: "flex",
-            alignItems: "flex-end",
+            // Alineado por arriba, no por abajo: los dos números no miden lo
+            // mismo (30 y 44), así que cuadrar los pies dejaba los rótulos a
+            // distinta altura y la fila se veía chueca. Con los rótulos en la
+            // misma línea, los números arrancan parejos.
+            alignItems: "flex-start",
             gap: 14,
             marginBottom: 14,
             width: "100%",
@@ -208,16 +220,17 @@ export function Hoy({
               <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 <div style={{ ...S.rotulo, fontSize: 12, letterSpacing: 0.9 }}>Salí con</div>
                 <div
-                  style={{ fontSize: 30, fontWeight: 600, color: "var(--verde)", lineHeight: 1 }}
+                  style={{ fontSize: 30, fontWeight: 600, color: "var(--verde)", lineHeight: 1.1 }}
                 >
                   {resumen.stockPollos}
                 </div>
               </div>
-              <div style={{ fontSize: 26, color: "var(--texto-5)", paddingBottom: 2 }}>→</div>
+              {/* A la altura de los números, no de los rótulos. */}
+              <div style={{ fontSize: 26, color: "var(--texto-5)", marginTop: 18 }}>→</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 <div style={{ ...S.rotulo, fontSize: 12, letterSpacing: 0.9 }}>Me quedan</div>
                 <div
-                  style={{ fontSize: 44, fontWeight: 700, color: "var(--ambar)", lineHeight: 1 }}
+                  style={{ fontSize: 44, fontWeight: 700, color: "var(--ambar)", lineHeight: 1.1 }}
                 >
                   {resumen.restantePollos}
                 </div>
@@ -346,41 +359,6 @@ export function Hoy({
           </button>
         </div>
 
-        {/*
-          Sin API key el dictado se entiende con reglas, y eso se nota: nombres
-          a medias y pesos que se pierden. Como él siempre tiene internet, vale
-          la pena decírselo hasta que la ponga.
-        */}
-        {!conIA && (
-          <button
-            onClick={abrirAjustes}
-            className="pulsable"
-            style={{
-              background: "var(--acento-900)",
-              borderRadius: "var(--radio)",
-              padding: "13px 15px",
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              width: "100%",
-              marginBottom: 2,
-            }}
-          >
-            <Sparkles size={19} color="var(--acento-claro)" style={{ flex: "none" }} />
-            <span
-              style={{
-                flex: 1,
-                fontSize: 14,
-                color: "var(--acento-300)",
-                lineHeight: 1.45,
-                textAlign: "left",
-              }}
-            >
-              Pon tu API key de Gemini para que entienda bien lo que dictas
-            </span>
-            <ChevronRight size={20} color="var(--acento-claro)" style={{ flex: "none" }} />
-          </button>
-        )}
 
         {filas.length === 0 && (
           <Vacio

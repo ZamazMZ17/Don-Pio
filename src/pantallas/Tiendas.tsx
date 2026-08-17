@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Plus, Search, Trash2 } from "lucide-react";
 import { db } from "../db/db";
-import { useMemoriaScroll } from "../lib/ganchos";
+import { useAjuste, useMemoriaScroll } from "../lib/ganchos";
+import { CLAVE_ORDEN_TIENDAS, guardarAjuste } from "../voz/ajustes";
 import {
   actualizarTienda,
   agregarDeuda,
@@ -37,6 +38,8 @@ export function Tiendas() {
   const [noSePudo, setNoSePudo] = useState<{ id: number; deuda: Centimos } | null>(null);
   /** Las deudas viejas se fechan ayer: son de «antes», no de hoy. */
   const ayer = sumarDias(hoyISO(), -1);
+  /** "ruta" (por parada, como se reparte) o "abc" (alfabético, para buscar). */
+  const ordenTiendas = useAjuste(CLAVE_ORDEN_TIENDAS, "ruta");
 
   // Si lo dejó a medias, la confirmación de borrado no se queda armada
   // esperando un toque suelto que después borre algo sin querer.
@@ -70,9 +73,14 @@ export function Tiendas() {
   const { tiendas, deudas, saldos } = datos;
 
   const q = normalizar(busca);
-  const lista = (
-    q ? tiendas.filter((t) => parecido(q, t.nombreNorm) > 0.55) : tiendas
-  ).sort((a, b) => (a.ordenRuta || 99) - (b.ordenRuta || 99));
+  const filtradas = q ? tiendas.filter((t) => parecido(q, t.nombreNorm) > 0.55) : tiendas;
+  const lista = [...filtradas].sort((a, b) =>
+    ordenTiendas === "abc"
+      ? // Alfabético de verdad: `localeCompare` en español pone «Ángela» junto
+        // a «Angela» y no al final, que es lo que hace comparar cadenas a secas.
+        a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base" })
+      : (a.ordenRuta || 999) - (b.ordenRuta || 999),
+  );
 
   const crear = () => {
     const nombre = nombreNuevo.trim();
@@ -92,7 +100,32 @@ export function Tiendas() {
 
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <Cabecera titulo={`Tiendas · ${tiendas.length}`} />
+      <Cabecera
+        titulo={`Tiendas · ${tiendas.length}`}
+        derecha={
+          <button
+            onClick={() =>
+              void guardarAjuste(CLAVE_ORDEN_TIENDAS, ordenTiendas === "abc" ? "ruta" : "abc")
+            }
+            style={{
+              fontSize: 13,
+              color: "var(--acento-claro)",
+              fontWeight: 500,
+              // El mínimo táctil de 52px, con margen negativo para no engordar
+              // la cabecera (§4 y el fallo del botón de orden de Hoy).
+              minHeight: 52,
+              display: "inline-flex",
+              alignItems: "center",
+              whiteSpace: "nowrap",
+              padding: "0 10px",
+              margin: "-14px -6px",
+              flex: "none",
+            }}
+          >
+            {ordenTiendas === "abc" ? "A–Z ⇅" : "Por ruta ⇅"}
+          </button>
+        }
+      />
 
       <div style={{ flex: "none", padding: "0 20px 12px", display: "flex", gap: 8 }}>
         <div

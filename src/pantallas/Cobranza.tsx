@@ -6,7 +6,7 @@ import { descripcionEntrega, repartirPago, TOPE_REDONDEO } from "../dominio/calc
 import { aCentimos, money } from "../lib/dinero";
 import { diaCorto, type DiaISO } from "../lib/fecha";
 import { avisoGuardado } from "../lib/aviso";
-import { useAjuste, useHolguraMic, useMemoriaScroll } from "../lib/ganchos";
+import { useAjuste, useMemoriaScroll } from "../lib/ganchos";
 import { CLAVE_ORDEN_COBRANZA, guardarAjuste } from "../voz/ajustes";
 import { normalizar, parecido } from "../tiendas/normalizar";
 import { S, Vacio } from "../ui/base";
@@ -104,7 +104,6 @@ export function Cobranza({
   // La medida se rehace cuando cambia la cantidad de cuentas **o** el texto del
   // buscador: al filtrar, la lista visible se acorta y el hueco del micrófono
   // vuelve a decidirse.
-  const holguraMic = useHolguraMic(scrollRef, 190, 230, `${cuentas?.length ?? 0}:${busca}`);
   // No perder el sitio al cobrar: la lista se rehace y volvía al principio.
   const guardarScroll = useMemoriaScroll(scrollRef, "cobranza", cuentas);
 
@@ -262,13 +261,9 @@ export function Cobranza({
         className="scroll"
         style={{
           flex: 1,
-          // Hueco para la barra de pestañas y el micrófono, que flotan encima.
-          padding: "14px 18px 230px",
-          // Con pocas cuentas —que ni piden scroll— ese padding nunca llega a
-          // verse, y el micrófono tapa igual la última tarjeta desde el
-          // primer vistazo. Con muchas, el diseño de siempre ya funciona
-          // bien y esto no le toca nada (ver useHolguraMic).
-          marginBottom: holguraMic,
+          // Solo el hueco de la barra de pestañas: aquí ya no flota el
+          // micrófono, así que no hace falta reservarle sitio ni medir nada.
+          padding: "14px 18px 130px",
           display: "flex",
           flexDirection: "column",
           gap: 10,

@@ -13,7 +13,6 @@ import { avisoAtencion, avisoEntendido, avisoEscuchando, avisoGuardado, configur
 import { useAjuste, useAjusteBool, useTema } from "./lib/ganchos";
 import { useBotonAtras } from "./lib/atras";
 import {
-  CLAVE_API,
   CLAVE_MODO_HOY,
   CLAVE_MODO_TECLADO,
   CLAVE_SONIDO,
@@ -22,18 +21,13 @@ import {
   guardarAjuste,
   leerAjuste,
 } from "./voz/ajustes";
-import { useCola, useConexion } from "./voz/cola";
 import {
   descartarDictado,
-  hayInternet,
-  interpretarAudio,
   interpretarYa,
   ligarAEntrega,
   limpiarAudiosViejos,
-  refinar,
   type Interpretacion,
 } from "./voz/interpretar";
-import { duracion, useGrabadora } from "./voz/grabacion";
 import { useReconocedor } from "./voz/reconocimiento";
 import type { Candidata, Contexto } from "./tiendas/emparejar";
 import { intencionVacia, type Intencion } from "./voz/intencion";
@@ -89,9 +83,8 @@ export default function App() {
   const pila = useRef<Pantalla[]>([]);
 
   const fecha = hoyISO();
-  const enLinea = useConexion();
-  // La cola se revisa sola al volver la señal; ya no se enseña en pantalla.
-  useCola();
+  // Ya no hay cola de dictados que repasar: el dictado se resuelve entero en
+  // el teléfono, así que nada queda esperando señal.
   useTema();
   const sonido = useAjusteBool(CLAVE_SONIDO, true);
   /** "agenda" (lo ya hecho) o "ruta" (todos los clientes para ir tocando). */
@@ -170,46 +163,24 @@ export default function App() {
   );
 
   /**
-   * De un texto escrito a la tarjeta, **sin hacerle esperar la red**.
+   * De un texto escrito a la tarjeta. **Todo local, sin red.**
    *
-   * El parser local llena la tarjeta al instante y Gemini la repasa después,
-   * ya con la tarjeta en pantalla. Antes se esperaba a Gemini antes de enseñar
-   * nada y el teléfono se quedaba parado varios segundos con el dedo encima
-   * del botón. Mientras dura el repaso, la tarjeta lo dice en pequeño.
+   * El dictado ya no pasa por Gemini: lo interpreta el parser de reglas y la
+   * tarjeta sale al instante. Gemini queda reservado para los informes (cierre
+   * del día y resumen semanal), que es donde de verdad aporta y donde tardar
+   * unos segundos no estorba — repartiendo, esperar a la nube sí.
    */
   const procesar = useCallback(
     async (texto: string) => {
       setEscribiendo(false);
       setPensando(true);
-      let base: Awaited<ReturnType<typeof interpretarYa>>;
       try {
-        base = await interpretarYa(texto);
-        await proponer(base.puedeRefinar ? { ...base, aviso: "afinando…" } : base);
+        await proponer(await interpretarYa(texto));
       } finally {
         setPensando(false);
       }
-      if (!base.puedeRefinar) return;
-
-      const mejor = await refinar(base.dictadoId, texto);
-      // El repaso solo pisa la tarjeta si sigue siendo la misma y él no la ha
-      // tocado: lo que acaba de corregir a mano manda sobre lo que diga la IA.
-      // `cargar_stock` se queda fuera: eso no se confirma en tarjeta.
-      if (!mejor || mejor.intencion === "cargar_stock") {
-        setPropuesta((actual) =>
-          actual && actual.dictadoId === base.dictadoId && actual.aviso === "afinando…"
-            ? { ...actual, aviso: undefined }
-            : actual,
-        );
-        return;
-      }
-      const { resultado } = await identificar(mejor.cliente, fecha);
-      setPropuesta((actual) => {
-        if (!actual || actual.dictadoId !== base.dictadoId || actual.editadaAMano) return actual;
-        if (resultado.decision === "ambiguo" || resultado.decision === "nueva") avisoAtencion();
-        return { ...actual, intencion: mejor, emparejamiento: resultado, aviso: undefined };
-      });
     },
-    [proponer, fecha],
+    [proponer],
   );
 
   /**
@@ -231,47 +202,24 @@ export default function App() {
     ),
   );
 
-  const grab = useGrabadora();
-  const apiKey = useAjuste(CLAVE_API);
   /**
    * Por defecto se dicta con el teclado: el micrófono de Gboard transcribe
-   * igual de bien y **no gasta cuota de la API**, que en el plan gratuito se
-   * acaba en cuatro dictados. Se puede cambiar en Ajustes.
+   * igual de bien, **sin gastar datos ni cuota**. Se puede cambiar en Ajustes
+   * para usar el reconocedor de Android, que también funciona sin señal.
    */
   const modoTeclado = useAjusteBool(CLAVE_MODO_TECLADO, true);
   const escuchando = rec.estado === "escuchando" || rec.estado === "pidiendo";
-  const grabando = grab.estado === "grabando" || grab.estado === "pidiendo";
-  const dictando = escuchando || grabando;
-  /** Con key e internet manda el audio a Gemini; si no, reconocedor offline. */
-  const porAudio = !modoTeclado && apiKey !== "" && enLinea && hayInternet();
+  const dictando = escuchando;
 
   /**
    * Dictar.
    *
-   * Con API key e internet **se graba el audio y se manda entero a Gemini**,
-   * que transcribe y estructura de una vez. El reconocedor del teléfono se
-   * comía el nombre del cliente («hay de cinco pollos») porque transcribe a
-   * ciegas; Gemini oye las pausas y la entonación, que es donde está la
-   * separación entre el nombre y las cantidades.
-   *
-   * Sin key o sin señal se usa el reconocedor de Android, que funciona offline.
+   * Ya no se manda audio a ningún lado: lo que se dicta lo transcribe el
+   * teclado o el reconocedor del teléfono, y lo interpreta el parser de reglas
+   * aquí mismo. Todo el circuito es local, así que funciona igual sin señal y
+   * la tarjeta sale al instante.
    */
   const dictar = useCallback(async () => {
-    if (grabando) {
-      const audio = await grab.detener();
-      if (!audio) {
-        avisoAtencion();
-        return;
-      }
-      avisoEntendido();
-      setPensando(true);
-      try {
-        await proponer(await interpretarAudio(audio, ""));
-      } finally {
-        setPensando(false);
-      }
-      return;
-    }
     if (escuchando) {
       rec.detener();
       return;
@@ -279,16 +227,15 @@ export default function App() {
 
     setPropuesta(null);
     // Modo teclado: se abre el cuadro de escribir y él usa el micrófono de su
-    // teclado. Un toque más, pero gratis y con mejor transcripción.
+    // teclado. Un toque más, pero con mejor transcripción.
     if (modoTeclado) {
       setEscribiendo(true);
       return;
     }
     setEscribiendo(false);
     avisoEscuchando();
-    if (porAudio) await grab.iniciar();
-    else await rec.iniciar();
-  }, [grab, rec, grabando, escuchando, porAudio, modoTeclado, proponer]);
+    await rec.iniciar();
+  }, [rec, escuchando, modoTeclado]);
 
   /** Confirma la propuesta. Aquí es donde por fin se escribe en la base. */
   const confirmar = useCallback(
@@ -443,7 +390,6 @@ export default function App() {
       setPropuesta(null);
       setEscribiendo(false);
       rec.cancelar();
-      grab.cancelar();
     },
     [rec],
   );
@@ -457,7 +403,6 @@ export default function App() {
   useBotonAtras(() => {
     if (dictando) {
       rec.cancelar();
-      grab.cancelar();
       return true;
     }
     if (propuesta) {
@@ -518,7 +463,11 @@ export default function App() {
     pantalla === "cobranza" ||
     pantalla === "tiendas" ||
     pantalla === "menu";
-  const conMic = pantalla === "hoy" || pantalla === "cobranza";
+  /**
+   * El micrófono vive solo en Hoy. En Cobranza estorbaba: ahí no se dicta
+   * nada —se cobra tocando las tarjetas— y encima tapaba el último botón.
+   */
+  const conMic = pantalla === "hoy";
   /**
    * Mientras escucha, el micrófono flotante se quita: tapaba la mitad de lo
    * que se está transcribiendo. Para parar está el botón «Ya terminé» dentro
@@ -548,7 +497,6 @@ export default function App() {
             setPantalla("detalle");
           }}
           abrirStock={() => setPantalla("stock")}
-          abrirAjustes={() => ir("ajustes")}
           registrarEnTienda={registrarEnTienda}
         />
       )}
@@ -602,20 +550,13 @@ export default function App() {
           }}
         >
           {escuchando && <HojaEscuchando texto={rec.parcial} onTerminar={rec.detener} />}
-          {grabando && (
-            <HojaEscuchando
-              texto={`Grabando · ${duracion(grab.ms)}`}
-              onda={grab.onda}
-              onTerminar={() => void dictar()}
-            />
-          )}
           {escribiendo && (
             <HojaEscribir
               onEnviar={(t) => void procesar(t)}
               onCerrar={() => setEscribiendo(false)}
             />
           )}
-          {(rec.error || grab.error) && (
+          {rec.error && (
             <div
               style={{
                 pointerEvents: "auto",
@@ -628,7 +569,7 @@ export default function App() {
                 border: "1px solid var(--borde)",
               }}
             >
-              {rec.error ?? grab.error}
+              {rec.error}
             </div>
           )}
           {propuesta && (

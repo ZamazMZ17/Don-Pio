@@ -23,6 +23,8 @@ export const CLAVE_MODO_HOY = "modoHoy";
  * dejó es la primera que se vuelve a encontrar.
  */
 export const CLAVE_ORDEN_COBRANZA = "ordenCobranza";
+/** Cómo se ordena el directorio: "ruta" (por parada) o "abc" (alfabético). */
+export const CLAVE_ORDEN_TIENDAS = "ordenTiendas";
 /**
  * Dictar con el micrófono del teclado (Gboard) en vez de grabar audio para
  * Gemini. Es gratis, no gasta cuota de la API y transcribe muy bien: el teclado

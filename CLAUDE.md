@@ -24,9 +24,10 @@ De ahí salen las dos reglas que mandan sobre todo lo demás:
 1. **La voz es la entrada principal, no un extra.** El micrófono es el botón más grande
    de la app. La pantalla sirve para *confirmar y corregir*, no para capturar a mano
    (aunque siempre se pueda).
-2. **Offline de verdad.** Todo se escribe primero en el teléfono. Gemini solo *refina*
-   cuando hay internet. **Si la app necesita señal para registrar una entrega, es
-   inusable.** Esto no es negociable.
+2. **Offline de verdad.** Todo se resuelve en el teléfono: registrar una entrega no toca
+   la red en ningún momento. **Si la app necesita señal para registrar una entrega, es
+   inusable.** Esto no es negociable. (Gemini quedó fuera del dictado por eso mismo — y
+   porque esperar a la nube con el dedo en el botón se hacía eterno; ver §3.)
 
 Corolario: cada acción por voz se confirma con **sonido y vibración**, para que él sepa
 que quedó registrado sin mirar la pantalla.
@@ -39,8 +40,8 @@ que quedó registrado sin mirar la pantalla.
 |---|---|
 | Plataforma | **PWA + APK por Capacitor**, pensada para Android. Mismo stack que LyKari |
 | Almacenamiento | **IndexedDB vía Dexie**, local-first. Nada de servidor propio |
-| Dictado (camino normal) | **Se graba el audio y va entero a Gemini**, que transcribe y estructura de una vez |
-| Dictado (sin key o sin señal) | Reconocedor nativo de Android (offline) + **parser local de reglas** |
+| Dictado | **Todo local**: lo transcribe el teclado (Gboard) o el reconocedor nativo de Android, y lo interpreta el **parser de reglas**. Sin red de por medio: la tarjeta sale al instante y funciona igual sin señal |
+| Gemini | **No interviene en el dictado.** Queda reservado para los informes — el resumen al cerrar el día y el de la semana —, donde tardar unos segundos no estorba |
 | API key | Vive en el dispositivo, pegada desde Ajustes. **Nunca en el repo, nunca en el APK** |
 | Directorio de tiendas | **Se construye solo, desde los dictados.** No hay carga manual masiva |
 | Desambiguar homónimos | Por **nombre + hora del día + posición en la ruta**. Ver §6 |
@@ -93,7 +94,8 @@ Dos reglas de navegación que ya costaron un fallo:
 
 - **Las cuatro pestañas siempre enseñan la barra.** Una pestaña que la esconde es una
   trampa: se entra a Menú y no hay forma de salir.
-- **El micrófono solo aparece en Hoy y Cobranza.** En Tiendas o Menú no hay nada que dictar.
+- **El micrófono solo aparece en Hoy.** En Cobranza no se dicta —se cobra tocando las tarjetas—
+  y encima tapaba el último botón; en Tiendas o Menú no hay nada que dictar.
 
 Junto al micrófono hay un botón de teclado: **escribir tiene que ser siempre posible**.
 Si el micrófono no tiene permiso, si el mercado está a tope de ruido o si simplemente no
@@ -106,10 +108,10 @@ intérprete que lo dictado.
 | **Detalle de entrega** | Cantidades con +/−, tandas de peso que se suman solas, precio por kilo, total en grande, pago y saldo, y la deuda anterior arriba |
 | **Cobranza** | El modo del retorno: solo tiendas con saldo, con la cuenta ya sacada (día + deuda). Ordenada **del último al primero** por defecto: reparte de ida y cobra de vuelta, así que la última tienda a la que dejó es la primera que reencuentra. Las que ya **abonaron una parte** (pago parcial, `tocada`) se hunden al final con una etiqueta «ya abonó», para que no estorben arriba y suba la siguiente por cobrar del todo |
 | **Cierre del día** | «Deberías tener S/ X en la caja» para cuadrar contra la plata física |
-| **Tiendas** | El directorio que se construyó solo |
+| **Tiendas** | El directorio que se construyó solo, con buscador y orden **por ruta o alfabético (A–Z)** |
 | **Historial** | Días cerrados y la semana |
 | **Detalle de día** | Un día cerrado, entrega por entrega |
-| **Ajustes** | Apariencia (oscuro/claro/sistema), hora de cierre, redondeo, sonido, respaldo, y la API key de Gemini |
+| **Ajustes** | Apariencia (oscuro/claro/sistema), hora de cierre, redondeo, sonido, respaldo, la API key de Gemini (solo para informes) y **Actualización**: qué versión tiene puesta y el enlace para bajar la última |
 | **Cargar stock** | «¿Con cuánto sales hoy?», con la sugerencia aprendida por día de semana |
 | **Menú** | Cuadrícula de 7 fichas, detrás de la pestaña «Más» |
 

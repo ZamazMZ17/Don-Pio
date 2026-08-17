@@ -161,43 +161,22 @@ async function anotarDictado(
 }
 
 /**
- * Lo que el parser local saca **al instante**, ya guardado y sin tocar la red.
+ * Interpreta un dictado **al instante y sin red**: es el único camino del
+ * dictado desde que Gemini quedó reservado para los informes.
  *
- * Es lo que llena la tarjeta en cuanto él pulsa «Continuar»: esperar a Gemini
- * antes de enseñar nada dejaba la pantalla parada varios segundos con el
- * teléfono en la mano. Gemini repasa después, con `refinar`.
- *
- * `puedeRefinar` dice si vale la pena ese repaso: sin key no hay nada que
- * esperar y lo del parser es la respuesta final.
+ * Lo del parser de reglas es la respuesta final —no hay repaso que esperar—,
+ * así que el dictado queda `procesado` y no se encola para nada. Lo que el
+ * parser no acierte se corrige en la tarjeta, que para eso se enseña siempre
+ * antes de guardar.
  */
 export async function interpretarYa(
   transcripcion: string,
   extra: { audioBlob?: Blob; duracionMs?: number } = {},
-): Promise<Interpretacion & { puedeRefinar: boolean }> {
+): Promise<Interpretacion> {
   const dictadoId = await guardarDictado(transcripcion, extra);
   const local = interpretarLocal(transcripcion);
-  const config = await configuracionIA();
-
-  const conKey = !!config.apiKey;
-  const conRed = hayInternet();
-  // Sin key, lo del parser es definitivo: dejarlo «pendiente» solo llenaría
-  // la cola para siempre. Sin señal sí queda pendiente, para repasarlo luego.
-  await anotarDictado(
-    dictadoId,
-    local,
-    "local",
-    undefined,
-    conKey && conRed ? true : !conKey ? false : true,
-  );
-
-  return {
-    intencion: local,
-    origen: "local",
-    dictadoId,
-    transcripcion,
-    aviso: !conKey ? "Sin API key" : !conRed ? "Sin señal" : undefined,
-    puedeRefinar: conKey && conRed,
-  };
+  await anotarDictado(dictadoId, local, "local", undefined, false);
+  return { intencion: local, origen: "local", dictadoId, transcripcion };
 }
 
 /**

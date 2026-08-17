@@ -171,8 +171,9 @@ export function Ajustes({ volver }: { volver: () => void }) {
           <div
             style={{ fontSize: 14, color: "var(--texto-3)", marginBottom: 12, lineHeight: 1.5 }}
           >
-            Tu API key se guarda solo en este teléfono. Sin ella la app funciona igual, pero
-            entiende el dictado con reglas en vez de con IA.
+            Tu API key se guarda solo en este teléfono. Se usa para los informes —el resumen al
+            cerrar el día y el de la semana—, no para dictar: el dictado se entiende aquí mismo,
+            sin internet.
           </div>
 
           <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
@@ -333,10 +334,42 @@ export function Ajustes({ volver }: { volver: () => void }) {
             </div>
           )}
         </div>
+
+        {/*
+          Actualizar la app. El APK se publica siempre en el mismo sitio, así
+          que aquí basta con enseñar qué versión tiene puesta y llevarlo a la
+          página de descarga: la app no puede instalarse sola sin permisos que
+          no vale la pena pedir.
+        */}
+        <div style={{ ...S.tarjeta, borderRadius: 12, padding: 16 }}>
+          <div style={{ ...S.rotulo, marginBottom: 4 }}>Actualización</div>
+          <div
+            style={{ fontSize: 14, color: "var(--texto-3)", marginBottom: 4, lineHeight: 1.5 }}
+          >
+            Tienes puesta la versión
+          </div>
+          <div style={{ fontSize: 17, fontWeight: 600, marginBottom: 12 }}>{__VERSION_APP__}</div>
+          <div
+            style={{ fontSize: 14, color: "var(--texto-3)", marginBottom: 12, lineHeight: 1.5 }}
+          >
+            Abre la página de descarga: si la de ahí es más nueva que esta, bájala e instálala
+            encima. No se pierde nada de lo que tienes registrado.
+          </div>
+          <button
+            onClick={() => window.open(URL_DESCARGA, "_blank", "noopener")}
+            className="pulsable"
+            style={botonRespaldo}
+          >
+            Buscar actualización
+          </button>
+        </div>
       </div>
     </div>
   );
 }
+
+/** Donde se publica siempre el último APK. */
+const URL_DESCARGA = "https://github.com/ZamazMZ17/Don-Pio/releases/tag/apk-latest";
 
 const campo: React.CSSProperties = {
   flex: 1,
