@@ -177,6 +177,13 @@ export function TarjetaConfirmacion({
   const { intencion: i, emparejamiento: em } = propuesta;
   const [eligiendo, setEligiendo] = useState(em.decision === "ambiguo" || !em.mejor);
   const [nombreNuevo, setNombreNuevo] = useState(em.mejor?.tienda.nombre ?? i.cliente);
+  /**
+   * Piernas y pechos son la excepción: la mayoría de entregas son pollos
+   * enteros y nada más, así que sus campos no ocupan sitio hasta que hacen
+   * falta. Se muestran si ya venían con valor (de un dictado) o si él los pide
+   * con «+ piernas o pechos» — que es lo que faltaba al registrar tocando.
+   */
+  const [mostrarPresas, setMostrarPresas] = useState(i.piernas > 0 || i.pechos > 0);
 
   const tandas = i.tandasKg.map(aGramos);
   const precio = i.precioPorKg ? aCentimos(i.precioPorKg) : precioDefectoKg;
@@ -364,28 +371,29 @@ export function TarjetaConfirmacion({
               marginBottom: 16,
             }}
           >
-            {/* Pechos y piernas solo ocupan sitio si los hay: en la mayoría
-                de las entregas son pollos enteros y nada más. */}
+            {/* Pechos y piernas solo ocupan sitio si los hay o si él los pide. */}
             <CampoEditable
               flex={1}
-              rotulo={i.pechos || i.piernas ? "Enteros" : "Pollos"}
+              rotulo={mostrarPresas ? "Enteros" : "Pollos"}
               valor={String(i.pollos)}
               onGuardar={(n) => onEditar({ pollos: Math.max(0, Math.round(n)) })}
             />
-            {i.pechos > 0 && (
-              <CampoEditable
-                flex={1}
-                rotulo="Pechos"
-                valor={String(i.pechos)}
-                onGuardar={(n) => onEditar({ pechos: Math.max(0, Math.round(n)) })}
-              />
-            )}
-            {i.piernas > 0 && (
+            {mostrarPresas && (
               <CampoEditable
                 flex={1}
                 rotulo="Piernas"
-                valor={String(i.piernas)}
+                valor={i.piernas ? String(i.piernas) : ""}
+                placeholder="0"
                 onGuardar={(n) => onEditar({ piernas: Math.max(0, Math.round(n)) })}
+              />
+            )}
+            {mostrarPresas && (
+              <CampoEditable
+                flex={1}
+                rotulo="Pechos"
+                valor={i.pechos ? String(i.pechos) : ""}
+                placeholder="0"
+                onGuardar={(n) => onEditar({ pechos: Math.max(0, Math.round(n)) })}
               />
             )}
             <CampoEditable
@@ -404,6 +412,28 @@ export function TarjetaConfirmacion({
               onGuardar={(n) => onEditar({ precioPorKg: n > 0 ? n : null })}
             />
           </div>
+
+          {/* La forma de sumar piernas o pechos cuando el pollo va partido:
+              parte un pecho por un lado y una pierna por otro. Sin esto, al
+              registrar tocando no había dónde ponerlos. */}
+          {!mostrarPresas && (
+            <button
+              onClick={() => setMostrarPresas(true)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                marginTop: -4,
+                marginBottom: 14,
+                color: "var(--acento-claro)",
+                fontSize: 14,
+                fontWeight: 500,
+                padding: "4px 2px",
+              }}
+            >
+              + piernas o pechos
+            </button>
+          )}
 
           <div
             style={{
