@@ -27,6 +27,15 @@ export interface Tienda {
 
   /** 0 = no tiene precio fijo todavía. En céntimos por kilo. */
   precioKgDefecto: Centimos;
+  /**
+   * Cuánto más (o menos, si es negativo) que el **precio base del día** cobra
+   * esta tienda, en céntimos por kilo. Se aprende al registrar: si un día con
+   * base S/ 9.50 se le cobra S/ 9.70, su offset queda en +20. Así, cuando el
+   * base cambia otro día, su precio se recalcula solo (base + offset), sin
+   * perder que a ella se le da «dos puntos más». `undefined` = todavía no se
+   * sabe su diferencia; se usa su `precioKgDefecto` absoluto mientras tanto.
+   */
+  precioOffsetKg?: Centimos;
   /** Para las tiendas sin pesar: precio por pollo, en céntimos. */
   precioPolloDefecto: Centimos;
   /** 1 si se le pesa el pollo, 0 si es de trato cerrado. */
@@ -55,6 +64,13 @@ export interface Jornada {
   fecha: DiaISO;
   stockPollos: number;
   stockPiernas: number;
+  /**
+   * El precio por kilo base del día, en céntimos. Se aplica a todas las
+   * entregas por defecto; cada tienda lo ajusta con su `precioOffsetKg`. Hay
+   * días que el precio sube o baja para todos, y aquí es donde se pone.
+   * `undefined`/0 = no se fijó, y cada tienda usa su precio absoluto.
+   */
+  precioBaseKg?: Centimos;
   /** "19:30". Solo para el recordatorio de cuadrar caja. */
   horaCierre: string;
   /** `abierta` mientras reparte; `cerrada` congela el día. */

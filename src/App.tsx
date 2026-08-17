@@ -6,7 +6,7 @@ import { db, type Tienda } from "./db/db";
 import { cerrarDiasPasados, guardarStock, leerJornada } from "./db/jornada";
 import { registrarEntrega } from "./db/entregas";
 import { registrarCobro } from "./db/entregas";
-import { contextoDeRuta, crearTienda, identificar } from "./db/tiendas";
+import { contextoDeRuta, crearTienda, identificar, precioEfectivoKg } from "./db/tiendas";
 import { aCentimos, aGramos } from "./lib/dinero";
 import { hoyISO, type DiaISO } from "./lib/fecha";
 import { avisoAtencion, avisoEntendido, avisoEscuchando, avisoGuardado, configurarAviso } from "./lib/aviso";
@@ -289,9 +289,12 @@ export default function App() {
             sinPesar: i.sinPesar,
             tandas: i.tandasKg.map(aGramos),
             peso: i.pesoTotalKg ? aGramos(i.pesoTotalKg) : undefined,
-            // Sin precio dictado se usa el que la tienda ya tenía: es lo que
-            // hace que «lo de siempre» funcione.
-            precioKg: i.precioPorKg ? aCentimos(i.precioPorKg) : tienda?.precioKgDefecto,
+            // Sin precio dictado se usa el que le toca hoy: el base del día más
+            // la diferencia de la tienda, o su precio de siempre. Es lo que hace
+            // que «lo de siempre» funcione y que el base mueva a todos a la vez.
+            precioKg: i.precioPorKg
+              ? aCentimos(i.precioPorKg)
+              : precioEfectivoKg(tienda, jornada?.precioBaseKg ?? 0),
             precioPollo: tienda?.precioPolloDefecto,
             totalDictado: i.totalDictado ? aCentimos(i.totalDictado) : undefined,
             notas: i.notas,
@@ -594,7 +597,11 @@ export default function App() {
           {propuesta && (
             <TarjetaConfirmacion
               propuesta={propuesta}
-              precioDefectoKg={propuesta.emparejamiento.mejor?.tienda.precioKgDefecto ?? 0}
+              // Lo que le toca hoy: base del día + la diferencia de la tienda.
+              precioDefectoKg={precioEfectivoKg(
+                propuesta.emparejamiento.mejor?.tienda,
+                jornada?.precioBaseKg ?? 0,
+              )}
               onConfirmar={(id) => void confirmar(id)}
               onElegirOtra={elegirOtra}
               onCrearNueva={(nombre) => void confirmar(null, nombre)}

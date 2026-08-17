@@ -43,9 +43,28 @@ export async function guardarStock(
   fecha: DiaISO,
   stockPollos: number,
   stockPiernas: number,
+  /** El precio base por kilo del día. Si no se pasa, se conserva el que hubiera. */
+  precioBaseKg?: Centimos,
 ): Promise<void> {
   const actual = await leerJornada(fecha);
-  await db.jornadas.put({ ...actual, stockPollos, stockPiernas });
+  await db.jornadas.put({
+    ...actual,
+    stockPollos,
+    stockPiernas,
+    precioBaseKg: precioBaseKg ?? actual.precioBaseKg,
+  });
+}
+
+/**
+ * El último precio base que puso, para sugerirlo por defecto: casi siempre es
+ * el mismo del día anterior, y así no lo teclea cada mañana.
+ */
+export async function sugerirPrecioBase(fecha: DiaISO): Promise<Centimos> {
+  const previas = await db.jornadas.where("fecha").below(fecha).toArray();
+  const conBase = previas
+    .filter((j) => (j.precioBaseKg ?? 0) > 0)
+    .sort((a, b) => (a.fecha < b.fecha ? 1 : -1));
+  return conBase[0]?.precioBaseKg ?? 0;
 }
 
 /**

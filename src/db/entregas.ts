@@ -1,4 +1,5 @@
 import { db, type Entrega, type Tienda } from "./db";
+import { leerJornada } from "./jornada";
 import { hoyISO, type DiaISO } from "../lib/fecha";
 import { aCobrar, type Centimos, type Gramos } from "../lib/dinero";
 import { calcular, estadoDe, repartirPago, sumarTandas, TOPE_REDONDEO } from "../dominio/calculo";
@@ -57,6 +58,10 @@ export async function registrarEntrega(
 
   const id = await db.entregas.add(entrega);
 
+  // El precio base del día, para que la tienda aprenda su diferencia respecto
+  // de él (ver `precioOffsetKg`).
+  const jornada = await leerJornada(fecha);
+
   await aprenderDeEntrega(datos.tiendaId, ctx, {
     dictado: opciones.dictado,
     // Solo se recuerda el precio si vino del dictado, no el implícito de un
@@ -64,6 +69,7 @@ export async function registrarEntrega(
     precioKg: datos.precioKg,
     precioPollo: datos.precioPollo,
     sinPesar: datos.sinPesar,
+    precioBaseKg: jornada.precioBaseKg,
   });
 
   return id;

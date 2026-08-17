@@ -102,6 +102,24 @@ export async function cerrarDeudas(tiendaId: number): Promise<void> {
 }
 
 /**
+ * El precio por kilo que le toca hoy a una tienda: si hay **precio base del
+ * día** y ya se le conoce su diferencia, es base + offset; si no, su precio
+ * absoluto de siempre; y si tampoco lo tiene, el base pelado. Es lo que se
+ * muestra ya puesto en la tarjeta de entrega — editable, claro.
+ */
+export function precioEfectivoKg(
+  tienda: Pick<Tienda, "precioKgDefecto" | "precioOffsetKg"> | undefined,
+  precioBaseKg: Centimos,
+): Centimos {
+  if (!tienda) return precioBaseKg > 0 ? precioBaseKg : 0;
+  if (precioBaseKg > 0 && tienda.precioOffsetKg != null) {
+    return Math.max(0, precioBaseKg + tienda.precioOffsetKg);
+  }
+  if (tienda.precioKgDefecto > 0) return tienda.precioKgDefecto;
+  return precioBaseKg > 0 ? precioBaseKg : 0;
+}
+
+/**
  * Guarda lo aprendido de una entrega confirmada, junto con el precio si él
  * dictó uno distinto: así la próxima vez le basta decir «lo de siempre».
  */
@@ -113,13 +131,23 @@ export async function aprenderDeEntrega(
     precioKg?: Centimos;
     precioPollo?: Centimos;
     sinPesar?: boolean;
+    /** El precio base del día, para aprender la diferencia de esta tienda. */
+    precioBaseKg?: Centimos;
   } = {},
 ): Promise<void> {
   const t = await db.tiendas.get(tiendaId);
   if (!t) return;
 
   const actualizada = aprender(t, ctx, opciones.dictado);
-  if (opciones.precioKg) actualizada.precioKgDefecto = opciones.precioKg;
+  if (opciones.precioKg) {
+    actualizada.precioKgDefecto = opciones.precioKg;
+    // Con precio base del día, se aprende cuánto más o menos cobra esta tienda
+    // respecto de él: es lo que deja que «dos puntos más» la siga por sí sola
+    // cuando el base cambie otro día.
+    if (opciones.precioBaseKg && opciones.precioBaseKg > 0) {
+      actualizada.precioOffsetKg = opciones.precioKg - opciones.precioBaseKg;
+    }
+  }
   if (opciones.precioPollo) actualizada.precioPolloDefecto = opciones.precioPollo;
   if (opciones.sinPesar !== undefined) actualizada.pesa = opciones.sinPesar ? 0 : 1;
 

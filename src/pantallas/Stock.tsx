@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { guardarStock, leerJornada, sugerirStock } from "../db/jornada";
+import { guardarStock, leerJornada, sugerirPrecioBase, sugerirStock } from "../db/jornada";
 import { diaCorto, horaAmPm, type DiaISO } from "../lib/fecha";
+import { aCentimos } from "../lib/dinero";
 import { avisoGuardado } from "../lib/aviso";
 import { BotonPrincipal, S } from "../ui/base";
 import { Teclado } from "../ui/Teclado";
 
-type Campo = "pollos" | "piernas";
+type Campo = "pollos" | "piernas" | "precio";
 
 /**
  * «¿Con cuánto sales hoy?». Es lo primero que se abre si la jornada empieza en
@@ -27,9 +28,12 @@ export function Stock({
 }) {
   const jornada = useLiveQuery(() => leerJornada(fecha), [fecha]);
   const sugerencia = useLiveQuery(() => sugerirStock(fecha), [fecha]);
+  const baseSugerido = useLiveQuery(() => sugerirPrecioBase(fecha), [fecha]);
 
   const [pollos, setPollos] = useState<string | null>(null);
   const [piernas, setPiernas] = useState("");
+  /** Precio base por kilo del día, en soles con decimales, tal como se teclea. */
+  const [precio, setPrecio] = useState("");
   const [activo, setActivo] = useState<Campo>("pollos");
   /** El primer número tras elegir un campo reemplaza; los siguientes suman. */
   const [recienElegido, setRecienElegido] = useState(true);
@@ -38,17 +42,20 @@ export function Stock({
   // el historial. En un efecto para no pisar lo que él esté tecleando cada vez
   // que Dexie reemite.
   useEffect(() => {
-    if (!jornada || pollos !== null) return;
+    if (!jornada || pollos !== null || baseSugerido === undefined) return;
     const p = jornada.stockPollos || sugerencia?.pollos || 0;
     const q = jornada.stockPiernas || sugerencia?.piernas || 0;
+    const base = jornada.precioBaseKg || baseSugerido || 0;
     setPollos(p ? String(p) : "");
     setPiernas(q ? String(q) : "");
-  }, [jornada, sugerencia, pollos]);
+    setPrecio(base ? (base / 100).toFixed(2) : "");
+  }, [jornada, sugerencia, baseSugerido, pollos]);
 
   if (!jornada || pollos === null) return null;
 
-  const valor = activo === "pollos" ? pollos : piernas;
-  const poner = (v: string) => (activo === "pollos" ? setPollos(v) : setPiernas(v));
+  const valor = activo === "pollos" ? pollos : activo === "piernas" ? piernas : precio;
+  const poner = (v: string) =>
+    activo === "pollos" ? setPollos(v) : activo === "piernas" ? setPiernas(v) : setPrecio(v);
 
   const teclear = (nuevo: string) => {
     // Al elegir un campo, el primer dígito borra lo que había: si no, teclear
@@ -65,10 +72,15 @@ export function Stock({
   const elegir = (campo: Campo) => {
     setActivo(campo);
     setRecienElegido(true);
+    // El precio lleva decimales: el truco de «reemplazar al primer dígito» no
+    // sirve —el teclado bloquea al llegar a dos decimales, así que un 9.50 ya
+    // no admite otra tecla—; se limpia para reescribirlo de cero.
+    if (campo === "precio") setPrecio("");
   };
 
   const empezar = () => {
-    void guardarStock(fecha, Number(pollos) || 0, Number(piernas) || 0).then(() => {
+    const base = aCentimos(Number(precio.replace(",", ".")) || 0);
+    void guardarStock(fecha, Number(pollos) || 0, Number(piernas) || 0, base).then(() => {
       avisoGuardado();
       listo();
     });
@@ -125,8 +137,21 @@ export function Stock({
           />
         </div>
 
-        {/* Enteros: no existe medio pollo. */}
-        <Teclado valor={valor} onCambio={teclear} decimales={false} />
+        {/*
+          El precio por kilo base del día: se aplica a todas las entregas, y
+          cada tienda le suma o resta su diferencia. Hay días que sube o baja
+          para todos, y aquí es donde se pone.
+        */}
+        <Campo
+          rotulo="Precio base · por kilo"
+          valor={precio}
+          prefijo="S/ "
+          activo={activo === "precio"}
+          onClick={() => elegir("precio")}
+        />
+
+        {/* Enteros para las cantidades; el precio sí lleva decimales. */}
+        <Teclado valor={valor} onCambio={teclear} decimales={activo === "precio"} />
 
         {sugerencia?.texto && (
           <div
@@ -174,11 +199,14 @@ function Campo({
   valor,
   activo,
   onClick,
+  prefijo,
 }: {
   rotulo: string;
   valor: string;
   activo: boolean;
   onClick: () => void;
+  /** «S/ » delante del número, para el precio. */
+  prefijo?: string;
 }) {
   return (
     <button
@@ -207,6 +235,7 @@ function Campo({
           color: valor ? "var(--texto)" : "var(--texto-5)",
         }}
       >
+        {prefijo && <span style={{ fontSize: 28, color: "var(--texto-4)" }}>{prefijo}</span>}
         {valor || "0"}
         {activo && (
           <span

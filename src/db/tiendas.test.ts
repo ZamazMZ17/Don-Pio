@@ -1,8 +1,15 @@
 import "fake-indexeddb/auto";
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "./db";
-import { agregarDeuda, borrarTienda, crearTienda, saldoTotalPorTienda } from "./tiendas";
+import {
+  agregarDeuda,
+  borrarTienda,
+  crearTienda,
+  precioEfectivoKg,
+  saldoTotalPorTienda,
+} from "./tiendas";
 import { registrarEntrega } from "./entregas";
+import { guardarStock } from "./jornada";
 import { aCentimos, aGramos } from "../lib/dinero";
 import { hoyISO, sumarDias } from "../lib/fecha";
 import type { Contexto } from "../tiendas/emparejar";
@@ -72,6 +79,52 @@ describe("borrarTienda", () => {
 
     expect(r.ok).toBe(true);
     expect(await db.tiendas.get(t.id!)).toBeUndefined();
+  });
+});
+
+describe("precio base del día y diferencia por tienda", () => {
+  it("sin base, cada tienda usa su precio absoluto de siempre", () => {
+    const t = { precioKgDefecto: aCentimos(9.7), precioOffsetKg: undefined };
+    expect(precioEfectivoKg(t, 0)).toBe(aCentimos(9.7));
+  });
+
+  it("con base y diferencia conocida, es base + diferencia", () => {
+    const t = { precioKgDefecto: aCentimos(9.7), precioOffsetKg: aCentimos(0.2) };
+    // Base 9.80 este día → 9.80 + 0.20 = 10.00.
+    expect(precioEfectivoKg(t, aCentimos(9.8))).toBe(aCentimos(10));
+  });
+
+  it("con base pero sin diferencia aún, respeta su precio absoluto (migración)", () => {
+    // Tienda vieja con precio absoluto y sin offset: no se le baja al base a secas.
+    const t = { precioKgDefecto: aCentimos(9.7), precioOffsetKg: undefined };
+    expect(precioEfectivoKg(t, aCentimos(9.5))).toBe(aCentimos(9.7));
+  });
+
+  it("una entrega con base aprende la diferencia de la tienda", async () => {
+    const t = await crearTienda("Bodega Marta", { pesa: 1 });
+    await guardarStock(hoyISO(), 100, 0, aCentimos(9.5)); // base del día 9.50
+    // Se le cobra 9.70 el kilo → dos puntos más que el base.
+    await registrarEntrega(
+      { tiendaId: t.id!, pollos: 3, tandas: [aGramos(8)], precioKg: aCentimos(9.7) },
+      ctx,
+      { fecha: hoyISO() },
+    );
+    const guardada = await db.tiendas.get(t.id!);
+    expect(guardada!.precioOffsetKg).toBe(aCentimos(0.2));
+
+    // Otro día con base 9.80, su precio efectivo sube solo a 10.00.
+    expect(precioEfectivoKg(guardada!, aCentimos(9.8))).toBe(aCentimos(10));
+  });
+
+  it("sin base fijada, registrar no inventa una diferencia", async () => {
+    const t = await crearTienda("Sin base", { pesa: 1 });
+    await registrarEntrega(
+      { tiendaId: t.id!, pollos: 2, tandas: [aGramos(5)], precioKg: aCentimos(9) },
+      ctx,
+      { fecha: hoyISO() },
+    );
+    const guardada = await db.tiendas.get(t.id!);
+    expect(guardada!.precioOffsetKg).toBeUndefined();
   });
 });
 
