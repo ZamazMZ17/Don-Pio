@@ -561,6 +561,36 @@ describe("cobrar", () => {
   });
 });
 
+describe("orden de cobranza: los abonos parciales bajan al final", () => {
+  it("una cuenta con abono parcial se va al fondo y sube la siguiente", async () => {
+    const a = await crearTienda("Primero");
+    const b = await crearTienda("Ultimo");
+    await registrarEntrega(
+      { tiendaId: a.id!, pollos: 2, tandas: [aGramos(5)], precioKg: aCentimos(9) },
+      ctx(1),
+      { fecha: HOY },
+    );
+    await registrarEntrega(
+      { tiendaId: b.id!, pollos: 2, tandas: [aGramos(5)], precioKg: aCentimos(9) },
+      ctx(2),
+      { fecha: HOY },
+    );
+
+    // «Del último»: la parada 2 (Ultimo) va primero, como cuando vuelve.
+    let cuentas = await cuentasPendientes(HOY, "retorno");
+    expect(cuentas.map((c) => c.tienda.nombre)).toEqual(["Ultimo", "Primero"]);
+
+    // Ultimo paga solo una parte (45 de cuenta, le da 20): queda debiendo.
+    await registrarCobro(b.id!, aCentimos(20), { fecha: HOY });
+
+    cuentas = await cuentasPendientes(HOY, "retorno");
+    // Ya abonado, se hunde al final aunque por ruta iría primero; Primero sube.
+    expect(cuentas.map((c) => c.tienda.nombre)).toEqual(["Primero", "Ultimo"]);
+    expect(cuentas.find((c) => c.tienda.nombre === "Ultimo")!.tocada).toBe(true);
+    expect(cuentas.find((c) => c.tienda.nombre === "Primero")!.tocada).toBe(false);
+  });
+});
+
 describe("agregar tandas de peso a una entrega", () => {
   it("una entrega de una sola pesada conserva ese peso como primera tanda", async () => {
     // El caso del bug: se registró con `peso` y sin `tandas` (lo más común).

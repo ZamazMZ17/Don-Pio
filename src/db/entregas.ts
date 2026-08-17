@@ -209,6 +209,12 @@ export interface CuentaTienda {
   deudaDesde: DiaISO | null;
   total: Centimos;
   entregas: Entrega[];
+  /**
+   * Ya recibió un abono y todavía debe: pagó una parte, no todo. Va al final
+   * de la lista para no estorbar arriba mientras se sigue cobrando el resto de
+   * la ruta — el que aún no pagó nada sube al tope.
+   */
+  tocada: boolean;
 }
 
 /**
@@ -263,6 +269,13 @@ export async function cuentasPendientes(
     // cada deuda suelta: tres migajas de 4 céntimos sí suman una moneda y esa
     // sí se cobra.
     if (total <= 0) continue;
+    // Recibió algo y aún debe: un pago parcial en una entrega de hoy
+    // (`totalCobrado`/`descuentoRedondeo`) o un abono a una deuda vieja
+    // (`saldado`). El día cerrado no cuenta lo de hoy, así que ahí solo mira
+    // la deuda.
+    const tocada =
+      (!diaCerrado && suyas.some((e) => e.totalCobrado > 0 || e.descuentoRedondeo > 0)) ||
+      abiertas.some((d) => d.saldado > 0);
     cuentas.push({
       tienda,
       delDia,
@@ -270,6 +283,7 @@ export async function cuentasPendientes(
       deudaDesde: abiertas[0]?.fechaOrigen ?? null,
       total,
       entregas: suyas,
+      tocada,
     });
   }
 
@@ -282,6 +296,10 @@ export async function cuentasPendientes(
    */
   const sinRuta = 9999;
   return cuentas.sort((a, b) => {
+    // Las que ya abonaron parte se van al fondo, sin importar la ruta: así el
+    // siguiente por cobrar del todo sube y no estorban las que quedan colgando
+    // por un resto.
+    if (a.tocada !== b.tocada) return a.tocada ? 1 : -1;
     const x = a.tienda.ordenRuta || sinRuta;
     const y = b.tienda.ordenRuta || sinRuta;
     if (x === sinRuta || y === sinRuta) return x - y;

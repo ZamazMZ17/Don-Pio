@@ -301,7 +301,13 @@ export function Cobranza({
                   marginBottom: 8,
                 }}
               >
-                <div style={{ fontSize: 18, fontWeight: 600 }}>{c.tienda.nombre}</div>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 8, minWidth: 0 }}>
+                  <div style={{ fontSize: 18, fontWeight: 600 }}>{c.tienda.nombre}</div>
+                  {/* Ya pagó una parte: por eso está aquí abajo, esperando el resto. */}
+                  {c.tocada && (
+                    <div style={{ fontSize: 12, color: "var(--verde)", flex: "none" }}>ya abonó</div>
+                  )}
+                </div>
                 {c.tienda.ordenRuta > 0 && (
                   <div style={{ fontSize: 12, color: "var(--texto-4)", flex: "none" }}>
                     parada {c.tienda.ordenRuta}
