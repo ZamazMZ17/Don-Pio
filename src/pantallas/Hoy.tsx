@@ -436,22 +436,6 @@ export function Hoy({
           const estado = estadoDe(e.totalCalculado, cobrado);
           const deuda = deudas.get(e.tiendaId) ?? 0;
 
-          const partes: string[] = [];
-          // Singular de verdad: «1 pollos» se lee a error de la app.
-          const cuantos = (n: number, uno: string, varios: string) =>
-            `${n} ${n === 1 ? uno : varios}`;
-          if (e.pollos) partes.push(cuantos(e.pollos, "pollo", "pollos"));
-          if (e.pechos) partes.push(cuantos(e.pechos, "pecho", "pechos"));
-          if (e.piernas) partes.push(cuantos(e.piernas, "pierna", "piernas"));
-          if (partes.length === 0) partes.push("sin cantidad");
-          // Sin peso no se enseña «0.0 kg · 0.00/kg»: eso parece un error de
-          // la app, no una entrega de trato cerrado.
-          partes.push(
-            e.peso > 0
-              ? `${kgCorto(e.peso)} · ${(e.precioKg / 100).toFixed(2)}/kg`
-              : "sin pesar",
-          );
-
           return (
             <button
               key={e.id}
@@ -480,7 +464,7 @@ export function Hoy({
                 <div style={{ fontSize: 20, fontWeight: 600, lineHeight: 1.2, marginBottom: 4 }}>
                   {tienda?.nombre ?? "Sin nombre"}
                 </div>
-                <div style={{ fontSize: 14, color: "var(--texto-3)" }}>{partes.join(" · ")}</div>
+                <div style={{ fontSize: 14, color: "var(--texto-3)" }}>{descripcionEntrega(e)}</div>
                 {deuda > 0 && (
                   <div style={{ fontSize: 13, color: "var(--ambar)", marginTop: 5 }}>
                     + {money(deuda)} que debía de antes
@@ -538,6 +522,24 @@ export function Hoy({
       </div>
     </div>
   );
+}
+
+/**
+ * Los datos de una entrega en una línea: «3 pollos · 7.7 kg · 8.80/kg». Igual
+ * en la agenda y en la ruta, para que lo entregado se lea igual en las dos.
+ */
+function descripcionEntrega(e: Entrega): string {
+  // Singular de verdad: «1 pollos» se lee a error de la app.
+  const cuantos = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
+  const partes: string[] = [];
+  if (e.pollos) partes.push(cuantos(e.pollos, "pollo", "pollos"));
+  if (e.pechos) partes.push(cuantos(e.pechos, "pecho", "pechos"));
+  if (e.piernas) partes.push(cuantos(e.piernas, "pierna", "piernas"));
+  if (partes.length === 0) partes.push("sin cantidad");
+  // Sin peso no se enseña «0.0 kg · 0.00/kg»: eso parece un error de la app,
+  // no una entrega de trato cerrado.
+  partes.push(e.peso > 0 ? `${kgCorto(e.peso)} · ${(e.precioKg / 100).toFixed(2)}/kg` : "sin pesar");
+  return partes.join(" · ");
 }
 
 /** Un botón del interruptor Agenda / Ruta. Objetivo táctil de 52px. */
@@ -665,8 +667,18 @@ function RutaLista({
               <div style={{ fontSize: 19, fontWeight: 600, lineHeight: 1.2, marginBottom: 3 }}>
                 {t.nombre}
               </div>
+              {/*
+                Ya entregada: se muestran los datos de lo que se le dejó
+                —«3 pollos · 7.7 kg · 8.80/kg»—, igual que en la agenda, para
+                verlos de un vistazo y saber qué se va a editar al tocarla. Sin
+                entregar: su sitio y hora de siempre, que es lo que orienta.
+              */}
               <div style={{ fontSize: 13, color: "var(--texto-3)" }}>
-                {meta.length ? meta.join(" · ") : "sin ruta todavía"}
+                {ultima
+                  ? descripcionEntrega(ultima)
+                  : meta.length
+                    ? meta.join(" · ")
+                    : "sin ruta todavía"}
               </div>
             </div>
             {hecho ? (
