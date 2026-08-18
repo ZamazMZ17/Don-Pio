@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useLayoutEffect, useState, type RefObject } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
+import { StatusBar, Style } from "@capacitor/status-bar";
 import { db } from "../db/db";
 import { CLAVE_TEMA, leerAjuste } from "../voz/ajustes";
+import { esNativo } from "./plataforma";
 
 /**
  * Dónde estaba el scroll de cada lista, para no perder el sitio.
@@ -83,6 +85,14 @@ export function useTema(): void {
       // El navegador tiñe la barra de direcciones con esto en modo PWA; sin
       // actualizarlo quedaba oscuro aunque la app ya hubiera pasado a claro.
       metaColor?.setAttribute("content", claro ? "#f3ecdd" : "#161826");
+      // Solo el color de los íconos: la barra de estado sigue transparente
+      // (`overlay: true`, puesto por `cerrarSplash()` en main.tsx al cerrar
+      // el splash) y sin eso `--seguro-arriba` da 0 — se rompe el espaciado
+      // de todas las pantallas. Íconos oscuros sobre el fondo claro, claros
+      // sobre el oscuro, igual que ya hace `metaColor` arriba.
+      if (esNativo) {
+        void StatusBar.setStyle({ style: claro ? Style.Light : Style.Dark });
+      }
     };
     aplicar();
     if (tema !== "sistema") return;

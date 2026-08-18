@@ -1,11 +1,24 @@
 import { createRoot } from "react-dom/client";
 import { SplashScreen } from "@capacitor/splash-screen";
+import { StatusBar, Style } from "@capacitor/status-bar";
 
 import "@fontsource-variable/inter";
 import "./estilos.css";
 
 import App from "./App";
 import { esNativo } from "./lib/plataforma";
+
+// El mismo crema del splash (marca/logo.png, drawable/splash.png).
+const CREMA_SPLASH = "#fae7c9";
+
+async function cerrarSplash(): Promise<void> {
+  await SplashScreen.hide();
+  // Vuelve a transparente: es como vive el resto de la app (`--seguro-arriba`
+  // depende de que la barra de estado se dibuje encima de la WebView, no al
+  // lado). El color de los íconos lo retoma `useTema()` en cuanto React
+  // monta, según el tema guardado — acá no hace falta adelantarlo.
+  await StatusBar.setOverlaysWebView({ overlay: true });
+}
 
 function pintar(): void {
   // Sin StrictMode a propósito: la doble ejecución de efectos en desarrollo
@@ -17,7 +30,7 @@ function pintar(): void {
   // pintar nada. Dos `requestAnimationFrame` para esperar a que el primer
   // cuadro ya esté en pantalla, no solo montado.
   if (esNativo) {
-    requestAnimationFrame(() => requestAnimationFrame(() => void SplashScreen.hide()));
+    requestAnimationFrame(() => requestAnimationFrame(() => void cerrarSplash()));
   }
 }
 
@@ -34,8 +47,22 @@ function pintar(): void {
 // esconder y no lo vuelve a intentar — la imagen queda pegada en pantalla
 // para siempre en vez de durar ~1 segundo. Por eso `pintar()` se llama
 // recién cuando la promesa de `show()` se resuelve (o falla).
+//
+// El `splashImmersive`/`splashFullScreen` de capacitor.config.ts no bastaba
+// para tapar la barra de estado: el hueco de arriba seguía enseñando el
+// fondo oscuro de la WebView por debajo. Mientras dura el splash no hay
+// CSS corriendo todavía que dependa de la barra de estado transparente
+// (`--seguro-arriba`), así que acá se la pone sólida y del mismo crema.
 if (esNativo) {
-  SplashScreen.show({ autoHide: false }).then(pintar, pintar);
+  StatusBar.setOverlaysWebView({ overlay: false })
+    .then(() =>
+      Promise.all([
+        StatusBar.setBackgroundColor({ color: CREMA_SPLASH }),
+        StatusBar.setStyle({ style: Style.Light }),
+        SplashScreen.show({ autoHide: false }),
+      ]),
+    )
+    .then(pintar, pintar);
 } else {
   pintar();
 }
