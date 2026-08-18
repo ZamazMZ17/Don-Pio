@@ -649,7 +649,7 @@ function BarraPestanas({ actual, ir }: { actual: Pantalla; ir: (p: Pantalla) => 
         display: "flex",
         alignItems: "flex-start",
         // Por encima de la barra de gestos de Android.
-        padding: "10px 8px calc(26px + var(--seguro-abajo))",
+        padding: "6px 8px calc(14px + var(--seguro-abajo))",
       }}
     >
       {pestanas.map(({ icono: Icono, label, destino }) => {
@@ -663,13 +663,13 @@ function BarraPestanas({ actual, ir }: { actual: Pantalla; ir: (p: Pantalla) => 
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              gap: 5,
-              padding: "6px 0",
+              gap: 3,
+              padding: "4px 0",
               color: activa ? "var(--acento-claro)" : "var(--texto-4)",
             }}
           >
-            <Icono size={22} strokeWidth={activa ? 2.3 : 2} />
-            <div style={{ fontSize: 12, fontWeight: 500 }}>{label}</div>
+            <Icono size={20} strokeWidth={activa ? 2.3 : 2} />
+            <div style={{ fontSize: 11, fontWeight: 500 }}>{label}</div>
           </button>
         );
       })}

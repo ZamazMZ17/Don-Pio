@@ -103,10 +103,10 @@ export function Stock({
         <div style={{ fontSize: 14, color: "var(--texto-3)", marginBottom: 4 }}>
           {diaCorto(fecha)} · {horaAmPm()}
         </div>
-        <div style={{ fontSize: 30, fontWeight: 600, lineHeight: 1.15, letterSpacing: -0.5 }}>
+        <div style={{ fontSize: 26, fontWeight: 600, lineHeight: 1.15, letterSpacing: -0.5 }}>
           ¿Con cuánto sales hoy?
         </div>
-        <div style={{ fontSize: 15, color: "var(--texto-4)", marginTop: 6, lineHeight: 1.45 }}>
+        <div style={{ fontSize: 14, color: "var(--texto-4)", marginTop: 4, lineHeight: 1.4 }}>
           Sirve para saber cuánto te queda. Si no lo sabes todavía, puedes seguir sin ponerlo.
         </div>
       </div>
@@ -121,8 +121,8 @@ export function Stock({
           // pantallas cortas el contenido no cabía y `justify-content: center`
           // recortaba el tope (los pollos) sin dejar subir el scroll. Arriba
           // siempre se ve entero y baja con scroll si hace falta.
-          gap: 14,
-          padding: "16px 0",
+          gap: 10,
+          padding: "10px 0",
         }}
       >
         <div style={{ display: "flex", gap: 10 }}>
@@ -173,7 +173,7 @@ export function Stock({
       </div>
 
       <div style={{ flex: "none", display: "flex", flexDirection: "column", gap: 4 }}>
-        <BotonPrincipal onClick={empezar} alto={62} deshabilitado={!Number(pollos)}>
+        <BotonPrincipal onClick={empezar} alto={56} deshabilitado={!Number(pollos)}>
           Empezar el día
         </BotonPrincipal>
         <button
@@ -220,7 +220,7 @@ function Campo({
         flex: 1,
         minWidth: 0,
         borderRadius: "var(--radio-lg)",
-        padding: "14px 16px 16px",
+        padding: "10px 14px 12px",
         // Ancho fijo en los dos estados — si cambiara de 1px a 2px al
         // activarse, el contenido saltaría un pixel al pasar de un campo a
         // otro con box-sizing: border-box.
@@ -228,26 +228,26 @@ function Campo({
         background: activo ? "var(--acento-900)" : "var(--superficie)",
       }}
     >
-      <div style={{ ...S.rotulo, fontSize: 12, marginBottom: 6 }}>{rotulo}</div>
+      <div style={{ ...S.rotulo, fontSize: 11, marginBottom: 4 }}>{rotulo}</div>
       <div
         style={{
-          fontSize: 52,
+          fontSize: 42,
           fontWeight: 700,
           lineHeight: 1,
           letterSpacing: -1,
           color: valor ? "var(--texto)" : "var(--texto-5)",
         }}
       >
-        {prefijo && <span style={{ fontSize: 28, color: "var(--texto-4)" }}>{prefijo}</span>}
+        {prefijo && <span style={{ fontSize: 24, color: "var(--texto-4)" }}>{prefijo}</span>}
         {valor || "0"}
         {activo && (
           <span
             style={{
               display: "inline-block",
               width: 3,
-              height: 42,
+              height: 34,
               marginLeft: 4,
-              verticalAlign: "-6px",
+              verticalAlign: "-4px",
               background: "var(--acento-claro)",
               animation: "dpcursor 1s steps(1) infinite",
             }}

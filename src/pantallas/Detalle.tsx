@@ -381,6 +381,7 @@ export function Detalle({ entregaId, volver }: { entregaId: number; volver: () =
               <input
                 defaultValue={(e.precioKg / 100).toFixed(2)}
                 inputMode="decimal"
+                onFocus={(ev) => ev.currentTarget.select()}
                 onBlur={(ev) => {
                   const n = Number(ev.target.value.replace(",", "."));
                   if (Number.isFinite(n) && n > 0) {
@@ -482,7 +483,7 @@ export function Detalle({ entregaId, volver }: { entregaId: number; volver: () =
           )}
         </div>
 
-        <BotonPrincipal onClick={volver}>Listo</BotonPrincipal>
+        <BotonPrincipal onClick={volver} alto={62}>Listo</BotonPrincipal>
 
         {borrando ? (
           <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 4px" }}>
