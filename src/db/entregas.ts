@@ -221,6 +221,14 @@ export interface CuentaTienda {
    * casos `totalCalculado` queda en 0 y hay que poder cobrarla igual.
    */
   tieneSinPesar: boolean;
+  /** No le queda nada por cobrar ahora mismo: ni de hoy, ni de antes. */
+  pagada: boolean;
+  /**
+   * Lo que se le cobró hoy en total, de lo de hoy y de deuda vieja junto —
+   * para la vista Ruta, donde una ya saldada se queda marcada en vez de
+   * desaparecer y hay que decir cuánto se le sacó, no solo que ya pagó.
+   */
+  cobradoHoy: Centimos;
 }
 
 /**
@@ -229,15 +237,17 @@ export interface CuentaTienda {
  */
 export type OrdenCobranza = "retorno" | "ruta";
 
-export async function cuentasPendientes(
-  fecha: DiaISO = hoyISO(),
-  orden: OrdenCobranza = "retorno",
-): Promise<CuentaTienda[]> {
-  const [entregas, deudas, tiendas, jornada] = await Promise.all([
+/**
+ * El cálculo de una cuenta por tienda, compartido entre `cuentasPendientes`
+ * (que descarta las ya saldadas) y `cuentasDelDia` (que las deja, marcadas).
+ */
+async function construirCuentas(fecha: DiaISO): Promise<CuentaTienda[]> {
+  const [entregas, deudas, tiendas, jornada, pagos] = await Promise.all([
     db.entregas.where("fecha").equals(fecha).toArray(),
     db.deudas.toArray(),
     db.tiendas.toArray(),
     db.jornadas.get(fecha),
+    db.pagos.where("fecha").equals(fecha).toArray(),
   ]);
 
   // Con el día cerrado, lo que faltaba ya vive como deuda: contarlo también
@@ -278,13 +288,6 @@ export async function cuentasPendientes(
 
     // Hacia abajo a los 10 céntimos: es lo que se puede pagar con monedas.
     const total = aCobrar(delDia + deuda);
-    // Si lo que queda —sumando todo— no llega ni a una moneda de 10 céntimos,
-    // no hay nada que cobrar: mostrarla con «A cobrar S/ 0.00» solo estorba y
-    // no se puede saldar cobrando (cobrar S/ 0 no hace nada). Son migajas de
-    // redondeo que el modelo ya da por perdonadas. Se mira el saldo entero, no
-    // cada deuda suelta: tres migajas de 4 céntimos sí suman una moneda y esa
-    // sí se cobra.
-    if (total <= 0 && !sinPrecioPendiente) continue;
     // Recibió algo y aún debe: un pago parcial en una entrega de hoy
     // (`totalCobrado`/`descuentoRedondeo`) o un abono a una deuda vieja
     // (`saldado`). El día cerrado no cuenta lo de hoy, así que ahí solo mira
@@ -292,6 +295,9 @@ export async function cuentasPendientes(
     const tocada =
       (!diaCerrado && suyas.some((e) => e.totalCobrado > 0 || e.descuentoRedondeo > 0)) ||
       abiertas.some((d) => d.saldado > 0);
+    const cobradoHoy = pagos
+      .filter((p) => p.tiendaId === id)
+      .reduce((a, p) => a + p.monto, 0);
     cuentas.push({
       tienda,
       delDia,
@@ -301,8 +307,22 @@ export async function cuentasPendientes(
       entregas: suyas,
       tocada,
       tieneSinPesar: sinPrecioPendiente,
+      // Si lo que queda —sumando todo— no llega ni a una moneda de 10
+      // céntimos, no hay nada que cobrar: son migajas de redondeo que el
+      // modelo ya da por perdonadas.
+      pagada: total <= 0 && !sinPrecioPendiente,
+      cobradoHoy,
     });
   }
+
+  return cuentas;
+}
+
+export async function cuentasPendientes(
+  fecha: DiaISO = hoyISO(),
+  orden: OrdenCobranza = "retorno",
+): Promise<CuentaTienda[]> {
+  const cuentas = (await construirCuentas(fecha)).filter((c) => !c.pagada);
 
   /*
    * `retorno` es el orden natural de cobrar: reparte de ida y cobra de vuelta,
@@ -321,6 +341,39 @@ export async function cuentasPendientes(
     const y = b.tienda.ordenRuta || sinRuta;
     if (x === sinRuta || y === sinRuta) return x - y;
     return orden === "retorno" ? y - x : x - y;
+  });
+}
+
+/**
+ * Todas las tiendas con algo hoy —entregadas o con deuda vieja abierta—,
+ * cobradas o no, en el orden real de la ruta. Para la vista "Ruta" de
+ * Cobranza: a diferencia de `cuentasPendientes`, las que ya se saldaron
+ * **no desaparecen** — se quedan marcadas en su sitio, para que el scroll no
+ * salte bajo el dedo cada vez que cobra una (el mismo problema que ya se
+ * evitó en la vista de ruta de Hoy no reordenando al registrar).
+ */
+export async function cuentasDelDia(fecha: DiaISO = hoyISO()): Promise<CuentaTienda[]> {
+  const cuentas = await construirCuentas(fecha);
+
+  // Misma idea que `paradaDe` en la vista de ruta de Hoy: la parada de hoy
+  // manda si ya se le entregó, si no la media de sus últimas paradas, y si
+  // tampoco eso, su orden aprendido.
+  const sinRuta = 99999;
+  const paradaDe = (c: CuentaTienda): number => {
+    if (c.entregas.length > 0) return Math.max(...c.entregas.map((e) => e.orden));
+    const recientes = c.tienda.posiciones.slice(-2);
+    if (recientes.length > 0) return recientes.reduce((a, b) => a + b, 0) / recientes.length;
+    return c.tienda.ordenRuta > 0 ? c.tienda.ordenRuta : sinRuta;
+  };
+
+  // Del último al primero, igual que el retorno de siempre en Cobranza: la
+  // última parada a la que dejó es la primera que se reencuentra volviendo.
+  // Las sin ruta aprendida quedan al final, sin importar el sentido.
+  return cuentas.sort((a, b) => {
+    const x = paradaDe(a);
+    const y = paradaDe(b);
+    if (x === sinRuta || y === sinRuta) return x - y;
+    return y - x;
   });
 }
 

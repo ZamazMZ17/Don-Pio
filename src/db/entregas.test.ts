@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "./db";
 import {
   agregarTanda,
+  cuentasDelDia,
   cuentasPendientes,
   editarEntrega,
   fijarPeso,
@@ -402,6 +403,33 @@ describe("cobrar", () => {
     expect(await cuentasPendientes(HOY)).toHaveLength(1);
     await registrarCobro(t.id!, aCentimos(42), { fecha: HOY });
     expect(await cuentasPendientes(HOY)).toHaveLength(0);
+  });
+
+  it("cuentasDelDia no descarta a las ya cobradas, en orden de ruta", async () => {
+    // Vista de ruta de Cobranza: al contrario de cuentasPendientes, las
+    // tiendas ya saldadas se quedan en la lista (marcadas), en vez de
+    // desaparecer — para que el scroll no salte al cobrar.
+    const primera = await crearTienda("Bodega Milagros");
+    const segunda = await crearTienda("Doña Elsa");
+    await registrarEntrega(
+      { tiendaId: segunda.id!, pollos: 7, sinPesar: true, totalDictado: aCentimos(218.88) },
+      ctx(7),
+      { fecha: HOY },
+    );
+    await registrarEntrega(
+      { tiendaId: primera.id!, pollos: 6, sinPesar: true, totalDictado: aCentimos(168) },
+      ctx(3),
+      { fecha: HOY },
+    );
+    await registrarCobro(primera.id!, aCentimos(168), { fecha: HOY });
+
+    const ruta = await cuentasDelDia(HOY);
+    expect(ruta).toHaveLength(2);
+    // Del último al primero (retorno): parada 7 antes que parada 3, no de
+    // cobrado/pendiente.
+    expect(ruta.map((c) => c.tienda.id)).toEqual([segunda.id, primera.id]);
+    expect(ruta[0].pagada).toBe(false);
+    expect(ruta[1].pagada).toBe(true);
   });
 
   it("una entrega confirmada sin precio sigue en cobranza aunque no se haya marcado 'sin pesar'", async () => {

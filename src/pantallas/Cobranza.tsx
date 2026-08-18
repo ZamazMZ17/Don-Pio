@@ -1,13 +1,20 @@
-import { useEffect, useLayoutEffect, useRef, useState, type MutableRefObject } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type MutableRefObject,
+  type ReactNode,
+} from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Search, X } from "lucide-react";
-import { cuentasPendientes, registrarCobro } from "../db/entregas";
+import { cuentasDelDia, cuentasPendientes, registrarCobro } from "../db/entregas";
 import { descripcionEntrega, repartirPago, TOPE_REDONDEO } from "../dominio/calculo";
 import { aCentimos, money } from "../lib/dinero";
 import { diaCorto, type DiaISO } from "../lib/fecha";
 import { avisoGuardado } from "../lib/aviso";
 import { useAjuste, useMemoriaScroll } from "../lib/ganchos";
-import { CLAVE_ORDEN_COBRANZA, guardarAjuste } from "../voz/ajustes";
+import { CLAVE_MODO_COBRANZA, CLAVE_ORDEN_COBRANZA, guardarAjuste } from "../voz/ajustes";
 import { normalizar, parecido } from "../tiendas/normalizar";
 import { S, Vacio } from "../ui/base";
 import { Teclado } from "../ui/Teclado";
@@ -34,6 +41,12 @@ export function Cobranza({
    *  tienda concreta a mano es lento; escribir dos letras la trae de una. */
   const [busca, setBusca] = useState("");
   const orden = useAjuste(CLAVE_ORDEN_COBRANZA, "retorno") as "retorno" | "ruta";
+  /**
+   * "deudas": solo lo que falta por cobrar, desaparece al pagar — la vista de
+   * siempre. "ruta": todas las tiendas de hoy en orden real, cobradas o no,
+   * sin desaparecer — para ir tocando de vuelta sin que el scroll salte.
+   */
+  const modo = useAjuste(CLAVE_MODO_COBRANZA, "deudas") as "deudas" | "ruta";
   /** Qué tienda tiene el «me pagó todo» armado, esperando confirmación. */
   const [confirmando, setConfirmando] = useState<number | null>(null);
   /** Si el resto que falta se perdona como descuento en vez de quedar a deber. */
@@ -92,10 +105,16 @@ export function Cobranza({
   }, [abierta]);
 
   const cuentas = useLiveQuery(() => cuentasPendientes(fecha, orden), [fecha, orden]);
+  // Solo se pide cuando hace falta: en modo "deudas" no se usa para nada.
+  const cuentasRuta = useLiveQuery(
+    () => (modo === "ruta" ? cuentasDelDia(fecha) : Promise.resolve([])),
+    [fecha, modo],
+  );
   const total = useLiveQuery(
     async () => (await db.entregas.where("fecha").equals(fecha).toArray()).length,
     [fecha],
   );
+  const listaActual = modo === "ruta" ? cuentasRuta : cuentas;
 
   // Antes del `if` que puede cortar el render: los hooks no pueden ser
   // condicionales. `?? 0` es solo para tener algo estable mientras `cuentas`
@@ -105,7 +124,9 @@ export function Cobranza({
   // buscador: al filtrar, la lista visible se acorta y el hueco del micrófono
   // vuelve a decidirse.
   // No perder el sitio al cobrar: la lista se rehace y volvía al principio.
-  const guardarScroll = useMemoriaScroll(scrollRef, "cobranza", cuentas);
+  // Clave separada por modo: son dos recorridos de scroll distintos, como
+  // Agenda/Ruta en Hoy.
+  const guardarScroll = useMemoriaScroll(scrollRef, `cobranza-${modo}`, listaActual);
 
   /*
    * Acaba de repartir y viene a cobrar: si la última entrega es de hace pocos
@@ -131,6 +152,9 @@ export function Cobranza({
   const [resaltada, setResaltada] = useState<number | null>(null);
 
   useLayoutEffect(() => {
+    // Solo en la vista de deudas: en Ruta las tiendas no se mueven ni
+    // desaparecen, así que no hace falta saltar a ninguna.
+    if (modo !== "deudas") return;
     if (!cuentas || cuentas.length === 0) return;
     // Solo en los primeros instantes tras entrar, mientras el orden se asienta.
     if (Date.now() - montaje.current > 1500) return;
@@ -155,7 +179,7 @@ export function Cobranza({
       resaltadoPuesto.current = true;
       setResaltada(reciente.tiendaId);
     }
-  }, [cuentas, orden]);
+  }, [cuentas, orden, modo]);
 
   // El resaltado se apaga solo; se pone al saltar y dura lo justo para ubicarla.
   useEffect(() => {
@@ -164,7 +188,7 @@ export function Cobranza({
     return () => clearTimeout(t);
   }, [resaltada]);
 
-  if (!cuentas) return null;
+  if (!cuentas || !listaActual) return null;
 
   /*
    * El buscador solo se muestra cuando la lista es lo bastante larga como para
@@ -174,11 +198,11 @@ export function Cobranza({
    * filtrada— para que el buscador no desaparezca en cuanto se escribe y quede
    * solo una coincidencia.
    */
-  const hayBuscador = cuentas.length > 6;
+  const hayBuscador = listaActual.length > 6;
   const q = hayBuscador ? normalizar(busca) : "";
   const visibles = q
-    ? cuentas.filter((c) => parecido(q, c.tienda.nombreNorm) > 0.55)
-    : cuentas;
+    ? listaActual.filter((c) => parecido(q, c.tienda.nombreNorm) > 0.55)
+    : listaActual;
 
   const faltan = cuentas.reduce((a, c) => a + c.total, 0);
   /*
@@ -231,28 +255,30 @@ export function Cobranza({
           }}
         >
           <div style={{ fontSize: 19, fontWeight: 600 }}>Cobranza de retorno</div>
-          <button
-            onClick={() =>
-              void guardarAjuste(CLAVE_ORDEN_COBRANZA, orden === "retorno" ? "ruta" : "retorno")
-            }
-            style={{
-              fontSize: 13,
-              color: "var(--acento-claro)",
-              fontWeight: 500,
-              // Mismo objetivo táctil de 52px que el orden de Hoy (§4). Antes
-              // medía ~28px y el dedo no lo acertaba en el teléfono. El margen
-              // negativo deja la fila igual de compacta.
-              minHeight: 52,
-              display: "inline-flex",
-              alignItems: "center",
-              whiteSpace: "nowrap",
-              padding: "0 10px",
-              margin: "-14px -6px",
-              flex: "none",
-            }}
-          >
-            {orden === "retorno" ? "Del último ⇅" : "Del primero ⇅"}
-          </button>
+          {modo === "deudas" && (
+            <button
+              onClick={() =>
+                void guardarAjuste(CLAVE_ORDEN_COBRANZA, orden === "retorno" ? "ruta" : "retorno")
+              }
+              style={{
+                fontSize: 13,
+                color: "var(--acento-claro)",
+                fontWeight: 500,
+                // Mismo objetivo táctil de 52px que el orden de Hoy (§4). Antes
+                // medía ~28px y el dedo no lo acertaba en el teléfono. El margen
+                // negativo deja la fila igual de compacta.
+                minHeight: 52,
+                display: "inline-flex",
+                alignItems: "center",
+                whiteSpace: "nowrap",
+                padding: "0 10px",
+                margin: "-14px -6px",
+                flex: "none",
+              }}
+            >
+              {orden === "retorno" ? "Del último ⇅" : "Del primero ⇅"}
+            </button>
+          )}
         </div>
         <div style={{ fontSize: 14, color: "var(--texto-3)", marginBottom: 10 }}>
           Lo que deben de antes ya está sumado
@@ -282,6 +308,20 @@ export function Cobranza({
           </span>
           <span style={{ fontWeight: 600, color: "var(--rojo)" }}>Faltan {money(faltan)}</span>
         </div>
+      </div>
+
+      {/*
+        Deudas (solo lo que falta, desaparece al pagar) o Ruta (todas las
+        tiendas de hoy en orden real, cobradas o no — para ir tocando de
+        vuelta sin que el scroll salte). Mismo patrón que Agenda/Ruta en Hoy.
+      */}
+      <div style={{ flex: "none", padding: "10px 18px 0", display: "flex", gap: 8 }}>
+        <ModoBtn activo={modo === "deudas"} onClick={() => void guardarAjuste(CLAVE_MODO_COBRANZA, "deudas")}>
+          Deudas
+        </ModoBtn>
+        <ModoBtn activo={modo === "ruta"} onClick={() => void guardarAjuste(CLAVE_MODO_COBRANZA, "ruta")}>
+          Ruta
+        </ModoBtn>
       </div>
 
       {hayBuscador && (
@@ -349,13 +389,17 @@ export function Cobranza({
           gap: 10,
         }}
       >
-        {cuentas.length === 0 && (
+        {listaActual.length === 0 && (
           <Vacio
-            titulo="No queda nada por cobrar"
-            sub="Cuando registres entregas sin pagar, aparecerán aquí en el orden de tu ruta."
+            titulo={modo === "ruta" ? "Todavía no hay nada hoy" : "No queda nada por cobrar"}
+            sub={
+              modo === "ruta"
+                ? "Cuando entregues o cobres algo, la tienda aparece aquí en orden de ruta."
+                : "Cuando registres entregas sin pagar, aparecerán aquí en el orden de tu ruta."
+            }
           />
         )}
-        {cuentas.length > 0 && visibles.length === 0 && (
+        {listaActual.length > 0 && visibles.length === 0 && (
           <Vacio titulo="Ninguna coincide" sub="Prueba con otra forma del nombre." />
         )}
 
@@ -382,6 +426,49 @@ export function Cobranza({
                 : null;
 
           const resalta = resaltada === c.tienda.id;
+
+          // Vista Ruta: ya no le queda nada por cobrar. Se queda en su sitio,
+          // marcada, en vez de desaparecer — igual que las ya entregadas en
+          // la vista de ruta de Hoy.
+          if (c.pagada) {
+            return (
+              <div
+                key={c.tienda.id}
+                style={{
+                  ...S.tarjeta,
+                  padding: "13px 14px",
+                  display: "flex",
+                  gap: 14,
+                  alignItems: "center",
+                  opacity: 0.62,
+                }}
+              >
+                <div
+                  style={{
+                    width: 14,
+                    height: 14,
+                    borderRadius: "50%",
+                    flex: "none",
+                    background: "var(--verde)",
+                  }}
+                />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 17, fontWeight: 600, lineHeight: 1.2 }}>
+                    {c.tienda.nombre}
+                  </div>
+                  <div style={{ fontSize: 13, color: "var(--texto-3)", marginTop: 2 }}>
+                    {c.entregas.length > 0 ? descripcionEntrega(c.entregas[0]) : "sin entrega hoy"}
+                  </div>
+                </div>
+                <div style={{ textAlign: "right", flex: "none" }}>
+                  <div style={{ fontSize: 17, fontWeight: 600, lineHeight: 1.2 }}>
+                    {money(c.cobradoHoy)}
+                  </div>
+                  <div style={{ fontSize: 12, marginTop: 2, color: "var(--verde)" }}>cobrado</div>
+                </div>
+              </div>
+            );
+          }
 
           return (
             <div
@@ -790,5 +877,38 @@ function Linea({ label, valor, color }: { label: string; valor: string; color: s
       <span style={{ color: "var(--texto-3)" }}>{label}</span>
       <span style={{ fontWeight: 600, color }}>{valor}</span>
     </div>
+  );
+}
+
+/** Un botón del interruptor Deudas / Ruta. Objetivo táctil de 52px. */
+function ModoBtn({
+  activo,
+  onClick,
+  children,
+}: {
+  activo: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="pulsable"
+      style={{
+        flex: 1,
+        height: 44,
+        borderRadius: "var(--radio)",
+        border: activo ? "1.5px solid var(--acento)" : "1.5px solid var(--borde)",
+        background: activo ? "var(--acento-900)" : "transparent",
+        color: activo ? "var(--acento-200)" : "var(--texto-3)",
+        fontSize: 15,
+        fontWeight: activo ? 600 : 500,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      {children}
+    </button>
   );
 }

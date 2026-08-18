@@ -23,6 +23,13 @@ export const CLAVE_MODO_HOY = "modoHoy";
  * dejó es la primera que se vuelve a encontrar.
  */
 export const CLAVE_ORDEN_COBRANZA = "ordenCobranza";
+/**
+ * Cómo se ve Cobranza: "deudas" (solo las que faltan por cobrar, y
+ * desaparecen al pagar, como siempre) o "ruta" (todas las tiendas de hoy en
+ * orden real, cobradas o no, sin desaparecer — para ir tocando de vuelta sin
+ * que el scroll salte). Por defecto "deudas": es la vista de siempre.
+ */
+export const CLAVE_MODO_COBRANZA = "modoCobranza";
 /** Cómo se ordena el directorio: "ruta" (por parada) o "abc" (alfabético). */
 export const CLAVE_ORDEN_TIENDAS = "ordenTiendas";
 /**
