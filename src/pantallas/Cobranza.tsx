@@ -11,10 +11,11 @@ import { Search, X } from "lucide-react";
 import { cuentasDelDia, cuentasPendientes, registrarCobro } from "../db/entregas";
 import { descripcionEntrega, repartirPago, TOPE_REDONDEO } from "../dominio/calculo";
 import { aCentimos, money } from "../lib/dinero";
-import { diaCorto, type DiaISO } from "../lib/fecha";
+import { diaCorto, horaTxt, type DiaISO } from "../lib/fecha";
 import { avisoGuardado } from "../lib/aviso";
 import { useAjuste, useMemoriaScroll } from "../lib/ganchos";
 import { CLAVE_MODO_COBRANZA, CLAVE_ORDEN_COBRANZA, guardarAjuste } from "../voz/ajustes";
+import { mediana } from "../tiendas/emparejar";
 import { normalizar, parecido } from "../tiendas/normalizar";
 import { S, Vacio } from "../ui/base";
 import { Teclado } from "../ui/Teclado";
@@ -427,10 +428,52 @@ export function Cobranza({
 
           const resalta = resaltada === c.tienda.id;
 
-          // Vista Ruta: ya no le queda nada por cobrar. Se queda en su sitio,
-          // marcada, en vez de desaparecer — igual que las ya entregadas en
-          // la vista de ruta de Hoy.
+          // Vista Ruta: refleja Hoy Ruta. La tienda tiene tres estados.
           if (c.pagada) {
+            // Sin ninguna actividad hoy: ni entrega, ni deuda vieja, ni
+            // cobro. Se ve como en Hoy Ruta antes de tocarla — círculo
+            // hueco y su parada/hora. Solo aparece en modo Ruta; en Deudas
+            // ya se descartó de la lista.
+            const sinActividad = c.entregas.length === 0 && c.cobradoHoy === 0;
+            if (sinActividad) {
+              const hora = mediana(c.tienda.minutos);
+              const meta: string[] = [];
+              if (c.tienda.ordenRuta) meta.push(`parada ${c.tienda.ordenRuta}`);
+              if (hora !== null) meta.push(horaTxt(Math.round(hora)));
+              return (
+                <div
+                  key={c.tienda.id}
+                  style={{
+                    ...S.tarjeta,
+                    padding: "13px 14px",
+                    display: "flex",
+                    gap: 14,
+                    alignItems: "center",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 14,
+                      height: 14,
+                      borderRadius: "50%",
+                      flex: "none",
+                      background: "transparent",
+                      border: "2px solid var(--texto-5)",
+                    }}
+                  />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 17, fontWeight: 600, lineHeight: 1.2 }}>
+                      {c.tienda.nombre}
+                    </div>
+                    <div style={{ fontSize: 13, color: "var(--texto-4)", marginTop: 2 }}>
+                      {meta.length ? meta.join(" · ") : "sin ruta todavía"}
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+            // Ya cobrada: entregó y/o cobró algo, y no queda nada por cobrar.
+            // Se queda en su sitio marcada, en vez de desaparecer.
             return (
               <div
                 key={c.tienda.id}
@@ -457,7 +500,7 @@ export function Cobranza({
                     {c.tienda.nombre}
                   </div>
                   <div style={{ fontSize: 13, color: "var(--texto-3)", marginTop: 2 }}>
-                    {c.entregas.length > 0 ? descripcionEntrega(c.entregas[0]) : "sin entrega hoy"}
+                    {c.entregas.length > 0 ? descripcionEntrega(c.entregas[0]) : "solo cobro"}
                   </div>
                 </div>
                 <div style={{ textAlign: "right", flex: "none" }}>

@@ -405,12 +405,13 @@ describe("cobrar", () => {
     expect(await cuentasPendientes(HOY)).toHaveLength(0);
   });
 
-  it("cuentasDelDia no descarta a las ya cobradas, en orden de ruta", async () => {
-    // Vista de ruta de Cobranza: al contrario de cuentasPendientes, las
-    // tiendas ya saldadas se quedan en la lista (marcadas), en vez de
-    // desaparecer — para que el scroll no salte al cobrar.
+  it("cuentasDelDia trae todas las tiendas de la ruta, entregadas o no, en orden ascendente", async () => {
+    // La vista Ruta de Cobranza refleja Hoy Ruta: **todas** las tiendas,
+    // en el mismo orden (primera parada primero), las cobradas se quedan
+    // marcadas en su sitio y las sin actividad también aparecen.
     const primera = await crearTienda("Bodega Milagros");
     const segunda = await crearTienda("Doña Elsa");
+    const sinVisita = await crearTienda("Sin Visitar");
     await registrarEntrega(
       { tiendaId: segunda.id!, pollos: 7, sinPesar: true, totalDictado: aCentimos(218.88) },
       ctx(7),
@@ -424,12 +425,14 @@ describe("cobrar", () => {
     await registrarCobro(primera.id!, aCentimos(168), { fecha: HOY });
 
     const ruta = await cuentasDelDia(HOY);
-    expect(ruta).toHaveLength(2);
-    // Del último al primero (retorno): parada 7 antes que parada 3, no de
-    // cobrado/pendiente.
-    expect(ruta.map((c) => c.tienda.id)).toEqual([segunda.id, primera.id]);
-    expect(ruta[0].pagada).toBe(false);
-    expect(ruta[1].pagada).toBe(true);
+    // Las tres tiendas, la sin actividad incluida.
+    expect(ruta).toHaveLength(3);
+    // Orden ascendente: parada 3, parada 7, y la sin ruta al final.
+    expect(ruta.map((c) => c.tienda.id)).toEqual([primera.id, segunda.id, sinVisita.id]);
+    expect(ruta[0].pagada).toBe(true); // primera saldada
+    expect(ruta[1].pagada).toBe(false); // segunda pendiente
+    expect(ruta[2].pagada).toBe(true); // sin visitar: nada que cobrar
+    expect(ruta[2].entregas).toHaveLength(0);
   });
 
   it("una entrega confirmada sin precio sigue en cobranza aunque no se haya marcado 'sin pesar'", async () => {
