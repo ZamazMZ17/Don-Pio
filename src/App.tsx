@@ -141,7 +141,7 @@ export default function App() {
   /** De una interpretación ya hecha a la tarjeta de confirmación. */
   const proponer = useCallback(
     async (r: Interpretacion) => {
-      const { intencion, aviso, dictadoId, transcripcion } = r;
+      const { intencion, dictadoId, transcripcion } = r;
 
       // Stock no necesita confirmación: es un número suyo, no de un cliente.
       if (intencion.intencion === "cargar_stock") {
@@ -157,7 +157,7 @@ export default function App() {
 
       const { resultado } = await identificar(intencion.cliente, fecha);
       if (resultado.decision === "ambiguo" || resultado.decision === "nueva") avisoAtencion();
-      setPropuesta({ intencion, emparejamiento: resultado, transcripcion, dictadoId, aviso });
+      setPropuesta({ intencion, emparejamiento: resultado, transcripcion, dictadoId });
     },
     [fecha, jornada],
   );
@@ -349,8 +349,6 @@ export default function App() {
       setPropuesta({
         ...propuesta,
         emparejamiento: { ...propuesta.emparejamiento, decision: "encontrada", mejor: candidata },
-        // Eligió tienda a mano: el repaso de la IA ya no puede cambiársela.
-        editadaAMano: true,
       });
     },
     [propuesta],
@@ -365,11 +363,7 @@ export default function App() {
   const editarPropuesta = useCallback(
     (cambios: Partial<Intencion>) => {
       setPropuesta((actual) =>
-        actual
-          ? // Lo que corrige a mano manda: el repaso de la IA, que llega
-            // después, ya no le pisa estos campos.
-            { ...actual, intencion: { ...actual.intencion, ...cambios }, editadaAMano: true }
-          : actual,
+        actual ? { ...actual, intencion: { ...actual.intencion, ...cambios } } : actual,
       );
     },
     [],

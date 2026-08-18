@@ -144,17 +144,11 @@ export interface Propuesta {
    * ruta (o el botón +), no dictándola: ahí no hubo dictado que rastrear.
    */
   dictadoId?: number;
-  aviso?: string;
   /**
    * Registrada tocando una tienda de la ruta, no dictada. La tarjeta oculta la
    * transcripción y el «¿es esta?»: ya sabemos a quién, la tocó él mismo.
    */
   manual?: boolean;
-  /**
-   * Ya la corrigió a mano. El repaso de Gemini, que llega después de que la
-   * tarjeta está en pantalla, **no puede pisar** lo que él acaba de escribir.
-   */
-  editadaAMano?: boolean;
 }
 
 /**
@@ -218,23 +212,8 @@ export function TarjetaConfirmacion({
         overflowY: "auto",
       }}
     >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "baseline",
-          justifyContent: "space-between",
-          gap: 10,
-          marginBottom: 12,
-        }}
-      >
-        <div style={{ ...S.rotulo, fontSize: 13 }}>
-          {esPago ? "Confirma el cobro" : "Confirma la entrega"}
-        </div>
-        {propuesta.aviso && (
-          <div style={{ fontSize: 12, color: "var(--ambar-señal)", flex: "none" }}>
-            {propuesta.aviso}
-          </div>
-        )}
+      <div style={{ ...S.rotulo, fontSize: 13, marginBottom: 12 }}>
+        {esPago ? "Confirma el cobro" : "Confirma la entrega"}
       </div>
 
       {/* Quién. Es lo que más se equivoca y lo que más caro sale. */}

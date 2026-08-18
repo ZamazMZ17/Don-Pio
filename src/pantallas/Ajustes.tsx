@@ -16,7 +16,6 @@ import {
   MODELO_POR_DEFECTO,
   guardarAjuste,
 } from "../voz/ajustes";
-import { pendientes, procesarCola } from "../voz/cola";
 import { useAjuste, useAjusteBool, type Tema } from "../lib/ganchos";
 import { hoyISO } from "../lib/fecha";
 import { avisoAtencion, avisoGuardado } from "../lib/aviso";
@@ -37,10 +36,8 @@ export function Ajustes({ volver }: { volver: () => void }) {
   const sonido = useAjusteBool(CLAVE_SONIDO, true);
   const tema = useAjuste(CLAVE_TEMA, "oscuro") as Tema;
 
-  const enCola = useLiveQuery(() => pendientes(), []) ?? 0;
   const tiendas = useLiveQuery(() => db.tiendas.count(), []) ?? 0;
   const [verKey, setVerKey] = useState(false);
-  const [repasando, setRepasando] = useState(false);
 
   const [compartiendo, setCompartiendo] = useState(false);
   const [restaurando, setRestaurando] = useState(false);
@@ -216,32 +213,6 @@ export function Ajustes({ volver }: { volver: () => void }) {
           <div style={{ fontSize: 13, color: "var(--texto-4)", marginTop: 8, lineHeight: 1.5 }}>
             Los nombres de modelo cambian cada pocos meses; por eso se edita aquí.
           </div>
-
-          {enCola > 0 && (
-            <button
-              className="pulsable"
-              onClick={() => {
-                setRepasando(true);
-                void procesarCola(50).finally(() => setRepasando(false));
-              }}
-              style={{
-                marginTop: 14,
-                height: 52,
-                width: "100%",
-                borderRadius: "var(--radio)",
-                border: "1.5px solid var(--borde)",
-                color: "var(--acento-300)",
-                fontSize: 15,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              {repasando
-                ? "Repasando…"
-                : `Repasar ${enCola} ${enCola === 1 ? "dictado" : "dictados"} pendientes`}
-            </button>
-          )}
         </div>
 
         <Valor

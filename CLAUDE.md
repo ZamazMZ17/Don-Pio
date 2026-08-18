@@ -107,9 +107,9 @@ intérprete que lo dictado.
 | **Hoy** | Encabezado con las cuatro cifras (salí con → me quedan · cobrado · por cobrar) y, con un interruptor **Agenda / Ruta**: *Agenda* es la lista de lo ya hecho hoy, tipo agenda, con punto de color por estado; *Ruta* es **todos** los clientes en orden de ruta para ir tocando de uno en uno: al que aún no se le entregó abre la tarjeta de confirmación del dictado para registrar; al que **ya** se le entregó abre su **Detalle** para editar cantidades y precio (el precio por kilo casi siempre varía), igual que tocar su fila en Agenda. Con un **+** en lugar del micrófono para dar de alta a alguien que no está en el directorio |
 | **Detalle de entrega** | Cantidades con +/−, tandas de peso que se suman solas, precio por kilo, total en grande, pago y saldo, y la deuda anterior arriba |
 | **Cobranza** | El modo del retorno: solo tiendas con saldo, con la cuenta ya sacada (día + deuda). Ordenada **del último al primero** por defecto: reparte de ida y cobra de vuelta, así que la última tienda a la que dejó es la primera que reencuentra. Las que ya **abonaron una parte** (pago parcial, `tocada`) se hunden al final con una etiqueta «ya abonó», para que no estorben arriba y suba la siguiente por cobrar del todo |
-| **Cierre del día** | «Deberías tener S/ X en la caja» para cuadrar contra la plata física |
+| **Cierre del día** | «Deberías tener S/ X en la caja» para cuadrar contra la plata física. Ya cerrado, un botón pide a Gemini el informe del día |
 | **Tiendas** | El directorio que se construyó solo, con buscador y orden **por ruta o alfabético (A–Z)** |
-| **Historial** | Días cerrados y la semana |
+| **Historial** | Días cerrados y la semana, con un botón para el informe de Gemini de esos 7 días |
 | **Detalle de día** | Un día cerrado, entrega por entrega |
 | **Ajustes** | Apariencia (oscuro/claro/sistema), hora de cierre, redondeo, sonido, respaldo, la API key de Gemini (solo para informes) y **Actualización**: qué versión tiene puesta y el enlace para bajar la última |
 | **Cargar stock** | «¿Con cuánto sales hoy?», con la sugerencia aprendida por día de semana |

@@ -203,6 +203,19 @@ export interface Ajuste {
   valor: string;
 }
 
+/**
+ * Un informe de Gemini, guardado para no tener que regenerarlo cada vez que
+ * se vuelve a ver. `clave` es `dia-2026-08-18` o `semana-2026-08-18` (esta
+ * última fechada el día en que se generó, porque la ventana de 7 días se
+ * corre a diario).
+ */
+export interface Informe {
+  clave: string;
+  resumen: string;
+  destacados: string[];
+  creado: number;
+}
+
 class BaseDonPio extends Dexie {
   tiendas!: Table<Tienda, number>;
   jornadas!: Table<Jornada, string>;
@@ -212,6 +225,7 @@ class BaseDonPio extends Dexie {
   dictados!: Table<Dictado, number>;
   gastos!: Table<Gasto, number>;
   ajustes!: Table<Ajuste, string>;
+  informes!: Table<Informe, string>;
 
   constructor() {
     super("donpio");
@@ -240,6 +254,8 @@ class BaseDonPio extends Dexie {
       );
 
     this.version(4).stores({ gastos: "++id, fecha, creada" });
+
+    this.version(5).stores({ informes: "clave" });
   }
 }
 

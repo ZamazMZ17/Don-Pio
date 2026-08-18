@@ -1,13 +1,42 @@
+import { useEffect, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { ChevronRight } from "lucide-react";
 import { db } from "../db/db";
 import { resumenDe } from "../db/jornada";
 import { money } from "../lib/dinero";
 import { diaCorto, hoyISO, inicialDia, ultimosDias, type DiaISO } from "../lib/fecha";
+import { useAjuste } from "../lib/ganchos";
+import { CLAVE_API } from "../voz/ajustes";
+import { informeDeLaSemana, type Informe } from "../voz/informes";
 import { Cabecera, Fila, S, Vacio } from "../ui/base";
 
 /** Los días cerrados y cómo va la semana. */
 export function Historial({ volver, abrirDia }: { volver: () => void; abrirDia: (d: DiaISO) => void }) {
+  const apiKey = useAjuste(CLAVE_API);
+  const [informe, setInforme] = useState<Informe | null>(null);
+  const [generandoInforme, setGenerandoInforme] = useState(false);
+  const [errorInforme, setErrorInforme] = useState<string | null>(null);
+
+  // Igual que en Cierre: si ya se generó hoy, se enseña sin gastar otra
+  // llamada. La clave lleva la fecha de hoy porque la ventana de 7 días se
+  // corre a diario — ver `informes.ts`.
+  useEffect(() => {
+    void db.informes.get(`semana-${hoyISO()}`).then((g) => {
+      if (g) setInforme(g);
+    });
+  }, []);
+
+  const generarInforme = () => {
+    setGenerandoInforme(true);
+    setErrorInforme(null);
+    void informeDeLaSemana(true)
+      .then(setInforme)
+      .catch((e) =>
+        setErrorInforme(e instanceof Error ? e.message : "No se pudo generar el informe."),
+      )
+      .finally(() => setGenerandoInforme(false));
+  };
+
   const datos = useLiveQuery(async () => {
     const jornadas = (await db.jornadas.toArray()).sort((a, b) => (a.fecha < b.fecha ? 1 : -1));
     const cerradas = jornadas.filter((j) => j.estado === "cerrada");
@@ -56,6 +85,78 @@ export function Historial({ volver, abrirDia }: { volver: () => void; abrirDia: 
           gap: 12,
         }}
       >
+        {/* Igual que el informe del día en Cierre: números ya sacados, contados
+            en un par de frases. Guardado del día, para no gastar cuota si
+            solo se quiere volver a ver. */}
+        <div style={{ ...S.tarjeta, padding: 16 }}>
+          <div style={{ ...S.rotulo, marginBottom: 12 }}>Informe de la semana</div>
+          {!apiKey ? (
+            <div style={{ fontSize: 14, color: "var(--texto-3)", lineHeight: 1.5 }}>
+              Pon tu API key de Gemini en Ajustes para que te resuma la semana.
+            </div>
+          ) : (
+            <>
+              {informe && (
+                <div style={{ marginBottom: 14 }}>
+                  <div
+                    style={{
+                      fontSize: 15,
+                      color: "var(--texto-2)",
+                      lineHeight: 1.55,
+                      marginBottom: informe.destacados.length ? 12 : 0,
+                    }}
+                  >
+                    {informe.resumen}
+                  </div>
+                  {informe.destacados.length > 0 && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      {informe.destacados.map((d, i) => (
+                        <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                          <span style={{ color: "var(--acento-claro)", fontSize: 14, lineHeight: 1.5 }}>
+                            •
+                          </span>
+                          <span style={{ fontSize: 14, color: "var(--texto-2)", lineHeight: 1.5, flex: 1 }}>
+                            {d}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              {errorInforme && (
+                <div style={{ fontSize: 13, color: "var(--rojo)", marginBottom: 10, lineHeight: 1.5 }}>
+                  {errorInforme}
+                </div>
+              )}
+              <button
+                onClick={generarInforme}
+                disabled={generandoInforme}
+                className="pulsable"
+                style={{
+                  height: 48,
+                  width: "100%",
+                  borderRadius: "var(--radio)",
+                  border: "1.5px solid var(--borde)",
+                  color: "var(--acento-300)",
+                  fontSize: 15,
+                  fontWeight: 600,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  opacity: generandoInforme ? 0.6 : 1,
+                }}
+              >
+                {generandoInforme
+                  ? "Escribiendo…"
+                  : informe
+                    ? "Volver a generar"
+                    : "Generar informe con Gemini"}
+              </button>
+            </>
+          )}
+        </div>
+
         <div style={{ ...S.tarjeta, padding: 16 }}>
           <div style={{ ...S.rotulo, marginBottom: 14 }}>Esta semana</div>
           <div

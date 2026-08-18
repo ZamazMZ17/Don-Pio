@@ -1,10 +1,14 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
+import { db } from "../db/db";
 import { cerrarDia, leerJornada, resumenDe } from "../db/jornada";
 import { cuentasPendientes } from "../db/entregas";
 import { money } from "../lib/dinero";
 import type { DiaISO } from "../lib/fecha";
 import { avisoGuardado } from "../lib/aviso";
+import { useAjuste } from "../lib/ganchos";
+import { CLAVE_API } from "../voz/ajustes";
+import { informeDelDia, type Informe } from "../voz/informes";
 import { BotonPrincipal, Cabecera, Fila, S } from "../ui/base";
 
 /**
@@ -14,6 +18,10 @@ import { BotonPrincipal, Cabecera, Fila, S } from "../ui/base";
 export function Cierre({ fecha, volver }: { fecha: DiaISO; volver: () => void }) {
   const [cuadro, setCuadro] = useState<boolean | null>(null);
   const [confirmando, setConfirmando] = useState(false);
+  const apiKey = useAjuste(CLAVE_API);
+  const [informe, setInforme] = useState<Informe | null>(null);
+  const [generandoInforme, setGenerandoInforme] = useState(false);
+  const [errorInforme, setErrorInforme] = useState<string | null>(null);
 
   const datos = useLiveQuery(async () => {
     const [resumen, jornada, cuentas] = await Promise.all([
@@ -24,15 +32,37 @@ export function Cierre({ fecha, volver }: { fecha: DiaISO; volver: () => void })
     return { resumen, jornada, pendiente: cuentas.reduce((a, c) => a + c.total, 0) };
   }, [fecha]);
 
+  const cerrada = datos?.jornada.estado === "cerrada";
+
+  // Si ya se generó antes, se enseña de una sin gastar otra llamada. Solo
+  // mira el caché — `db.informes.get` fuera de un `useLiveQuery` porque esto
+  // no necesita reaccionar a cambios, solo cargar una vez al cerrar.
+  useEffect(() => {
+    if (!cerrada) return;
+    void db.informes.get(`dia-${fecha}`).then((g) => {
+      if (g) setInforme(g);
+    });
+  }, [cerrada, fecha]);
+
   if (!datos) return null;
-  const { resumen, jornada, pendiente } = datos;
-  const cerrada = jornada.estado === "cerrada";
+  const { resumen, pendiente } = datos;
 
   const cerrar = () => {
     void cerrarDia(fecha, resumen.cobrado - resumen.gastos, cuadro).then(() => {
       avisoGuardado();
       volver();
     });
+  };
+
+  const generarInforme = () => {
+    setGenerandoInforme(true);
+    setErrorInforme(null);
+    void informeDelDia(fecha, true)
+      .then(setInforme)
+      .catch((e) =>
+        setErrorInforme(e instanceof Error ? e.message : "No se pudo generar el informe."),
+      )
+      .finally(() => setGenerandoInforme(false));
   };
 
   return (
@@ -161,6 +191,85 @@ export function Cierre({ fecha, volver }: { fecha: DiaISO; volver: () => void })
             tam={17}
           />
         </div>
+
+        {/*
+          El único momento en que Gemini entra en juego: el día ya está
+          congelado, así que le cuenta con números que ya no van a cambiar.
+          Se guarda en `informes` para no volver a gastar cuota si solo
+          quiere verlo de nuevo.
+        */}
+        {cerrada && (
+          <div style={{ ...S.tarjeta, padding: 16 }}>
+            <div style={{ ...S.rotulo, marginBottom: 12 }}>Informe del día</div>
+            {!apiKey ? (
+              <div style={{ fontSize: 14, color: "var(--texto-3)", lineHeight: 1.5 }}>
+                Pon tu API key de Gemini en Ajustes para que te resuma el día.
+              </div>
+            ) : (
+              <>
+                {informe && (
+                  <div style={{ marginBottom: 14 }}>
+                    <div
+                      style={{
+                        fontSize: 15,
+                        color: "var(--texto-2)",
+                        lineHeight: 1.55,
+                        marginBottom: informe.destacados.length ? 12 : 0,
+                      }}
+                    >
+                      {informe.resumen}
+                    </div>
+                    {informe.destacados.length > 0 && (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {informe.destacados.map((d, i) => (
+                          <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                            <span style={{ color: "var(--acento-claro)", fontSize: 14, lineHeight: 1.5 }}>
+                              •
+                            </span>
+                            <span style={{ fontSize: 14, color: "var(--texto-2)", lineHeight: 1.5, flex: 1 }}>
+                              {d}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {errorInforme && (
+                  <div
+                    style={{ fontSize: 13, color: "var(--rojo)", marginBottom: 10, lineHeight: 1.5 }}
+                  >
+                    {errorInforme}
+                  </div>
+                )}
+                <button
+                  onClick={generarInforme}
+                  disabled={generandoInforme}
+                  className="pulsable"
+                  style={{
+                    height: 48,
+                    width: "100%",
+                    borderRadius: "var(--radio)",
+                    border: "1.5px solid var(--borde)",
+                    color: "var(--acento-300)",
+                    fontSize: 15,
+                    fontWeight: 600,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    opacity: generandoInforme ? 0.6 : 1,
+                  }}
+                >
+                  {generandoInforme
+                    ? "Escribiendo…"
+                    : informe
+                      ? "Volver a generar"
+                      : "Generar informe con Gemini"}
+                </button>
+              </>
+            )}
+          </div>
+        )}
 
         {cerrada ? (
           <div
