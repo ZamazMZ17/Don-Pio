@@ -43,7 +43,7 @@ export function Historial({ volver, abrirDia }: { volver: () => void; abrirDia: 
 
     const semana = ultimosDias(hoyISO(), 7);
     const resumenes = await Promise.all(semana.map((d) => resumenDe(d)));
-    const deudas = await db.deudas.toArray();
+    const [deudas, tiendas] = await Promise.all([db.deudas.toArray(), db.tiendas.toArray()]);
 
     const dias = await Promise.all(
       cerradas.slice(0, 30).map(async (j) => ({ jornada: j, resumen: await resumenDe(j.fecha) })),
@@ -57,23 +57,38 @@ export function Historial({ volver, abrirDia }: { volver: () => void; abrirDia: 
       db.gastos.where("fecha").equals(hoy).count(),
     ]);
 
+    const abiertas = deudas.filter((d) => !d.cerrada);
+    const porId = new Map(tiendas.map((t) => [t.id!, t]));
+    const montoPorTienda = new Map<number, number>();
+    for (const d of abiertas) {
+      montoPorTienda.set(d.tiendaId, (montoPorTienda.get(d.tiendaId) ?? 0) + (d.monto - d.saldado));
+    }
+    const deudasPendientes = [...montoPorTienda.entries()]
+      .filter(([, monto]) => monto > 0)
+      .map(([tiendaId, monto]) => ({
+        tiendaId,
+        nombre: porId.get(tiendaId)?.nombre ?? "Sin nombre",
+        monto,
+      }))
+      .sort((a, b) => b.monto - a.monto);
+
     return {
       semana,
       resumenes,
       dias,
       hayActividadHoy: resumenes[resumenes.length - 1].entregas > 0 || pagosHoy > 0 || gastosHoy > 0,
-      deudaAbierta: deudas
-        .filter((d) => !d.cerrada)
-        .reduce((a, d) => a + (d.monto - d.saldado), 0),
+      deudaAbierta: abiertas.reduce((a, d) => a + (d.monto - d.saldado), 0),
+      deudasPendientes,
       // `porCobrarDelDia` es siempre 0 en un día ya cerrado — eso pasó a
       // vivir como deuda. Para saber si ese día en concreto sigue debiendo
       // hay que mirar si queda alguna deuda abierta que haya nacido ese día.
-      diasConDeudaAbierta: new Set(deudas.filter((d) => !d.cerrada).map((d) => d.fechaOrigen)),
+      diasConDeudaAbierta: new Set(abiertas.map((d) => d.fechaOrigen)),
     };
   }, []);
 
   if (!datos) return null;
-  const { semana, resumenes, dias, deudaAbierta, diasConDeudaAbierta, hayActividadHoy } = datos;
+  const { semana, resumenes, dias, deudaAbierta, deudasPendientes, diasConDeudaAbierta, hayActividadHoy } =
+    datos;
 
   const maximo = Math.max(1, ...resumenes.map((r) => r.repartidoPollos));
   const repartidoSemana = resumenes.reduce((a, r) => a + r.repartidoPollos, 0);
@@ -217,6 +232,19 @@ export function Historial({ volver, abrirDia }: { volver: () => void; abrirDia: 
             />
           </div>
         </div>
+
+        {deudasPendientes.length > 0 && (
+          <>
+            <div style={{ ...S.rotulo, fontSize: 13, padding: "6px 4px 0" }}>
+              Deudas de días anteriores
+            </div>
+            <div style={{ ...S.tarjeta, padding: 16 }}>
+              {deudasPendientes.map((d) => (
+                <Fila key={d.tiendaId} label={d.nombre} valor={money(d.monto)} color="var(--ambar)" />
+              ))}
+            </div>
+          </>
+        )}
 
         {hayActividadHoy && (
           <button
