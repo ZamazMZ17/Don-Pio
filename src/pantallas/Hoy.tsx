@@ -166,9 +166,9 @@ export function Hoy({
             <img
               src={logo}
               alt=""
-              width={28}
-              height={28}
-              style={{ borderRadius: 7, flex: "none" }}
+              width={34}
+              height={34}
+              style={{ flex: "none", objectFit: "contain" }}
             />
             <div style={{ fontSize: 22, fontWeight: 600 }}>{diaCorto(fecha)}</div>
           </div>
