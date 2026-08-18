@@ -167,9 +167,9 @@ export function Hoy({
               src={logo}
               alt=""
               className="logo-marca"
-              width={56}
-              height={56}
-              style={{ flex: "none", objectFit: "contain", margin: "-8px 0" }}
+              width={60}
+              height={60}
+              style={{ flex: "none", objectFit: "contain", margin: "-10px 0" }}
             />
             <div style={{ fontSize: 22, fontWeight: 600 }}>{diaCorto(fecha)}</div>
           </div>
@@ -214,7 +214,18 @@ export function Hoy({
           }}
         >
           {resumen.stockPollos > 0 ? (
-            <>
+            // `flex: 1` + `justifyContent: center`: reparte el espacio que le
+            // deja el bloque de la derecha (marginLeft: auto) y centra el par
+            // ahí adentro, en vez de quedarse pegado al borde izquierdo.
+            <div
+              style={{
+                display: "flex",
+                flex: 1,
+                justifyContent: "center",
+                alignItems: "flex-start",
+                gap: 10,
+              }}
+            >
               <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 <div style={{ ...S.rotulo, fontSize: 12, letterSpacing: 0.9 }}>Salí con</div>
                 <div
@@ -235,7 +246,7 @@ export function Hoy({
                   {resumen.restantePollos}
                 </div>
               </div>
-            </>
+            </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 3, textAlign: "left" }}>
               <div style={{ ...S.rotulo, fontSize: 12, letterSpacing: 0.9 }}>Has repartido</div>
@@ -271,7 +282,7 @@ export function Hoy({
             </div>
             {resumen.pechosLibres > 0 && (
               <div style={{ color: "var(--ambar)" }}>
-                {resumen.pechosLibres} {resumen.pechosLibres === 1 ? "pecho libre" : "pechos libres"}
+                {resumen.pechosLibres} {resumen.pechosLibres === 1 ? "pecho" : "pechos"}
               </div>
             )}
             <div>

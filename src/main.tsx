@@ -11,7 +11,14 @@ import { esNativo } from "./lib/plataforma";
 // El mismo crema del splash (marca/logo.png, drawable/splash.png).
 const CREMA_SPLASH = "#fae7c9";
 
+// Para que la imagen alcance a verse aunque el teléfono cargue rapidísimo:
+// sin este mínimo, en un equipo veloz el splash pasaba en un parpadeo.
+const DURACION_MIN_SPLASH_MS = 2500;
+let inicioSplash = 0;
+
 async function cerrarSplash(): Promise<void> {
+  const falta = DURACION_MIN_SPLASH_MS - (performance.now() - inicioSplash);
+  if (falta > 0) await new Promise((resolver) => setTimeout(resolver, falta));
   await SplashScreen.hide();
   // Vuelve a transparente: es como vive el resto de la app (`--seguro-arriba`
   // depende de que la barra de estado se dibuje encima de la WebView, no al
@@ -54,6 +61,7 @@ function pintar(): void {
 // CSS corriendo todavía que dependa de la barra de estado transparente
 // (`--seguro-arriba`), así que acá se la pone sólida y del mismo crema.
 if (esNativo) {
+  inicioSplash = performance.now();
   StatusBar.setOverlaysWebView({ overlay: false })
     .then(() =>
       Promise.all([
