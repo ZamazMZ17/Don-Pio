@@ -9,31 +9,54 @@ import { Cabecera, Fila, S } from "../ui/base";
 /** Un día cerrado, entrega por entrega. Para cuando alguien discute una cuenta. */
 export function Dia({ fecha, volver }: { fecha: DiaISO; volver: () => void }) {
   const datos = useLiveQuery(async () => {
-    const [jornada, resumen, entregas, tiendas, deudas] = await Promise.all([
+    const [jornada, resumen, entregas, tiendas, deudas, pagos, gastosDb] = await Promise.all([
       leerJornada(fecha),
       resumenDe(fecha),
       db.entregas.where("fecha").equals(fecha).toArray(),
       db.tiendas.toArray(),
       db.deudas.where("fechaOrigen").equals(fecha).toArray(),
+      db.pagos.where("fecha").equals(fecha).toArray(),
+      db.gastos.where("fecha").equals(fecha).toArray(),
     ]);
+
+    const cobrosDeuda = pagos.filter((p) => p.tipo === "deudaAnterior");
+    const totalCobradoDeuda = cobrosDeuda.reduce((a, p) => a + p.monto, 0);
+
+    const deudaPorTienda = new Map<number, number>();
+    for (const p of cobrosDeuda) {
+      deudaPorTienda.set(p.tiendaId, (deudaPorTienda.get(p.tiendaId) ?? 0) + p.monto);
+    }
+
     return {
       jornada,
       resumen,
       entregas: entregas.sort((a, b) => a.orden - b.orden),
       porId: new Map(tiendas.map((t) => [t.id!, t])),
       traspasada: deudas.reduce((a, d) => a + d.monto, 0),
-      // De las entregas, no del resumen: con el día cerrado el resumen ya no
-      // cuenta ese saldo (vive como deuda), y aquí queremos la verdad de ese
-      // día — decir «todo cobrado» cuando alguien quedó debiendo es mentir.
       quedoDebiendo: entregas.reduce(
         (a, e) => a + Math.max(0, e.totalCalculado - e.totalCobrado - e.descuentoRedondeo),
         0,
       ),
+      deudaPorTienda,
+      totalCobradoDeuda,
+      gastos: gastosDb.sort((a, b) => a.creada - b.creada),
+      totalGastos: gastosDb.reduce((a, g) => a + g.monto, 0),
     };
   }, [fecha]);
 
   if (!datos) return null;
-  const { jornada, resumen, entregas, porId, traspasada, quedoDebiendo } = datos;
+  const {
+    jornada,
+    resumen,
+    entregas,
+    porId,
+    traspasada,
+    quedoDebiendo,
+    deudaPorTienda,
+    totalCobradoDeuda,
+    gastos,
+    totalGastos,
+  } = datos;
 
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
@@ -61,9 +84,16 @@ export function Dia({ fecha, volver }: { fecha: DiaISO; volver: () => void }) {
           />
           <Ficha
             rotulo="Cobrado"
-            valor={money(resumen.cobrado)}
+            valor={money(resumen.cobrado + totalCobradoDeuda)}
             valorColor="var(--verde)"
-            pie={quedoDebiendo > 0 ? `quedó ${money(quedoDebiendo)}` : "todo cobrado"}
+            pie={
+              [
+                quedoDebiendo > 0 ? `quedó ${money(quedoDebiendo)}` : "todo cobrado",
+                totalCobradoDeuda > 0 ? `+${money(totalCobradoDeuda)} deuda` : "",
+              ]
+                .filter(Boolean)
+                .join(" · ")
+            }
             pieColor={quedoDebiendo > 0 ? "var(--rojo)" : "var(--texto-4)"}
           />
         </div>
@@ -143,9 +173,65 @@ export function Dia({ fecha, volver }: { fecha: DiaISO; volver: () => void }) {
                   Tandas: {e.tandas.map((t) => kg(t)).join(" + ")}
                 </div>
               )}
+
+              {(e.descuentoRedondeo > 0 || e.notas) && (
+                <div
+                  style={{
+                    fontSize: 13,
+                    color: "var(--texto-4)",
+                    marginTop: e.tandas.length > 1 ? 6 : 11,
+                    paddingTop: e.tandas.length > 1 ? 0 : 10,
+                    borderTop: e.tandas.length > 1 ? "none" : "1px solid var(--linea)",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 4,
+                  }}
+                >
+                  {e.descuentoRedondeo > 0 && (
+                    <div>Redondeo a favor: {money(e.descuentoRedondeo)}</div>
+                  )}
+                  {e.notas && <div style={{ fontStyle: "italic" }}>{e.notas}</div>}
+                </div>
+              )}
             </div>
           );
         })}
+
+        {deudaPorTienda.size > 0 && (
+          <>
+            <div style={{ ...S.rotulo, fontSize: 13, padding: "6px 4px 0" }}>
+              Cobros de deuda anterior
+            </div>
+            <div style={{ ...S.tarjeta, padding: 16 }}>
+              {[...deudaPorTienda.entries()].map(([tiendaId, monto]) => (
+                <Fila
+                  key={tiendaId}
+                  label={porId.get(tiendaId)?.nombre ?? "Sin nombre"}
+                  valor={money(monto)}
+                  color="var(--verde)"
+                />
+              ))}
+              <Fila
+                label="Total cobrado de deuda"
+                valor={money(totalCobradoDeuda)}
+                color="var(--verde)"
+                peso={700}
+              />
+            </div>
+          </>
+        )}
+
+        {gastos.length > 0 && (
+          <>
+            <div style={{ ...S.rotulo, fontSize: 13, padding: "6px 4px 0" }}>Gastos del día</div>
+            <div style={{ ...S.tarjeta, padding: 16 }}>
+              {gastos.map((g) => (
+                <Fila key={g.id} label={g.concepto} valor={money(g.monto)} color="var(--rojo)" />
+              ))}
+              <Fila label="Total gastos" valor={money(totalGastos)} color="var(--rojo)" peso={700} />
+            </div>
+          </>
+        )}
 
         <div style={{ ...S.tarjeta, padding: 16 }}>
           <div style={{ ...S.rotulo, marginBottom: 12 }}>Cierre de ese día</div>
@@ -159,6 +245,12 @@ export function Dia({ fecha, volver }: { fecha: DiaISO; volver: () => void }) {
             color={jornada.cuadro === 0 ? "var(--rojo)" : "var(--texto)"}
           />
           <Fila label="Regalado en redondeos" valor={money(resumen.descuentos)} />
+          {totalGastos > 0 && (
+            <Fila label="Gastos del día" valor={money(totalGastos)} color="var(--rojo)" />
+          )}
+          {totalCobradoDeuda > 0 && (
+            <Fila label="Cobrado de deuda anterior" valor={money(totalCobradoDeuda)} color="var(--verde)" />
+          )}
           <Fila label="Deuda que pasó a hoy" valor={money(traspasada)} color="var(--ambar)" />
         </div>
       </div>
