@@ -275,15 +275,6 @@ export function Hoy({
                 return `${piernas} ${piernas === 1 ? "pierna" : "piernas"}`;
               })()}
             </div>
-            {/* Junto a piernas, no a pechos: de ahí sale (piernas de más al
-                partir pollos enteros, ver CLAUDE.md §7), no de las entregas.
-                Pegado bajo «X pechos» se leía como si contradijera esa
-                cuenta — «0 pechos» seguido de «1 pecho» de la nada. */}
-            {resumen.pechosLibres > 0 && (
-              <div style={{ color: "var(--ambar)" }}>
-                {resumen.pechosLibres} {resumen.pechosLibres === 1 ? "pecho libre" : "pechos libres"}
-              </div>
-            )}
             {/* Siempre visible, igual que piernas — no solo cuando hay
                 pollos partidos, para que se vea de un vistazo que la
                 cuenta sigue en cero y no que falta por cargar. */}
