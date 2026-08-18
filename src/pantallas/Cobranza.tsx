@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type MutableRefObject } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { cuentasPendientes, registrarCobro } from "../db/entregas";
 import { descripcionEntrega, repartirPago, TOPE_REDONDEO } from "../dominio/calculo";
 import { aCentimos, money } from "../lib/dinero";
@@ -311,6 +311,26 @@ export function Cobranza({
                 minWidth: 0,
               }}
             />
+            {busca && (
+              <button
+                onClick={() => setBusca("")}
+                aria-label="Limpiar búsqueda"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  // Mismo truco de zona táctil de 52px que el botón de orden
+                  // (§4): el margen negativo agranda lo que responde al dedo
+                  // sin agrandar la barra ni empujar al buscador.
+                  minHeight: 52,
+                  minWidth: 52,
+                  margin: "-14px -6px",
+                  flex: "none",
+                }}
+              >
+                <X size={18} color="var(--texto-4)" />
+              </button>
+            )}
           </div>
         </div>
       )}
