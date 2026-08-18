@@ -215,6 +215,11 @@ export interface CuentaTienda {
    * la ruta — el que aún no pagó nada sube al tope.
    */
   tocada: boolean;
+  /**
+   * Tiene hoy una entrega sin precio: la marcó "sin pesar" por voz, o
+   * simplemente confirmó la tarjeta sin poner el total todavía. En los dos
+   * casos `totalCalculado` queda en 0 y hay que poder cobrarla igual.
+   */
   tieneSinPesar: boolean;
 }
 
@@ -261,8 +266,14 @@ export async function cuentasPendientes(
       .sort((a, b) => (a.fechaOrigen < b.fechaOrigen ? -1 : 1));
     const deuda = abiertas.reduce((a, d) => a + (d.monto - d.saldado), 0);
 
-    const sinPesarPendientes = !diaCerrado && suyas.some(
-      (e) => e.sinPesar === 1 && e.totalCalculado === 0 && e.estadoPago === "pendiente",
+    // `totalCalculado === 0` siempre quiere decir "todavía no tiene precio"
+    // (`calcular()` solo devuelve 0 por la rama `incompleto`) — sin
+    // importar si se marcó explícitamente "sin pesar" por voz o si
+    // simplemente confirmó la tarjeta sin poner el total. Sin esto, una
+    // tienda con una entrega sin precio desaparecía de Cobranza igual que
+    // antes del arreglo: no había forma de cobrarle.
+    const sinPrecioPendiente = !diaCerrado && suyas.some(
+      (e) => e.totalCalculado === 0 && e.estadoPago === "pendiente",
     );
 
     // Hacia abajo a los 10 céntimos: es lo que se puede pagar con monedas.
@@ -273,7 +284,7 @@ export async function cuentasPendientes(
     // redondeo que el modelo ya da por perdonadas. Se mira el saldo entero, no
     // cada deuda suelta: tres migajas de 4 céntimos sí suman una moneda y esa
     // sí se cobra.
-    if (total <= 0 && !sinPesarPendientes) continue;
+    if (total <= 0 && !sinPrecioPendiente) continue;
     // Recibió algo y aún debe: un pago parcial en una entrega de hoy
     // (`totalCobrado`/`descuentoRedondeo`) o un abono a una deuda vieja
     // (`saldado`). El día cerrado no cuenta lo de hoy, así que ahí solo mira
@@ -289,7 +300,7 @@ export async function cuentasPendientes(
       total,
       entregas: suyas,
       tocada,
-      tieneSinPesar: sinPesarPendientes,
+      tieneSinPesar: sinPrecioPendiente,
     });
   }
 
@@ -383,11 +394,15 @@ export async function registrarCobro(
     }
 
     if (resto > 0) {
-      const sinPesarHoy = (await db.entregas.where("[fecha+tiendaId]").equals([fecha, tiendaId]).toArray())
-        .filter((e) => e.sinPesar === 1 && e.totalCalculado === 0)
+      // Igual que en `cuentasPendientes`: cualquier entrega de hoy que
+      // todavía no tenga precio, se haya marcado "sin pesar" o no.
+      const sinPrecioHoy = (
+        await db.entregas.where("[fecha+tiendaId]").equals([fecha, tiendaId]).toArray()
+      )
+        .filter((e) => e.totalCalculado === 0)
         .sort((a, b) => a.orden - b.orden);
 
-      for (const e of sinPesarHoy) {
+      for (const e of sinPrecioHoy) {
         if (resto <= 0) break;
         await db.entregas.update(e.id!, {
           totalCalculado: resto,

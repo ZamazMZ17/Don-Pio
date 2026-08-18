@@ -404,6 +404,33 @@ describe("cobrar", () => {
     expect(await cuentasPendientes(HOY)).toHaveLength(0);
   });
 
+  it("una entrega confirmada sin precio sigue en cobranza aunque no se haya marcado 'sin pesar'", async () => {
+    // La tarjeta deja confirmar sin poner el total todavía (queda
+    // "incompleto"): sin peso, sin precio por kilo, sin total dictado y sin
+    // marcar `sinPesar`. Antes del arreglo, esto desaparecía de Cobranza
+    // igual que una entrega sin pesar de verdad.
+    const t = await crearTienda("Chifa Wong");
+    await registrarEntrega({ tiendaId: t.id!, pollos: 10 }, ctx(8), { fecha: HOY });
+
+    const cuentas = await cuentasPendientes(HOY);
+    expect(cuentas).toHaveLength(1);
+    expect(cuentas[0].tieneSinPesar).toBe(true);
+    expect(cuentas[0].total).toBe(0);
+  });
+
+  it("cobrar le pone precio a una entrega sin precio aunque no se haya marcado 'sin pesar'", async () => {
+    const t = await crearTienda("Chifa Wong");
+    await registrarEntrega({ tiendaId: t.id!, pollos: 10 }, ctx(8), { fecha: HOY });
+
+    await registrarCobro(t.id!, aCentimos(320), { fecha: HOY });
+
+    const e = (await db.entregas.toArray())[0];
+    expect(money(e.totalCalculado)).toBe("S/ 320.00");
+    expect(money(e.totalCobrado)).toBe("S/ 320.00");
+    expect(e.estadoPago).toBe("pagado");
+    expect(await cuentasPendientes(HOY)).toHaveLength(0);
+  });
+
   it("registra el redondeo como descuento, sin tocar el total calculado", async () => {
     // La cuenta es 56.90 y le dan 56.50 (plan §3.5).
     const t = await crearTienda("Bodega Sarita");

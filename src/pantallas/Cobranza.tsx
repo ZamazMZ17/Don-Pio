@@ -193,7 +193,7 @@ export function Cobranza({
       c.entregas
         .filter((e) =>
           e.totalCalculado - e.totalCobrado - e.descuentoRedondeo > 0 ||
-          (e.sinPesar === 1 && e.totalCalculado === 0 && e.estadoPago === "pendiente"),
+          (e.totalCalculado === 0 && e.estadoPago === "pendiente"),
         )
         .map((e) => e.id!),
     ),
@@ -352,7 +352,7 @@ export function Cobranza({
           const pendientesHoy = c.entregas.filter(
             (e) =>
               e.totalCalculado - e.totalCobrado - e.descuentoRedondeo > 0 ||
-              (e.sinPesar === 1 && e.totalCalculado === 0 && e.estadoPago === "pendiente"),
+              (e.totalCalculado === 0 && e.estadoPago === "pendiente"),
           );
           const descHoy =
             pendientesHoy.length === 1
