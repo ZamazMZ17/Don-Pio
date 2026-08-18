@@ -49,10 +49,19 @@ export function Historial({ volver, abrirDia }: { volver: () => void; abrirDia: 
       cerradas.slice(0, 30).map(async (j) => ({ jornada: j, resumen: await resumenDe(j.fecha) })),
     );
 
+    // No solo entregas: un día puede tener solo un cobro suelto de deuda
+    // vieja, o solo un gasto, sin ninguna entrega nueva.
+    const hoy = hoyISO();
+    const [pagosHoy, gastosHoy] = await Promise.all([
+      db.pagos.where("fecha").equals(hoy).count(),
+      db.gastos.where("fecha").equals(hoy).count(),
+    ]);
+
     return {
       semana,
       resumenes,
       dias,
+      hayActividadHoy: resumenes[resumenes.length - 1].entregas > 0 || pagosHoy > 0 || gastosHoy > 0,
       deudaAbierta: deudas
         .filter((d) => !d.cerrada)
         .reduce((a, d) => a + (d.monto - d.saldado), 0),
@@ -64,7 +73,7 @@ export function Historial({ volver, abrirDia }: { volver: () => void; abrirDia: 
   }, []);
 
   if (!datos) return null;
-  const { semana, resumenes, dias, deudaAbierta, diasConDeudaAbierta } = datos;
+  const { semana, resumenes, dias, deudaAbierta, diasConDeudaAbierta, hayActividadHoy } = datos;
 
   const maximo = Math.max(1, ...resumenes.map((r) => r.repartidoPollos));
   const repartidoSemana = resumenes.reduce((a, r) => a + r.repartidoPollos, 0);
@@ -209,7 +218,7 @@ export function Historial({ volver, abrirDia }: { volver: () => void; abrirDia: 
           </div>
         </div>
 
-        {resumenHoy.entregas > 0 && (
+        {hayActividadHoy && (
           <button
             onClick={() => abrirDia(hoy)}
             className="pulsable"

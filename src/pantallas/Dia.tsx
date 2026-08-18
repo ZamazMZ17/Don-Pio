@@ -98,7 +98,9 @@ export function Dia({ fecha, volver }: { fecha: DiaISO; volver: () => void }) {
           />
         </div>
 
-        <div style={{ ...S.rotulo, fontSize: 13, padding: "6px 4px 0" }}>Entregas de ese día</div>
+        {entregas.length > 0 && (
+          <div style={{ ...S.rotulo, fontSize: 13, padding: "6px 4px 0" }}>Entregas de ese día</div>
+        )}
 
         {entregas.map((e) => {
           const cobrado = e.totalCobrado + e.descuentoRedondeo;
