@@ -314,7 +314,6 @@ export default function App() {
         ...intencionVacia(),
         intencion: "nueva_entrega",
         cliente: tienda.nombre,
-        pollos: 1,
         sinPesar: tienda.pesa === 0,
       },
       emparejamiento: {
@@ -336,7 +335,7 @@ export default function App() {
     setPropuesta({
       manual: true,
       transcripcion: "",
-      intencion: { ...intencionVacia(), intencion: "nueva_entrega", pollos: 1 },
+      intencion: { ...intencionVacia(), intencion: "nueva_entrega" },
       emparejamiento: { decision: "nueva", candidatas: [], buscado: "" },
     });
   }, []);

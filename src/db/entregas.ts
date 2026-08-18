@@ -215,6 +215,7 @@ export interface CuentaTienda {
    * la ruta — el que aún no pagó nada sube al tope.
    */
   tocada: boolean;
+  tieneSinPesar: boolean;
 }
 
 /**
@@ -260,6 +261,10 @@ export async function cuentasPendientes(
       .sort((a, b) => (a.fechaOrigen < b.fechaOrigen ? -1 : 1));
     const deuda = abiertas.reduce((a, d) => a + (d.monto - d.saldado), 0);
 
+    const sinPesarPendientes = !diaCerrado && suyas.some(
+      (e) => e.sinPesar === 1 && e.totalCalculado === 0 && e.estadoPago === "pendiente",
+    );
+
     // Hacia abajo a los 10 céntimos: es lo que se puede pagar con monedas.
     const total = aCobrar(delDia + deuda);
     // Si lo que queda —sumando todo— no llega ni a una moneda de 10 céntimos,
@@ -268,7 +273,7 @@ export async function cuentasPendientes(
     // redondeo que el modelo ya da por perdonadas. Se mira el saldo entero, no
     // cada deuda suelta: tres migajas de 4 céntimos sí suman una moneda y esa
     // sí se cobra.
-    if (total <= 0) continue;
+    if (total <= 0 && !sinPesarPendientes) continue;
     // Recibió algo y aún debe: un pago parcial en una entrega de hoy
     // (`totalCobrado`/`descuentoRedondeo`) o un abono a una deuda vieja
     // (`saldado`). El día cerrado no cuenta lo de hoy, así que ahí solo mira
@@ -284,6 +289,7 @@ export async function cuentasPendientes(
       total,
       entregas: suyas,
       tocada,
+      tieneSinPesar: sinPesarPendientes,
     });
   }
 
@@ -374,6 +380,30 @@ export async function registrarCobro(
         creada: ahora,
       });
       resto -= aplica;
+    }
+
+    if (resto > 0) {
+      const sinPesarHoy = (await db.entregas.where("[fecha+tiendaId]").equals([fecha, tiendaId]).toArray())
+        .filter((e) => e.sinPesar === 1 && e.totalCalculado === 0)
+        .sort((a, b) => a.orden - b.orden);
+
+      for (const e of sinPesarHoy) {
+        if (resto <= 0) break;
+        await db.entregas.update(e.id!, {
+          totalCalculado: resto,
+          totalCobrado: resto,
+          estadoPago: estadoDe(resto, resto),
+        });
+        await db.pagos.add({
+          tiendaId,
+          entregaId: e.id!,
+          fecha,
+          monto: resto,
+          tipo: "delDia",
+          creada: ahora,
+        });
+        resto = 0;
+      }
     }
 
     if (!opciones.aceptarRedondeo) return;

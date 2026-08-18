@@ -191,7 +191,10 @@ export function Cobranza({
   const idsPendientesHoy = new Set(
     cuentas.flatMap((c) =>
       c.entregas
-        .filter((e) => e.totalCalculado - e.totalCobrado - e.descuentoRedondeo > 0)
+        .filter((e) =>
+          e.totalCalculado - e.totalCobrado - e.descuentoRedondeo > 0 ||
+          (e.sinPesar === 1 && e.totalCalculado === 0 && e.estadoPago === "pendiente"),
+        )
         .map((e) => e.id!),
     ),
   );
@@ -347,7 +350,9 @@ export function Cobranza({
           // dejó dos veces, se resume. Sin nada de hoy, la línea «Deuda del X»
           // de abajo ya dice que es de un día anterior.
           const pendientesHoy = c.entregas.filter(
-            (e) => e.totalCalculado - e.totalCobrado - e.descuentoRedondeo > 0,
+            (e) =>
+              e.totalCalculado - e.totalCobrado - e.descuentoRedondeo > 0 ||
+              (e.sinPesar === 1 && e.totalCalculado === 0 && e.estadoPago === "pendiente"),
           );
           const descHoy =
             pendientesHoy.length === 1
@@ -444,51 +449,60 @@ export function Cobranza({
                   borderTop: "1px solid var(--borde)",
                 }}
               >
-                <span style={{ ...S.rotulo, fontSize: 13 }}>A cobrar</span>
-                <span style={{ fontSize: 26, fontWeight: 700 }}>{money(c.total)}</span>
+                <span style={{ ...S.rotulo, fontSize: 13 }}>
+                  {c.tieneSinPesar && c.total === 0 ? "Por cobrar" : "A cobrar"}
+                </span>
+                {c.tieneSinPesar && c.total === 0 ? (
+                  <span style={{ fontSize: 16, fontWeight: 600, color: "var(--ambar)" }}>Sin precio aún</span>
+                ) : (
+                  <span style={{ fontSize: 26, fontWeight: 700 }}>{money(c.total)}</span>
+                )}
               </div>
 
               {!estaAbierta && !porConfirmar && (
                 <>
+                  {!c.tieneSinPesar && (
+                    <button
+                      className="pulsable-acento"
+                      onClick={() => setConfirmando(c.tienda.id!)}
+                      style={{
+                        marginTop: 12,
+                        height: 52,
+                        width: "100%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        borderRadius: "var(--radio)",
+                        border: "1.5px solid var(--acento)",
+                        color: "var(--acento-300)",
+                        fontSize: 18,
+                        fontWeight: 600,
+                      }}
+                    >
+                      Me pagó todo
+                    </button>
+                  )}
                   <button
-                    className="pulsable-acento"
-                    onClick={() => setConfirmando(c.tienda.id!)}
-                    style={{
-                      marginTop: 12,
-                      height: 52,
-                      width: "100%",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      borderRadius: "var(--radio)",
-                      border: "1.5px solid var(--acento)",
-                      color: "var(--acento-300)",
-                      fontSize: 18,
-                      fontWeight: 600,
-                    }}
-                  >
-                    Me pagó todo
-                  </button>
-                  <button
-                    className="pulsable"
+                    className={c.tieneSinPesar ? "pulsable-acento" : "pulsable"}
                     onClick={() => {
                       setAbierta(c.tienda.id!);
                       setMonto("");
                     }}
                     style={{
-                      marginTop: 8,
-                      height: 46,
+                      marginTop: c.tieneSinPesar ? 12 : 8,
+                      height: c.tieneSinPesar ? 52 : 46,
                       width: "100%",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                       borderRadius: "var(--radio)",
-                      border: "1.5px solid var(--borde)",
-                      color: "var(--texto-2)",
-                      fontSize: 16,
+                      border: `1.5px solid var(${c.tieneSinPesar ? "--acento" : "--borde"})`,
+                      color: `var(${c.tieneSinPesar ? "--acento-300" : "--texto-2"})`,
+                      fontSize: c.tieneSinPesar ? 18 : 16,
+                      fontWeight: c.tieneSinPesar ? 600 : undefined,
                     }}
                   >
-                    Me dio otra cantidad
+                    {c.tieneSinPesar ? "Cobrar" : "Me dio otra cantidad"}
                   </button>
                 </>
               )}
@@ -614,11 +628,13 @@ export function Cobranza({
                         color="var(--ambar)"
                       />
                     )}
-                    <Linea
-                      label="Va a lo de hoy"
-                      valor={money(reparto.aHoy)}
-                      color="var(--verde)"
-                    />
+                    {(!c.tieneSinPesar || c.delDia > 0) && (
+                      <Linea
+                        label="Va a lo de hoy"
+                        valor={money(reparto.aHoy)}
+                        color="var(--verde)"
+                      />
+                    )}
                     {reparto.restante > 0 && (
                       <Linea
                         label={perdonar ? "Se le descuenta" : "Le queda debiendo"}
@@ -628,12 +644,12 @@ export function Cobranza({
                     )}
                     {reparto.vuelto > 0 && (
                       <Linea
-                        label="Te dio de más"
+                        label={c.tieneSinPesar ? "A la entrega sin pesar" : "Te dio de más"}
                         valor={money(reparto.vuelto)}
-                        color="var(--acento-claro)"
+                        color={c.tieneSinPesar ? "var(--verde)" : "var(--acento-claro)"}
                       />
                     )}
-                    {centimos > 0 && reparto.restante === 0 && reparto.vuelto === 0 && (
+                    {centimos > 0 && reparto.restante === 0 && reparto.vuelto === 0 && !c.tieneSinPesar && (
                       <Linea label="Queda al día" valor="Sin saldo" color="var(--verde)" />
                     )}
                   </div>

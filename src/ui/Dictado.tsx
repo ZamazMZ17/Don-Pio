@@ -361,7 +361,8 @@ export function TarjetaConfirmacion({
             <CampoEditable
               flex={1}
               rotulo={mostrarPresas ? "Enteros" : "Pollos"}
-              valor={String(i.pollos)}
+              valor={i.pollos ? String(i.pollos) : ""}
+              placeholder="0"
               onGuardar={(n) => onEditar({ pollos: Math.max(0, Math.round(n)) })}
             />
             {mostrarPresas && (
