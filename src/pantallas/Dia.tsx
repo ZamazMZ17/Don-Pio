@@ -1,13 +1,20 @@
+import { useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
+import { Search, X } from "lucide-react";
 import { db } from "../db/db";
 import { leerJornada, resumenDe } from "../db/jornada";
 import { COLOR_ESTADO, estadoDe, TEXTO_ESTADO } from "../dominio/calculo";
 import { aCobrar, kg, money } from "../lib/dinero";
 import { diaCorto, diaLargo, type DiaISO } from "../lib/fecha";
-import { Cabecera, Fila, S } from "../ui/base";
+import { normalizar, parecido } from "../tiendas/normalizar";
+import { Cabecera, Fila, S, Vacio } from "../ui/base";
 
 /** Un día cerrado, entrega por entrega. Para cuando alguien discute una cuenta. */
 export function Dia({ fecha, volver }: { fecha: DiaISO; volver: () => void }) {
+  /** El texto del buscador. Con muchas tiendas en un día, encontrar una en
+   *  concreto a mano es lento; escribir dos letras la trae de una. */
+  const [busca, setBusca] = useState("");
+
   const datos = useLiveQuery(async () => {
     const [jornada, resumen, entregas, tiendas, deudas, pagos, gastosDb] = await Promise.all([
       leerJornada(fecha),
@@ -95,6 +102,20 @@ export function Dia({ fecha, volver }: { fecha: DiaISO; volver: () => void }) {
     totalGastos,
   } = datos;
 
+  /*
+   * Igual que en Cobranza: el buscador solo aparece cuando la lista es lo
+   * bastante larga como para que valga la pena. El umbral se mide sobre las
+   * entregas completas, no las filtradas, para que no desaparezca en cuanto
+   * se escribe.
+   */
+  const hayBuscador = entregas.length > 6;
+  const q = hayBuscador ? normalizar(busca) : "";
+  const coincide = (tiendaId: number) =>
+    !q || parecido(q, porId.get(tiendaId)?.nombreNorm ?? "") > 0.55;
+  const entregasVisibles = entregas.filter((e) => coincide(e.tiendaId));
+  const deudaVisible = [...deudaPorTienda.entries()].filter(([tiendaId]) => coincide(tiendaId));
+  const sinCoincidencias = q !== "" && entregasVisibles.length === 0 && deudaVisible.length === 0;
+
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
       <Cabecera
@@ -135,11 +156,59 @@ export function Dia({ fecha, volver }: { fecha: DiaISO; volver: () => void }) {
           />
         </div>
 
-        {entregas.length > 0 && (
+        {hayBuscador && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              background: "var(--superficie)",
+              borderRadius: "var(--radio)",
+              padding: "0 14px",
+              height: 50,
+            }}
+          >
+            <Search size={19} color="var(--texto-4)" style={{ flex: "none" }} />
+            <input
+              value={busca}
+              onChange={(ev) => setBusca(ev.target.value)}
+              placeholder="Buscar una tienda"
+              style={{
+                flex: 1,
+                background: "none",
+                border: "none",
+                outline: "none",
+                fontSize: 17,
+                minWidth: 0,
+              }}
+            />
+            {busca && (
+              <button
+                onClick={() => setBusca("")}
+                aria-label="Limpiar búsqueda"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  minHeight: 52,
+                  minWidth: 52,
+                  margin: "-14px -6px",
+                  flex: "none",
+                }}
+              >
+                <X size={18} color="var(--texto-4)" />
+              </button>
+            )}
+          </div>
+        )}
+
+        {sinCoincidencias && <Vacio titulo="Ninguna coincide" sub="Prueba con otra forma del nombre." />}
+
+        {entregasVisibles.length > 0 && (
           <div style={{ ...S.rotulo, fontSize: 13, padding: "6px 4px 0" }}>Entregas de ese día</div>
         )}
 
-        {entregas.map((e) => {
+        {entregasVisibles.map((e) => {
           const cobrado = e.totalCobrado + e.descuentoRedondeo;
           const estado = estadoDe(e.totalCalculado, cobrado);
           const saldo = e.totalCalculado - cobrado;
@@ -252,13 +321,13 @@ export function Dia({ fecha, volver }: { fecha: DiaISO; volver: () => void }) {
           );
         })}
 
-        {deudaPorTienda.size > 0 && (
+        {deudaVisible.length > 0 && (
           <>
             <div style={{ ...S.rotulo, fontSize: 13, padding: "6px 4px 0" }}>
               Cobros de deuda anterior
             </div>
             <div style={{ ...S.tarjeta, padding: 16, display: "flex", flexDirection: "column" }}>
-              {[...deudaPorTienda.entries()].map(([tiendaId, pagado], i) => {
+              {deudaVisible.map(([tiendaId, pagado], i) => {
                 const antes = deudaAntesPorTienda.get(tiendaId) ?? 0;
                 const queda = aCobrar(Math.max(0, antes - pagado));
                 return (
@@ -281,20 +350,24 @@ export function Dia({ fecha, volver }: { fecha: DiaISO; volver: () => void }) {
                   </div>
                 );
               })}
-              <div
-                style={{
-                  paddingTop: 12,
-                  marginTop: 12,
-                  borderTop: "1px solid var(--linea)",
-                }}
-              >
-                <Fila
-                  label="Total cobrado de deuda"
-                  valor={money(totalCobradoDeuda)}
-                  color="var(--verde)"
-                  peso={700}
-                />
-              </div>
+              {/* El total de todas: mientras se busca, mezclaría tiendas que
+                  no se están viendo, así que se esconde. */}
+              {!q && (
+                <div
+                  style={{
+                    paddingTop: 12,
+                    marginTop: 12,
+                    borderTop: "1px solid var(--linea)",
+                  }}
+                >
+                  <Fila
+                    label="Total cobrado de deuda"
+                    valor={money(totalCobradoDeuda)}
+                    color="var(--verde)"
+                    peso={700}
+                  />
+                </div>
+              )}
             </div>
           </>
         )}
