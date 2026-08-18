@@ -14,6 +14,21 @@ const config: CapacitorConfig = {
       smallIcon: "ic_stat_donpio",
       iconColor: "#9184d9",
     },
+    // Desde Android 12 el sistema se salta el `drawable/splash.png` de
+    // siempre y solo enseña el ícono sobre un fondo liso — este plugin es
+    // la única forma soportada de volver a mostrar una imagen completa
+    // (la del pollo con la Hilux) al abrir. `androidSplashResourceName`
+    // apunta al mismo `splash.png` ya generado por densidad/orientación;
+    // `main.ts` la cierra a mano en cuanto React pinta la primera pantalla.
+    SplashScreen: {
+      launchAutoHide: false,
+      backgroundColor: "#fae7c9",
+      androidSplashResourceName: "splash",
+      androidScaleType: "CENTER_CROP",
+      showSpinner: false,
+      splashFullScreen: true,
+      splashImmersive: true,
+    },
   },
 };
 

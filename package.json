@@ -20,6 +20,7 @@
     "@capacitor/haptics": "^8.0.1",
     "@capacitor/local-notifications": "^8.2.1",
     "@capacitor/share": "^8.0.1",
+    "@capacitor/splash-screen": "^8.0.2",
     "@capacitor/status-bar": "^8.0.3",
     "@fontsource-variable/inter": "^5.1.1",
     "dexie": "^4.0.11",
