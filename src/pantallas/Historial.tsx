@@ -70,6 +70,10 @@ export function Historial({ volver, abrirDia }: { volver: () => void; abrirDia: 
   const repartidoSemana = resumenes.reduce((a, r) => a + r.repartidoPollos, 0);
   const cobradoSemana = resumenes.reduce((a, r) => a + r.cobrado, 0);
   const hoy = hoyISO();
+  // El último de `semana` es siempre hoy (`ultimosDias` termina en la fecha
+  // que se le pasa). Se muestra aparte, arriba de los días cerrados: no hace
+  // falta cerrar la jornada para poder repasar lo que llevas hoy.
+  const resumenHoy = resumenes[resumenes.length - 1];
 
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
@@ -204,6 +208,34 @@ export function Historial({ volver, abrirDia }: { volver: () => void; abrirDia: 
             />
           </div>
         </div>
+
+        {resumenHoy.entregas > 0 && (
+          <button
+            onClick={() => abrirDia(hoy)}
+            className="pulsable"
+            style={{
+              ...S.tarjeta,
+              borderRadius: 12,
+              padding: "14px 16px",
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              width: "100%",
+              border: "1.5px solid var(--acento)",
+            }}
+          >
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 17, fontWeight: 600 }}>Hoy</div>
+              <div style={{ fontSize: 14, color: "var(--texto-3)", marginTop: 3 }}>
+                {resumenHoy.repartidoPollos} pollos · {resumenHoy.tiendas} tiendas · en curso
+              </div>
+            </div>
+            <div style={{ fontSize: 18, fontWeight: 600, color: "var(--verde)", flex: "none" }}>
+              {money(resumenHoy.cobrado)}
+            </div>
+            <ChevronRight size={22} color="var(--texto-5)" style={{ flex: "none" }} />
+          </button>
+        )}
 
         <div style={{ ...S.rotulo, fontSize: 13, padding: "4px 4px 0" }}>Días cerrados</div>
 
