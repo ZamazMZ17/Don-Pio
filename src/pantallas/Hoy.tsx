@@ -167,9 +167,9 @@ export function Hoy({
               src={logo}
               alt=""
               className="logo-marca"
-              width={48}
-              height={48}
-              style={{ flex: "none", objectFit: "contain", margin: "-4px 0" }}
+              width={56}
+              height={56}
+              style={{ flex: "none", objectFit: "contain", margin: "-8px 0" }}
             />
             <div style={{ fontSize: 22, fontWeight: 600 }}>{diaCorto(fecha)}</div>
           </div>
@@ -218,17 +218,19 @@ export function Hoy({
               <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 <div style={{ ...S.rotulo, fontSize: 12, letterSpacing: 0.9 }}>Salí con</div>
                 <div
-                  style={{ fontSize: 30, fontWeight: 600, color: "var(--verde)", lineHeight: 1.1 }}
+                  style={{ fontSize: 36, fontWeight: 600, color: "var(--verde)", lineHeight: 1.1 }}
                 >
                   {resumen.stockPollos}
                 </div>
               </div>
-              {/* A la altura de los números, no de los rótulos. */}
-              <div style={{ fontSize: 26, color: "var(--texto-5)", marginTop: 18 }}>→</div>
+              {/* A la altura de los números, no de los rótulos: mismo tamaño
+                  de número en los dos lados ahora, así que un solo marginTop
+                  centra la flecha frente a ambos. */}
+              <div style={{ fontSize: 26, color: "var(--texto-5)", marginTop: 16 }}>→</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 <div style={{ ...S.rotulo, fontSize: 12, letterSpacing: 0.9 }}>Me quedan</div>
                 <div
-                  style={{ fontSize: 44, fontWeight: 700, color: "var(--ambar)", lineHeight: 1.1 }}
+                  style={{ fontSize: 36, fontWeight: 700, color: "var(--ambar)", lineHeight: 1.1 }}
                 >
                   {resumen.restantePollos}
                 </div>
@@ -255,7 +257,11 @@ export function Hoy({
             }}
           >
             <div>
-              {resumen.stockPollos > 0 ? resumen.restantePiernas : resumen.repartidoPiernas} piernas
+              {(() => {
+                const piernas =
+                  resumen.stockPollos > 0 ? resumen.restantePiernas : resumen.repartidoPiernas;
+                return `${piernas} ${piernas === 1 ? "pierna" : "piernas"}`;
+              })()}
             </div>
             {/* Siempre visible, igual que piernas — no solo cuando hay
                 pollos partidos, para que se vea de un vistazo que la
@@ -264,7 +270,9 @@ export function Hoy({
               {resumen.repartidoPechos} {resumen.repartidoPechos === 1 ? "pecho" : "pechos"}
             </div>
             {resumen.pechosLibres > 0 && (
-              <div style={{ color: "var(--ambar)" }}>{resumen.pechosLibres} pechos libres</div>
+              <div style={{ color: "var(--ambar)" }}>
+                {resumen.pechosLibres} {resumen.pechosLibres === 1 ? "pecho libre" : "pechos libres"}
+              </div>
             )}
             <div>
               {resumen.tiendas} {resumen.tiendas === 1 ? "tienda" : "tiendas"}

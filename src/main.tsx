@@ -7,15 +7,21 @@ import "./estilos.css";
 import App from "./App";
 import { esNativo } from "./lib/plataforma";
 
+// `launchShowDuration: 0` en capacitor.config.ts apaga el splash automático
+// del plugin — desde Android 12 ese camino pasa por la API nativa del
+// sistema, que por diseño de Android solo puede enseñar el ícono, nunca una
+// imagen completa. Por eso la imagen (el pollo con la Hilux) se pone a mano,
+// lo primero de todo, con el método viejo del plugin que sí la respeta.
+if (esNativo) void SplashScreen.show({ autoHide: false });
+
 // Sin StrictMode a propósito: la doble ejecución de efectos en desarrollo
 // dispara dos veces el reconocedor de voz, y Android no deja abrir dos.
 createRoot(document.getElementById("root")!).render(<App />);
 
-// `launchAutoHide: false` en capacitor.config.ts deja el splash (la imagen
-// del pollo con la Hilux) puesto hasta que se cierra a mano — si no, en un
-// teléfono lento se lo comía el fogonazo blanco de siempre antes de que
-// React llegue a pintar nada. Dos `requestAnimationFrame` para esperar a que
-// el primer cuadro ya esté en pantalla, no solo montado.
+// Se queda puesta hasta que se cierra a mano — si no, en un teléfono lento
+// se la come el fogonazo blanco de siempre antes de que React llegue a
+// pintar nada. Dos `requestAnimationFrame` para esperar a que el primer
+// cuadro ya esté en pantalla, no solo montado.
 if (esNativo) {
   requestAnimationFrame(() => requestAnimationFrame(() => void SplashScreen.hide()));
 }
