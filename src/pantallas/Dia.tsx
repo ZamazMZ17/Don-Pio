@@ -2,7 +2,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../db/db";
 import { leerJornada, resumenDe } from "../db/jornada";
 import { COLOR_ESTADO, estadoDe, TEXTO_ESTADO } from "../dominio/calculo";
-import { kg, money } from "../lib/dinero";
+import { aCobrar, kg, money } from "../lib/dinero";
 import { diaCorto, diaLargo, type DiaISO } from "../lib/fecha";
 import { Cabecera, Fila, S } from "../ui/base";
 
@@ -56,7 +56,10 @@ export function Dia({ fecha, volver }: { fecha: DiaISO; volver: () => void }) {
       const abonadaAntes = todosSusPagos
         .filter((p) => p.tiendaId === id && p.tipo === "deudaAnterior" && p.fecha < fecha)
         .reduce((a, p) => a + p.monto, 0);
-      deudaAntesPorTienda.set(id, Math.max(0, acumulada - abonadaAntes));
+      // Redondeado hacia abajo a la moneda, igual que en Cobranza: un
+      // residuo de un par de céntimos no es deuda de verdad, es lo que
+      // ninguna moneda puede cubrir y ya se dio por perdonado en su momento.
+      deudaAntesPorTienda.set(id, aCobrar(Math.max(0, acumulada - abonadaAntes)));
     }
 
     return {
@@ -257,7 +260,7 @@ export function Dia({ fecha, volver }: { fecha: DiaISO; volver: () => void }) {
             <div style={{ ...S.tarjeta, padding: 16, display: "flex", flexDirection: "column" }}>
               {[...deudaPorTienda.entries()].map(([tiendaId, pagado], i) => {
                 const antes = deudaAntesPorTienda.get(tiendaId) ?? 0;
-                const queda = Math.max(0, antes - pagado);
+                const queda = aCobrar(Math.max(0, antes - pagado));
                 return (
                   <div
                     key={tiendaId}
