@@ -167,9 +167,9 @@ export function Hoy({
               src={logo}
               alt=""
               className="logo-marca"
-              width={60}
-              height={60}
-              style={{ flex: "none", objectFit: "contain", margin: "-10px 0" }}
+              width={72}
+              height={72}
+              style={{ flex: "none", objectFit: "contain", margin: "-14px 0" }}
             />
             <div style={{ fontSize: 22, fontWeight: 600 }}>{diaCorto(fecha)}</div>
           </div>
@@ -203,11 +203,12 @@ export function Hoy({
           onClick={abrirStock}
           style={{
             display: "flex",
-            // Alineado por arriba, no por abajo: los dos números no miden lo
-            // mismo (30 y 44), así que cuadrar los pies dejaba los rótulos a
-            // distinta altura y la fila se veía chueca. Con los rótulos en la
-            // misma línea, los números arrancan parejos.
-            alignItems: "flex-start",
+            // `stretch` (el valor por defecto, puesto explícito): el bloque
+            // de la izquierda toma el alto de la columna de la derecha —que
+            // es la más alta, con piernas/pechos/tiendas apilados— y adentro
+            // se centra de verdad, no solo se pega arriba con espacio vacío
+            // debajo.
+            alignItems: "stretch",
             gap: 14,
             marginBottom: 14,
             width: "100%",
@@ -222,7 +223,7 @@ export function Hoy({
                 display: "flex",
                 flex: 1,
                 justifyContent: "center",
-                alignItems: "flex-start",
+                alignItems: "center",
                 gap: 10,
               }}
             >
@@ -234,10 +235,10 @@ export function Hoy({
                   {resumen.stockPollos}
                 </div>
               </div>
-              {/* A la altura de los números, no de los rótulos: mismo tamaño
-                  de número en los dos lados ahora, así que un solo marginTop
-                  centra la flecha frente a ambos. */}
-              <div style={{ fontSize: 26, color: "var(--texto-5)", marginTop: 16 }}>→</div>
+              {/* Con el contenedor centrado (alignItems: center) ya no hace
+                  falta el marginTop de antes para que la flecha quede a la
+                  altura de los números — cae solita en medio. */}
+              <div style={{ fontSize: 26, color: "var(--texto-5)" }}>→</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 <div style={{ ...S.rotulo, fontSize: 12, letterSpacing: 0.9 }}>Me quedan</div>
                 <div
@@ -274,17 +275,21 @@ export function Hoy({
                 return `${piernas} ${piernas === 1 ? "pierna" : "piernas"}`;
               })()}
             </div>
+            {/* Junto a piernas, no a pechos: de ahí sale (piernas de más al
+                partir pollos enteros, ver CLAUDE.md §7), no de las entregas.
+                Pegado bajo «X pechos» se leía como si contradijera esa
+                cuenta — «0 pechos» seguido de «1 pecho» de la nada. */}
+            {resumen.pechosLibres > 0 && (
+              <div style={{ color: "var(--ambar)" }}>
+                {resumen.pechosLibres} {resumen.pechosLibres === 1 ? "pecho libre" : "pechos libres"}
+              </div>
+            )}
             {/* Siempre visible, igual que piernas — no solo cuando hay
                 pollos partidos, para que se vea de un vistazo que la
                 cuenta sigue en cero y no que falta por cargar. */}
             <div>
               {resumen.repartidoPechos} {resumen.repartidoPechos === 1 ? "pecho" : "pechos"}
             </div>
-            {resumen.pechosLibres > 0 && (
-              <div style={{ color: "var(--ambar)" }}>
-                {resumen.pechosLibres} {resumen.pechosLibres === 1 ? "pecho" : "pechos"}
-              </div>
-            )}
             <div>
               {resumen.tiendas} {resumen.tiendas === 1 ? "tienda" : "tiendas"}
             </div>
