@@ -246,3 +246,18 @@ input {
 .scroll::-webkit-scrollbar {
   display: none;
 }
+
+/*
+ * El logo de Hoy es un dibujo a líneas marrones (pensado para leerse sobre
+ * crema/blanco). En oscuro, marrón sobre el fondo azulado casi no se ve —
+ * se vuelve al mismo blanco que ya usa el texto de esa fila, para que se
+ * note de un vistazo. En claro el marrón ya combina con `--texto` de ese
+ * tema, así que se deja tal cual.
+ */
+.logo-marca {
+  filter: brightness(0) invert(1);
+}
+
+:root[data-theme="claro"] .logo-marca {
+  filter: none;
+}

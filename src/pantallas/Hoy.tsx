@@ -157,18 +157,19 @@ export function Hoy({
         <div
           style={{
             display: "flex",
-            alignItems: "baseline",
+            alignItems: "center",
             justifyContent: "space-between",
-            marginBottom: 14,
+            marginBottom: 10,
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <img
               src={logo}
               alt=""
-              width={34}
-              height={34}
-              style={{ flex: "none", objectFit: "contain" }}
+              className="logo-marca"
+              width={48}
+              height={48}
+              style={{ flex: "none", objectFit: "contain", margin: "-4px 0" }}
             />
             <div style={{ fontSize: 22, fontWeight: 600 }}>{diaCorto(fecha)}</div>
           </div>

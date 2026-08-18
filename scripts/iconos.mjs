@@ -118,9 +118,16 @@ for (const [densidad, launcher, adaptativo] of DENSIDADES) {
   const dir = join(RES, `mipmap-${densidad}`);
   await mkdir(dir, { recursive: true });
 
-  await (await png(marca(), launcher)).toFile(join(dir, "ic_launcher.png"));
+  // `sharp().composite()` reemplaza la lista anterior en vez de sumarla, así
+  // que encadenar un segundo `.composite()` sobre lo que devuelve `png()`
+  // (que ya trae uno puesto, para pegar la marca sobre el fondo) borraba esa
+  // primera composición: el círculo salía sin dibujo, solo el fondo liso.
+  // Por eso primero se resuelve a buffer y el recorte circular se aplica
+  // sobre un pipeline nuevo.
+  const cuadrado = await (await png(marca(), launcher)).toBuffer();
+  await sharp(cuadrado).toFile(join(dir, "ic_launcher.png"));
 
-  await (await png(marca(), launcher))
+  await sharp(cuadrado)
     .composite([{ input: circulo(launcher), blend: "dest-in" }])
     .toFile(join(dir, "ic_launcher_round.png"));
 
