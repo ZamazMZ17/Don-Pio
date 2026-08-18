@@ -43,7 +43,7 @@ export function Historial({ volver, abrirDia }: { volver: () => void; abrirDia: 
 
     const semana = ultimosDias(hoyISO(), 7);
     const resumenes = await Promise.all(semana.map((d) => resumenDe(d)));
-    const [deudas, tiendas] = await Promise.all([db.deudas.toArray(), db.tiendas.toArray()]);
+    const deudas = await db.deudas.toArray();
 
     const dias = await Promise.all(
       cerradas.slice(0, 30).map(async (j) => ({ jornada: j, resumen: await resumenDe(j.fecha) })),
@@ -57,38 +57,33 @@ export function Historial({ volver, abrirDia }: { volver: () => void; abrirDia: 
       db.gastos.where("fecha").equals(hoy).count(),
     ]);
 
-    const abiertas = deudas.filter((d) => !d.cerrada);
-    const porId = new Map(tiendas.map((t) => [t.id!, t]));
-    const montoPorTienda = new Map<number, number>();
-    for (const d of abiertas) {
-      montoPorTienda.set(d.tiendaId, (montoPorTienda.get(d.tiendaId) ?? 0) + (d.monto - d.saldado));
+    // Por cada día que dejó deuda: cuánto dejó en total y cuánto de eso
+    // sigue sin cobrar. Se guardan los dos —no solo el filtro de "abierta"—
+    // porque esto vive en la fila de ese día, no en una lista aparte: tiene
+    // que seguir contando lo que pasó ese día aunque ya se haya cobrado
+    // después, o el historial perdería el rastro.
+    const deudaOrigenPorDia = new Map<DiaISO, { total: number; abierto: number }>();
+    for (const d of deudas) {
+      const actual = deudaOrigenPorDia.get(d.fechaOrigen) ?? { total: 0, abierto: 0 };
+      actual.total += d.monto;
+      if (!d.cerrada) actual.abierto += d.monto - d.saldado;
+      deudaOrigenPorDia.set(d.fechaOrigen, actual);
     }
-    const deudasPendientes = [...montoPorTienda.entries()]
-      .filter(([, monto]) => monto > 0)
-      .map(([tiendaId, monto]) => ({
-        tiendaId,
-        nombre: porId.get(tiendaId)?.nombre ?? "Sin nombre",
-        monto,
-      }))
-      .sort((a, b) => b.monto - a.monto);
 
     return {
       semana,
       resumenes,
       dias,
       hayActividadHoy: resumenes[resumenes.length - 1].entregas > 0 || pagosHoy > 0 || gastosHoy > 0,
-      deudaAbierta: abiertas.reduce((a, d) => a + (d.monto - d.saldado), 0),
-      deudasPendientes,
-      // `porCobrarDelDia` es siempre 0 en un día ya cerrado — eso pasó a
-      // vivir como deuda. Para saber si ese día en concreto sigue debiendo
-      // hay que mirar si queda alguna deuda abierta que haya nacido ese día.
-      diasConDeudaAbierta: new Set(abiertas.map((d) => d.fechaOrigen)),
+      deudaAbierta: deudas
+        .filter((d) => !d.cerrada)
+        .reduce((a, d) => a + (d.monto - d.saldado), 0),
+      deudaOrigenPorDia,
     };
   }, []);
 
   if (!datos) return null;
-  const { semana, resumenes, dias, deudaAbierta, deudasPendientes, diasConDeudaAbierta, hayActividadHoy } =
-    datos;
+  const { semana, resumenes, dias, deudaAbierta, deudaOrigenPorDia, hayActividadHoy } = datos;
 
   const maximo = Math.max(1, ...resumenes.map((r) => r.repartidoPollos));
   const repartidoSemana = resumenes.reduce((a, r) => a + r.repartidoPollos, 0);
@@ -233,19 +228,6 @@ export function Historial({ volver, abrirDia }: { volver: () => void; abrirDia: 
           </div>
         </div>
 
-        {deudasPendientes.length > 0 && (
-          <>
-            <div style={{ ...S.rotulo, fontSize: 13, padding: "6px 4px 0" }}>
-              Deudas de días anteriores
-            </div>
-            <div style={{ ...S.tarjeta, padding: 16 }}>
-              {deudasPendientes.map((d) => (
-                <Fila key={d.tiendaId} label={d.nombre} valor={money(d.monto)} color="var(--ambar)" />
-              ))}
-            </div>
-          </>
-        )}
-
         {hayActividadHoy && (
           <button
             onClick={() => abrirDia(hoy)}
@@ -283,34 +265,46 @@ export function Historial({ volver, abrirDia }: { volver: () => void; abrirDia: 
           />
         )}
 
-        {dias.map(({ jornada, resumen }) => (
-          <button
-            key={jornada.fecha}
-            onClick={() => abrirDia(jornada.fecha)}
-            className="pulsable"
-            style={{
-              ...S.tarjeta,
-              borderRadius: 12,
-              padding: "14px 16px",
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              width: "100%",
-            }}
-          >
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 17, fontWeight: 600 }}>{diaCorto(jornada.fecha)}</div>
-              <div style={{ fontSize: 14, color: "var(--texto-3)", marginTop: 3 }}>
-                {resumen.repartidoPollos} pollos · {resumen.tiendas} tiendas
-                {diasConDeudaAbierta.has(jornada.fecha) && " · quedó debiendo"}
+        {dias.map(({ jornada, resumen }) => {
+          const deudaDia = deudaOrigenPorDia.get(jornada.fecha);
+          return (
+            <button
+              key={jornada.fecha}
+              onClick={() => abrirDia(jornada.fecha)}
+              className="pulsable"
+              style={{
+                ...S.tarjeta,
+                borderRadius: 12,
+                padding: "14px 16px",
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                width: "100%",
+              }}
+            >
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 17, fontWeight: 600 }}>{diaCorto(jornada.fecha)}</div>
+                <div style={{ fontSize: 14, color: "var(--texto-3)", marginTop: 3 }}>
+                  {resumen.repartidoPollos} pollos · {resumen.tiendas} tiendas
+                  {deudaDia && deudaDia.total > 0 && (
+                    <span
+                      style={{ color: deudaDia.abierto > 0 ? "var(--ambar)" : "var(--texto-4)" }}
+                    >
+                      {" · "}
+                      {deudaDia.abierto > 0
+                        ? `quedó debiendo ${money(deudaDia.abierto)}`
+                        : `dejó debiendo ${money(deudaDia.total)} · ya cobrado`}
+                    </span>
+                  )}
+                </div>
               </div>
-            </div>
-            <div style={{ fontSize: 18, fontWeight: 600, color: "var(--verde)", flex: "none" }}>
-              {money(resumen.cobrado)}
-            </div>
-            <ChevronRight size={22} color="var(--texto-5)" style={{ flex: "none" }} />
-          </button>
-        ))}
+              <div style={{ fontSize: 18, fontWeight: 600, color: "var(--verde)", flex: "none" }}>
+                {money(resumen.cobrado)}
+              </div>
+              <ChevronRight size={22} color="var(--texto-5)" style={{ flex: "none" }} />
+            </button>
+          );
+        })}
       </div>
     </div>
   );
