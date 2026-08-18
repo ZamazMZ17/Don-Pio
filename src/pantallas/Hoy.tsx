@@ -144,9 +144,6 @@ export function Hoy({
     pendientes: "Por pendientes ⇅",
   } as const;
 
-  const porCobrarTotal =
-    resumen.porCobrarDelDia + [...deudas.values()].reduce((a, b) => a + b, 0);
-
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
       {/* Encabezado con las cuatro cifras */}
@@ -274,10 +271,6 @@ export function Hoy({
           </div>
         </button>
 
-        <div style={{ display: "flex", gap: 10 }}>
-          <Cifra rotulo="Cobrado" valor={money(resumen.cobrado)} color="var(--verde)" />
-          <Cifra rotulo="Por cobrar" valor={money(porCobrarTotal)} color="var(--rojo)" />
-        </div>
       </div>
 
       {/*
@@ -679,20 +672,3 @@ function RutaLista({
   );
 }
 
-function Cifra({ rotulo, valor, color }: { rotulo: string; valor: string; color: string }) {
-  return (
-    <div
-      style={{
-        flex: 1,
-        background: "var(--superficie)",
-        borderRadius: "var(--radio-sm)",
-        padding: "10px 12px",
-      }}
-    >
-      <div style={{ ...S.rotulo, fontSize: 11, letterSpacing: 0.9, marginBottom: 3 }}>
-        {rotulo}
-      </div>
-      <div style={{ fontSize: 20, fontWeight: 600, color }}>{valor}</div>
-    </div>
-  );
-}
