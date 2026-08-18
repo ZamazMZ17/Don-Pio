@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type MutableRefObject } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type MutableRefObject } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Search } from "lucide-react";
 import { cuentasPendientes, registrarCobro } from "../db/entregas";
@@ -106,6 +106,63 @@ export function Cobranza({
   // vuelve a decidirse.
   // No perder el sitio al cobrar: la lista se rehace y volvía al principio.
   const guardarScroll = useMemoriaScroll(scrollRef, "cobranza", cuentas);
+
+  /*
+   * Acaba de repartir y viene a cobrar: si la última entrega es de hace pocos
+   * minutos, el scroll salta directo a su tarjeta y la resalta un momento, en
+   * vez de dejarlo buscar entre 50 tiendas la que acaba de dejar. Solo si esa
+   * tienda todavía tiene saldo —si ya no está en `cuentas`, es que ya cobró y no
+   * hay nada que resaltar.
+   *
+   * Va **después** de `useMemoriaScroll`: los dos ajustan el scroll al montar y
+   * este tiene que ganar. La memoria queda como respaldo cuando no hay entrega
+   * reciente (vuelve del cierre, de Tiendas…) y no se toca el scroll.
+   *
+   * El salto se reafirma durante una ventana corta tras montar y también cuando
+   * cambia `orden`: `useAjuste` arranca con el orden por defecto y resuelve el
+   * guardado un frame después, así que la lista se reordena una vez —si fijáramos
+   * el salto de una sola vez, aterrizaría sobre ese primer orden transitorio y
+   * quedaría descuadrado al reordenarse. Pasada la ventana, el dedo manda: un
+   * cobro posterior ya no lo devuelve a la tarjeta reciente.
+   */
+  const tarjetasRef = useRef<Map<number, HTMLElement>>(new Map());
+  const montaje = useRef(Date.now());
+  const resaltadoPuesto = useRef(false);
+  const [resaltada, setResaltada] = useState<number | null>(null);
+
+  useLayoutEffect(() => {
+    if (!cuentas || cuentas.length === 0) return;
+    // Solo en los primeros instantes tras entrar, mientras el orden se asienta.
+    if (Date.now() - montaje.current > 1500) return;
+
+    let reciente: { tiendaId: number; creada: number } | null = null;
+    for (const c of cuentas) {
+      for (const e of c.entregas) {
+        if (!reciente || e.creada > reciente.creada) {
+          reciente = { tiendaId: c.tienda.id!, creada: e.creada };
+        }
+      }
+    }
+    // Hace más de 3 minutos ya no es «la que acaba de dejar»: no salta.
+    if (!reciente || Date.now() - reciente.creada > 3 * 60 * 1000) return;
+
+    const el = tarjetasRef.current.get(reciente.tiendaId);
+    const cont = scrollRef.current;
+    if (!el || !cont) return;
+    const dif = el.getBoundingClientRect().top - cont.getBoundingClientRect().top;
+    cont.scrollTop += dif - 12;
+    if (!resaltadoPuesto.current) {
+      resaltadoPuesto.current = true;
+      setResaltada(reciente.tiendaId);
+    }
+  }, [cuentas, orden]);
+
+  // El resaltado se apaga solo; se pone al saltar y dura lo justo para ubicarla.
+  useEffect(() => {
+    if (resaltada === null) return;
+    const t = setTimeout(() => setResaltada(null), 2600);
+    return () => clearTimeout(t);
+  }, [resaltada]);
 
   if (!cuentas) return null;
 
@@ -299,8 +356,24 @@ export function Cobranza({
                 ? `${pendientesHoy.length} entregas de hoy`
                 : null;
 
+          const resalta = resaltada === c.tienda.id;
+
           return (
-            <div key={c.tienda.id} style={{ ...S.tarjeta, padding: "13px 14px" }}>
+            <div
+              key={c.tienda.id}
+              ref={(el) => {
+                if (el) tarjetasRef.current.set(c.tienda.id!, el);
+                else tarjetasRef.current.delete(c.tienda.id!);
+              }}
+              style={{
+                ...S.tarjeta,
+                padding: "13px 14px",
+                // Un momento tras el salto, para que la ubique de un vistazo.
+                borderColor: resalta ? "var(--acento)" : "var(--linea)",
+                background: resalta ? "var(--acento-900)" : "var(--superficie)",
+                transition: "border-color .5s ease-out, background-color .5s ease-out",
+              }}
+            >
               <div
                 style={{
                   display: "flex",
