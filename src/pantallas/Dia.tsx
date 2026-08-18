@@ -27,6 +27,38 @@ export function Dia({ fecha, volver }: { fecha: DiaISO; volver: () => void }) {
       deudaPorTienda.set(p.tiendaId, (deudaPorTienda.get(p.tiendaId) ?? 0) + p.monto);
     }
 
+    /*
+     * Con qué deuda llegó cada tienda a este día — para cuando discute una
+     * cuenta, lo que importa no es lo que debe *hoy* (eso ya cambió) sino lo
+     * que debía *antes de esta entrega*. Se reconstruye con lo que ya queda
+     * fechado: lo que se le sumó como deuda antes de este día (`fechaOrigen`
+     * < fecha) menos lo que ya había abonado a esa deuda antes de este día
+     * (`pagos` de tipo "deudaAnterior" con `fecha` < esta). No usa el
+     * `saldado`/`cerrada` de ahora mismo porque esos reflejan el estado
+     * actual, no el de aquel día.
+     */
+    const idsTiendasDelDia = new Set<number>([
+      ...entregas.map((e) => e.tiendaId),
+      ...pagos.map((p) => p.tiendaId),
+    ]);
+    const [todasSusDeudas, todosSusPagos] =
+      idsTiendasDelDia.size > 0
+        ? await Promise.all([
+            db.deudas.where("tiendaId").anyOf([...idsTiendasDelDia]).toArray(),
+            db.pagos.where("tiendaId").anyOf([...idsTiendasDelDia]).toArray(),
+          ])
+        : [[], []];
+    const deudaAntesPorTienda = new Map<number, number>();
+    for (const id of idsTiendasDelDia) {
+      const acumulada = todasSusDeudas
+        .filter((d) => d.tiendaId === id && d.fechaOrigen < fecha)
+        .reduce((a, d) => a + d.monto, 0);
+      const abonadaAntes = todosSusPagos
+        .filter((p) => p.tiendaId === id && p.tipo === "deudaAnterior" && p.fecha < fecha)
+        .reduce((a, p) => a + p.monto, 0);
+      deudaAntesPorTienda.set(id, Math.max(0, acumulada - abonadaAntes));
+    }
+
     return {
       jornada,
       resumen,
@@ -38,6 +70,7 @@ export function Dia({ fecha, volver }: { fecha: DiaISO; volver: () => void }) {
         0,
       ),
       deudaPorTienda,
+      deudaAntesPorTienda,
       totalCobradoDeuda,
       gastos: gastosDb.sort((a, b) => a.creada - b.creada),
       totalGastos: gastosDb.reduce((a, g) => a + g.monto, 0),
@@ -53,6 +86,7 @@ export function Dia({ fecha, volver }: { fecha: DiaISO; volver: () => void }) {
     traspasada,
     quedoDebiendo,
     deudaPorTienda,
+    deudaAntesPorTienda,
     totalCobradoDeuda,
     gastos,
     totalGastos,
@@ -106,6 +140,7 @@ export function Dia({ fecha, volver }: { fecha: DiaISO; volver: () => void }) {
           const cobrado = e.totalCobrado + e.descuentoRedondeo;
           const estado = estadoDe(e.totalCalculado, cobrado);
           const saldo = e.totalCalculado - cobrado;
+          const debiaAntes = deudaAntesPorTienda.get(e.tiendaId) ?? 0;
 
           return (
             <div key={e.id} style={{ ...S.tarjeta, padding: "15px 16px" }}>
@@ -126,6 +161,21 @@ export function Dia({ fecha, volver }: { fecha: DiaISO; volver: () => void }) {
                   {TEXTO_ESTADO[estado]}
                 </div>
               </div>
+
+              {debiaAntes > 0 && (
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    fontSize: 14,
+                    color: "var(--ambar)",
+                    marginBottom: 10,
+                  }}
+                >
+                  <span>Debía antes de esta entrega</span>
+                  <span>{money(debiaAntes)}</span>
+                </div>
+              )}
 
               <div
                 style={{
@@ -204,21 +254,44 @@ export function Dia({ fecha, volver }: { fecha: DiaISO; volver: () => void }) {
             <div style={{ ...S.rotulo, fontSize: 13, padding: "6px 4px 0" }}>
               Cobros de deuda anterior
             </div>
-            <div style={{ ...S.tarjeta, padding: 16 }}>
-              {[...deudaPorTienda.entries()].map(([tiendaId, monto]) => (
+            <div style={{ ...S.tarjeta, padding: 16, display: "flex", flexDirection: "column" }}>
+              {[...deudaPorTienda.entries()].map(([tiendaId, pagado], i) => {
+                const antes = deudaAntesPorTienda.get(tiendaId) ?? 0;
+                const queda = Math.max(0, antes - pagado);
+                return (
+                  <div
+                    key={tiendaId}
+                    style={{
+                      paddingTop: i > 0 ? 12 : 0,
+                      marginTop: i > 0 ? 12 : 0,
+                      borderTop: i > 0 ? "1px solid var(--linea)" : "none",
+                    }}
+                  >
+                    <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>
+                      {porId.get(tiendaId)?.nombre ?? "Sin nombre"}
+                    </div>
+                    <Fila label="Debía antes" valor={money(antes)} color="var(--ambar)" tam={14} />
+                    <Fila label="Pagó" valor={money(pagado)} color="var(--verde)" tam={14} />
+                    {queda > 0 && (
+                      <Fila label="Le queda debiendo" valor={money(queda)} color="var(--rojo)" tam={14} />
+                    )}
+                  </div>
+                );
+              })}
+              <div
+                style={{
+                  paddingTop: 12,
+                  marginTop: 12,
+                  borderTop: "1px solid var(--linea)",
+                }}
+              >
                 <Fila
-                  key={tiendaId}
-                  label={porId.get(tiendaId)?.nombre ?? "Sin nombre"}
-                  valor={money(monto)}
+                  label="Total cobrado de deuda"
+                  valor={money(totalCobradoDeuda)}
                   color="var(--verde)"
+                  peso={700}
                 />
-              ))}
-              <Fila
-                label="Total cobrado de deuda"
-                valor={money(totalCobradoDeuda)}
-                color="var(--verde)"
-                peso={700}
-              />
+              </div>
             </div>
           </>
         )}
