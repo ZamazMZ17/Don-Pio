@@ -61,9 +61,9 @@ export function kg(gramos: Gramos, sufijo = true): string {
   return sufijo ? `${s} kg` : s;
 }
 
-/** 26200 → "26.2 kg" — la versión corta, para el subtítulo de la lista. */
+/** 26200 → "26.20 kg" — para el subtítulo de la lista, sin redondear. */
 export function kgCorto(gramos: Gramos): string {
-  return `${(gramos / 1000).toFixed(1)} kg`;
+  return `${(gramos / 1000).toFixed(2)} kg`;
 }
 
 /**
