@@ -13,7 +13,7 @@ const CREMA_SPLASH = "#fae7c9";
 
 // Para que la imagen alcance a verse aunque el teléfono cargue rapidísimo:
 // sin este mínimo, en un equipo veloz el splash pasaba en un parpadeo.
-const DURACION_MIN_SPLASH_MS = 2500;
+const DURACION_MIN_SPLASH_MS = 1500;
 let inicioSplash = 0;
 
 async function cerrarSplash(): Promise<void> {

@@ -22,14 +22,18 @@ const config: CapacitorConfig = {
     // camino automático del todo, y `main.tsx` llama a `SplashScreen.show()`
     // a mano como primera línea — eso sí usa el `drawable/splash.png`
     // completo — y la cierra en cuanto React pinta la primera pantalla.
+    // `splashFullScreen`/`splashImmersive` quedan afuera a propósito: esa
+    // rama del plugin intenta ocultar la barra de estado por su cuenta
+    // (`controller.hide(...)`), al mismo tiempo que `main.tsx` la pone
+    // sólida y crema con `@capacitor/status-bar`. Las dos peleaban por la
+    // misma barra y el resultado era un hueco a medias — ni oculta ni
+    // pintada. Con esto apagado, `StatusBar` manda sola.
     SplashScreen: {
       launchShowDuration: 0,
       backgroundColor: "#fae7c9",
       androidSplashResourceName: "splash",
       androidScaleType: "CENTER_CROP",
       showSpinner: false,
-      splashFullScreen: true,
-      splashImmersive: true,
     },
   },
 };

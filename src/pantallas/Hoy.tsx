@@ -169,7 +169,7 @@ export function Hoy({
               className="logo-marca"
               width={72}
               height={72}
-              style={{ flex: "none", objectFit: "contain", margin: "-14px 0" }}
+              style={{ flex: "none", objectFit: "contain", marginTop: -10, marginBottom: -18 }}
             />
             <div style={{ fontSize: 22, fontWeight: 600 }}>{diaCorto(fecha)}</div>
           </div>
@@ -218,16 +218,21 @@ export function Hoy({
             // `flex: 1` + `justifyContent: center`: reparte el espacio que le
             // deja el bloque de la derecha (marginLeft: auto) y centra el par
             // ahí adentro, en vez de quedarse pegado al borde izquierdo.
+            // `marginTop` en vez de centrarlo en todo el alto de la fila: con
+            // la columna de la derecha casi de la misma altura, centrarlo del
+            // todo casi no se notaba — así queda a la altura de «pechos»,
+            // la línea de en medio.
             <div
               style={{
                 display: "flex",
                 flex: 1,
                 justifyContent: "center",
-                alignItems: "center",
+                alignItems: "flex-start",
                 gap: 10,
+                marginTop: 14,
               }}
             >
-              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
                 <div style={{ ...S.rotulo, fontSize: 12, letterSpacing: 0.9 }}>Salí con</div>
                 <div
                   style={{ fontSize: 36, fontWeight: 600, color: "var(--verde)", lineHeight: 1.1 }}
@@ -235,11 +240,9 @@ export function Hoy({
                   {resumen.stockPollos}
                 </div>
               </div>
-              {/* Con el contenedor centrado (alignItems: center) ya no hace
-                  falta el marginTop de antes para que la flecha quede a la
-                  altura de los números — cae solita en medio. */}
-              <div style={{ fontSize: 26, color: "var(--texto-5)" }}>→</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {/* A la altura de los números, no de los rótulos. */}
+              <div style={{ fontSize: 26, color: "var(--texto-5)", marginTop: 16 }}>→</div>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
                 <div style={{ ...S.rotulo, fontSize: 12, letterSpacing: 0.9 }}>Me quedan</div>
                 <div
                   style={{ fontSize: 36, fontWeight: 700, color: "var(--ambar)", lineHeight: 1.1 }}
