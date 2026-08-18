@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Keyboard, Mic, Plus, Square } from "lucide-react";
+import { Keyboard, Mic, Plus, Square, Trash2 } from "lucide-react";
 import type { Candidata, Emparejamiento } from "../tiendas/emparejar";
 import type { Intencion } from "../voz/intencion";
 import { aCentimos, aGramos, money } from "../lib/dinero";
@@ -183,6 +183,8 @@ export function TarjetaConfirmacion({
    * con «+ piernas o pechos» — que es lo que faltaba al registrar tocando.
    */
   const [mostrarPresas, setMostrarPresas] = useState(i.piernas > 0 || i.pechos > 0);
+  const [mostrarTandas, setMostrarTandas] = useState(i.tandasKg.length > 1);
+  const [nuevaTanda, setNuevaTanda] = useState("");
 
   const tandas = i.tandasKg.map(aGramos);
   const precio = i.precioPorKg ? aCentimos(i.precioPorKg) : precioDefectoKg;
@@ -380,14 +382,16 @@ export function TarjetaConfirmacion({
                 onGuardar={(n) => onEditar({ pechos: Math.max(0, Math.round(n)) })}
               />
             )}
-            <CampoEditable
-              flex={1.2}
-              rotulo="Peso"
-              valor={cuenta.peso ? (cuenta.peso / 1000).toFixed(2) : ""}
-              placeholder="sin pesar"
-              sufijo="kg"
-              onGuardar={(n) => onEditar({ tandasKg: [], pesoTotalKg: n > 0 ? n : null })}
-            />
+            {!mostrarTandas && (
+              <CampoEditable
+                flex={1.2}
+                rotulo="Peso"
+                valor={cuenta.peso ? (cuenta.peso / 1000).toFixed(2) : ""}
+                placeholder="sin pesar"
+                sufijo="kg"
+                onGuardar={(n) => onEditar({ tandasKg: [], pesoTotalKg: n > 0 ? n : null })}
+              />
+            )}
             <CampoEditable
               flex={1.2}
               rotulo="Por kilo"
@@ -397,27 +401,149 @@ export function TarjetaConfirmacion({
             />
           </div>
 
+          {/* Tandas de peso: se muestran al tocar "+ Agregar pesada" o cuando
+              ya vienen varias del dictado. Mismo patrón que en Detalle. */}
+          {mostrarTandas && (
+            <div style={{ marginBottom: 14 }}>
+              {i.tandasKg.map((t, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "8px 0",
+                    borderBottom: "1px solid var(--linea)",
+                  }}
+                >
+                  <span style={{ fontSize: 14, color: "var(--texto-2)" }}>
+                    {["Primera", "Segunda", "Tercera", "Cuarta"][idx] ?? `Tanda ${idx + 1}`} tanda
+                  </span>
+                  <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{ fontSize: 18, fontWeight: 600 }}>{t.toFixed(2)} kg</span>
+                    <button
+                      aria-label="Quitar tanda"
+                      onClick={() => {
+                        const nuevas = i.tandasKg.filter((_, j) => j !== idx);
+                        onEditar({ tandasKg: nuevas, pesoTotalKg: nuevas.length > 0 ? null : i.pesoTotalKg });
+                        if (nuevas.length <= 1) setMostrarTandas(false);
+                      }}
+                      style={{ color: "var(--texto-4)", display: "flex", padding: 4 }}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </span>
+                </div>
+              ))}
+
+              <div style={{ display: "flex", gap: 8, padding: "10px 0 4px" }}>
+                <input
+                  value={nuevaTanda}
+                  onChange={(ev) => setNuevaTanda(ev.target.value)}
+                  onKeyDown={(ev) => {
+                    if (ev.key === "Enter") {
+                      const n = Number(nuevaTanda.replace(",", "."));
+                      if (Number.isFinite(n) && n > 0) {
+                        onEditar({ tandasKg: [...i.tandasKg, n], pesoTotalKg: null });
+                        setNuevaTanda("");
+                      }
+                    }
+                  }}
+                  inputMode="decimal"
+                  placeholder="Otra pesada"
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    height: 48,
+                    borderRadius: "var(--radio)",
+                    border: "1.5px solid var(--borde)",
+                    background: "var(--hundido)",
+                    padding: "0 12px",
+                    fontSize: 16,
+                  }}
+                />
+                <button
+                  onClick={() => {
+                    const n = Number(nuevaTanda.replace(",", "."));
+                    if (!Number.isFinite(n) || n <= 0) return;
+                    onEditar({ tandasKg: [...i.tandasKg, n], pesoTotalKg: null });
+                    setNuevaTanda("");
+                  }}
+                  className="pulsable-acento"
+                  style={{
+                    flex: "none",
+                    width: 84,
+                    height: 48,
+                    borderRadius: "var(--radio)",
+                    border: "1.5px solid var(--acento)",
+                    color: "var(--acento-300)",
+                    fontSize: 15,
+                    fontWeight: 600,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  Agregar
+                </button>
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 8 }}>
+                <span style={{ fontSize: 14, color: "var(--texto-2)" }}>Peso total</span>
+                <span style={{ fontSize: 20, fontWeight: 700 }}>
+                  {cuenta.peso ? (cuenta.peso / 1000).toFixed(2) : "0.00"} kg
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* La forma de sumar piernas o pechos cuando el pollo va partido:
               parte un pecho por un lado y una pierna por otro. Sin esto, al
               registrar tocando no había dónde ponerlos. */}
-          {!mostrarPresas && (
-            <button
-              onClick={() => setMostrarPresas(true)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                marginTop: -4,
-                marginBottom: 14,
-                color: "var(--acento-claro)",
-                fontSize: 14,
-                fontWeight: 500,
-                padding: "4px 2px",
-              }}
-            >
-              + piernas o pechos
-            </button>
-          )}
+          <div style={{ display: "flex", gap: 14, marginTop: -4, marginBottom: 14, flexWrap: "wrap" }}>
+            {!mostrarPresas && (
+              <button
+                onClick={() => setMostrarPresas(true)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  color: "var(--acento-claro)",
+                  fontSize: 14,
+                  fontWeight: 500,
+                  padding: "4px 2px",
+                }}
+              >
+                + piernas o pechos
+              </button>
+            )}
+            {!mostrarTandas && (
+              <button
+                onClick={() => {
+                  const base: number[] = i.tandasKg.length > 0
+                    ? [...i.tandasKg]
+                    : i.pesoTotalKg && i.pesoTotalKg > 0
+                      ? [i.pesoTotalKg]
+                      : [];
+                  if (base.length > 0) {
+                    onEditar({ tandasKg: base, pesoTotalKg: null });
+                  }
+                  setMostrarTandas(true);
+                }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  color: "var(--acento-claro)",
+                  fontSize: 14,
+                  fontWeight: 500,
+                  padding: "4px 2px",
+                }}
+              >
+                + agregar pesada
+              </button>
+            )}
+          </div>
 
           <div
             style={{
