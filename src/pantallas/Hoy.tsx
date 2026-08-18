@@ -312,6 +312,7 @@ export function Hoy({
           <RutaLista
             tiendas={tiendas}
             entregas={entregas}
+            deudas={deudas}
             onTocar={registrarEnTienda}
             abrir={abrir}
           />
@@ -537,11 +538,13 @@ function ModoBtn({
 function RutaLista({
   tiendas,
   entregas,
+  deudas,
   onTocar,
   abrir,
 }: {
   tiendas: Tienda[];
   entregas: Entrega[];
+  deudas: Map<number, number>;
   /** Tocar una tienda **sin** entrega hoy: abre la tarjeta para registrarla. */
   onTocar: (t: Tienda) => void;
   /** Tocar una **ya entregada**: abre su Detalle para editar cantidades y precio. */
@@ -595,12 +598,11 @@ function RutaLista({
         if (t.pesa && t.precioKgDefecto) meta.push(`${(t.precioKgDefecto / 100).toFixed(2)}/kg`);
         else if (!t.pesa) meta.push("sin pesar");
 
+        const deuda = deudas.get(t.id!) ?? 0;
+
         return (
           <button
             key={t.id}
-            // Ya entregada → abre su Detalle para editar cantidades y precio
-            // (el precio por kilo casi siempre varía). Sin entregar → la
-            // tarjeta para registrarla.
             onClick={() => (ultima ? abrir(ultima.id!) : onTocar(t))}
             className="pulsable"
             style={{
@@ -611,7 +613,6 @@ function RutaLista({
               gap: 14,
               alignItems: "center",
               width: "100%",
-              // Lo ya hecho se apaga un poco: la vista es «qué me falta».
               opacity: hecho ? 0.62 : 1,
             }}
           >
@@ -629,12 +630,6 @@ function RutaLista({
               <div style={{ fontSize: 19, fontWeight: 600, lineHeight: 1.2, marginBottom: 3 }}>
                 {t.nombre}
               </div>
-              {/*
-                Ya entregada: se muestran los datos de lo que se le dejó
-                —«3 pollos · 7.7 kg · 8.80/kg»—, igual que en la agenda, para
-                verlos de un vistazo y saber qué se va a editar al tocarla. Sin
-                entregar: su sitio y hora de siempre, que es lo que orienta.
-              */}
               <div style={{ fontSize: 13, color: "var(--texto-3)" }}>
                 {ultima
                   ? descripcionEntrega(ultima)
@@ -642,6 +637,11 @@ function RutaLista({
                     ? meta.join(" · ")
                     : "sin ruta todavía"}
               </div>
+              {deuda > 0 && (
+                <div style={{ fontSize: 12, color: "var(--ambar)", fontWeight: 500, marginTop: 2 }}>
+                  Debe {money(deuda)} de antes
+                </div>
+              )}
             </div>
             {hecho ? (
               <div style={{ textAlign: "right", flex: "none" }}>
