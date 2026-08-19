@@ -243,7 +243,7 @@ export function Hoy({
               }}
             >
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-                <div style={{ ...S.rotulo, fontSize: 12, letterSpacing: 0.9 }}>Salí con</div>
+                <div style={{ ...S.rotulo, fontSize: 14, letterSpacing: 0.9 }}>Salí con</div>
                 <div
                   style={{ fontSize: 36, fontWeight: 600, color: "var(--verde)", lineHeight: 1.1 }}
                 >
@@ -253,7 +253,7 @@ export function Hoy({
               {/* A la altura de los números, no de los rótulos. */}
               <div style={{ fontSize: 26, color: "var(--texto-5)", marginTop: 16 }}>→</div>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-                <div style={{ ...S.rotulo, fontSize: 12, letterSpacing: 0.9 }}>Me quedan</div>
+                <div style={{ ...S.rotulo, fontSize: 14, letterSpacing: 0.9 }}>Me quedan</div>
                 <div
                   style={{ fontSize: 36, fontWeight: 700, color: "var(--ambar)", lineHeight: 1.1 }}
                 >
