@@ -7,7 +7,7 @@ import { cerrarDiasPasados, guardarStock, leerJornada } from "./db/jornada";
 import { registrarEntrega } from "./db/entregas";
 import { registrarCobro } from "./db/entregas";
 import { contextoDeRuta, crearTienda, identificar, precioEfectivoKg } from "./db/tiendas";
-import { aCentimos, aGramos } from "./lib/dinero";
+import { aCentimos, aCobrar, aGramos } from "./lib/dinero";
 import { hoyISO, type DiaISO } from "./lib/fecha";
 import { avisoAtencion, avisoEntendido, avisoEscuchando, avisoGuardado, configurarAviso } from "./lib/aviso";
 import { useAjuste, useAjusteBool, useTema } from "./lib/ganchos";
@@ -178,6 +178,17 @@ export default function App() {
         return;
       }
 
+      if (intencion.intencion === "consulta" || intencion.intencion === "desconocida") {
+        avisoAtencion();
+        await descartarDictado(dictadoId);
+        setAvisoAjuste(
+          intencion.intencion === "consulta"
+            ? "Las consultas por voz todavía no están listas. Busca la tienda en el directorio."
+            : "No se entendió el dictado. Inténtalo de nuevo o escríbelo a mano.",
+        );
+        return;
+      }
+
       const { resultado } = await identificar(intencion.cliente, fecha);
       if (resultado.decision === "ambiguo" || resultado.decision === "nueva") avisoAtencion();
       setPropuesta({ intencion, emparejamiento: resultado, transcripcion, dictadoId });
@@ -275,11 +286,13 @@ export default function App() {
         })).id!;
 
       if (i.intencion === "registrar_pago" || i.intencion === "abono_deuda") {
-        // «Pagó todo» sin monto: se cobra la cuenta entera que tenga abierta.
+        // «Pagó todo» sin monto: se cobra la cuenta entera que tenga abierta,
+        // redondeada a la moneda mínima (10 céntimos) y con el resto perdonado
+        // como descuento — igual que el botón «Me pagó todo» de Cobranza.
         const monto = i.pagoTodo
-          ? await cuentaTotalDe(id, fecha)
+          ? aCobrar(await cuentaTotalDe(id, fecha))
           : aCentimos(i.monto ?? 0);
-        await registrarCobro(id, monto, { fecha });
+        await registrarCobro(id, monto, { fecha, aceptarRedondeo: i.pagoTodo });
       } else {
         const tienda = await db.tiendas.get(id);
         const entregaId = await registrarEntrega(

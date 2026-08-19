@@ -12,7 +12,7 @@ import {
   registrarCobro,
 } from "../db/entregas";
 import { actualizarTienda, deudaDetalle } from "../db/tiendas";
-import { aCentimos, aGramos, kg, money } from "../lib/dinero";
+import { aCentimos, aCobrar, aGramos, kg, money } from "../lib/dinero";
 import { diaCorto } from "../lib/fecha";
 import { avisoGuardado } from "../lib/aviso";
 import { BotonPrincipal, Cabecera, Contador, Fila, S } from "../ui/base";
@@ -197,8 +197,10 @@ export function Detalle({ entregaId, volver }: { entregaId: number; volver: () =
           <button
             className="pulsable"
             onClick={() => {
-              void registrarCobro(e.tiendaId, deuda.monto, { fecha: e.fecha });
-              avisoGuardado();
+              void registrarCobro(e.tiendaId, aCobrar(deuda.monto), {
+                fecha: e.fecha,
+                aceptarRedondeo: true,
+              }).then(() => avisoGuardado());
             }}
             style={{
               background: "var(--acento-900)",

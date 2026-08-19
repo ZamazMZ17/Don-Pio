@@ -334,6 +334,26 @@ una tienda existente en silencio: **el emparejamiento siempre se muestra antes d
   si sumar o restar, `proponer()` (App.tsx) corta esas frases antes de la tarjeta: avisa con
   sonido y un aviso en pantalla, y no registra nada — se corrige tocando la entrega, que es lo
   que ya funciona.
+- **Por voz, «pagó todo» no redondeaba a la moneda mínima ni perdonaba el resto.**
+  `cuentaTotalDe()` devuelve el total exacto (entregas + deudas) sin redondear. El camino de
+  Cobranza ya envolvía ese total en `aCobrar()` y pasaba `aceptarRedondeo: true` (§7bis, bug
+  de las migajas), pero el camino de voz (`confirmar()`, rama `registrar_pago` con
+  `i.pagoTodo`) pasaba el total crudo: cobraba S/ 69.12 cuando solo existen monedas de 10
+  céntimos, y los 2 céntimos sobrantes quedaban como deuda perpetua. Arreglo: en `confirmar()`
+  se envuelve en `aCobrar()` y se pasa `aceptarRedondeo: i.pagoTodo`.
+- **En Detalle, el botón de cobrar la deuda no redondeaba y el aviso sonaba antes de
+  guardar.** El botón «Cobrar S/ X» de deuda antigua pasaba `deuda.monto` sin `aCobrar()` y
+  `aceptarRedondeo` estaba en `false` — misma mecánica de migajas que el bug anterior. Además
+  `avisoGuardado()` se ejecutaba síncronamente antes de que `registrarCobro` terminara, así
+  que el sonido de confirmación no coincidía con el guardado real. Arreglo: se envuelve en
+  `aCobrar()`, se pasa `aceptarRedondeo: true`, y `avisoGuardado()` se mueve a `.then()`.
+- **Dictados de consulta o ininteligibles creaban entregas fantasma.** Intenciones de tipo
+  `consulta` («¿Cuánto me debe Rosa?») o `desconocida` (ruido, frase cortada) caían por el
+  camino por defecto de `proponer()`: armaban una `Propuesta` sin datos útiles y, si se
+  confirmaba, `confirmar()` llamaba a `registrarEntrega()` con todo a cero — una entrega
+  vacía para la tienda que el emparejador encontrara. Arreglo: `proponer()` intercepta ambas
+  intenciones antes de armar la propuesta, descarta el dictado, y muestra un aviso
+  explicando qué hacer en su lugar.
 
 ---
 
