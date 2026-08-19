@@ -377,6 +377,18 @@ una tienda existente en silencio: **el emparejamiento siempre se muestra antes d
   jornada guardada — si las hay, es un teléfono con historial y se le enseña el registro
   entero (`CAMBIOS` completo); solo si de verdad no hay nada de nada es una instalación nueva
   y ahí sí se siembra en silencio.
+- **Restaurar un respaldo podía pegarle el historial de un cliente borrado a uno que no
+  tenía nada que ver.** `borrarTienda()` (Tiendas) solo borra la fila de la tienda cuando ya
+  no debe nada — no toca sus entregas pasadas, que se quedan en la base apuntando a un
+  `tiendaId` que ya no existe. Un respaldo sacado después trae esas entregas «huérfanas»
+  pero no a la tienda (`generarRespaldo()` solo vuelca las que siguen en el directorio). Al
+  restaurar ese archivo en **otro** celular, `restaurarRespaldo()` no encontraba ese
+  `tiendaId` entre las tiendas remapeadas y caía al número crudo del celular de origen — que
+  en el celular destino podía ser, por pura casualidad de los contadores autoincrementales,
+  el id de una tienda real sin ninguna relación: le pegaba un historial ajeno a un cliente
+  que no era. Arreglo: todo `tiendaId` de una entrega/pago/deuda que no venga en la lista de
+  tiendas del respaldo se remapea a una tienda de reemplazo nueva («Tienda borrada»), una
+  sola por id huérfano, nunca al número crudo.
 
 ---
 

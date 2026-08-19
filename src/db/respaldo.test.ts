@@ -122,4 +122,76 @@ describe("respaldo", () => {
     await expect(restaurarRespaldo(null)).rejects.toThrow();
     await expect(restaurarRespaldo("no soy json de respaldo")).rejects.toThrow();
   });
+
+  it("rechaza un respaldo truncado al que le falta alguna de las listas", async () => {
+    const truncado = {
+      version: 1,
+      creado: new Date().toISOString(),
+      tiendas: [],
+      jornadas: [],
+      entregas: [],
+      // pagos, deudas, gastos y ajustes faltan a propósito.
+    };
+    await expect(restaurarRespaldo(truncado)).rejects.toThrow();
+  });
+
+  it("una entrega de una tienda ya borrada en el celular de origen no pisa una tienda ajena de este celular", async () => {
+    // El celular destino ya tiene su propia tienda en el id=1.
+    await db.tiendas.put({
+      ...tiendaNueva("Rosa, celular destino", "rosa celular destino"),
+      id: 1,
+      creada: 1000,
+    });
+
+    // En el celular de origen, la tienda que tenía el id=1 ("Manuel") ya se
+    // borró (`borrarTienda`, que no toca el historial) antes de sacar el
+    // respaldo — por eso `tiendas` no la trae, pero su entrega sigue en
+    // `entregas`, apuntando a un id=1 que en este celular es "Rosa".
+    const entregaHuerfana: Entrega = {
+      id: 9,
+      fecha: "2026-01-05",
+      tiendaId: 1,
+      orden: 1,
+      minuto: 400,
+      pollos: 2,
+      piernas: 0,
+      pechos: 0,
+      sinPesar: 0,
+      tandas: [],
+      peso: 0,
+      precioKg: 0,
+      totalCalculado: 1600,
+      totalCobrado: 1600,
+      descuentoRedondeo: 0,
+      estadoPago: "pagado",
+      notas: "",
+      creada: 3000,
+    };
+    const respaldoConHuerfana: Respaldo = {
+      version: 1,
+      creado: new Date().toISOString(),
+      tiendas: [],
+      jornadas: [],
+      entregas: [entregaHuerfana],
+      pagos: [],
+      deudas: [],
+      gastos: [],
+      ajustes: [],
+    };
+
+    await restaurarRespaldo(respaldoConHuerfana);
+
+    // "Rosa" sigue siendo "Rosa": la entrega huérfana no le cayó encima.
+    const rosa = await db.tiendas.get(1);
+    expect(rosa?.nombre).toBe("Rosa, celular destino");
+
+    // La entrega restaurada quedó en una tienda de reemplazo, no en "Rosa".
+    const entregas = await db.entregas.toArray();
+    const restaurada = entregas.find((e) => e.creada === 3000);
+    expect(restaurada).toBeDefined();
+    expect(restaurada!.tiendaId).not.toBe(1);
+
+    const reemplazo = await db.tiendas.get(restaurada!.tiendaId);
+    expect(reemplazo?.nombre).toBe("Tienda borrada");
+  });
 });

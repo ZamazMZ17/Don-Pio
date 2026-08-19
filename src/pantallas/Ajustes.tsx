@@ -42,6 +42,9 @@ export function Ajustes({ volver }: { volver: () => void }) {
   const [compartiendo, setCompartiendo] = useState(false);
   const [restaurando, setRestaurando] = useState(false);
   const [mensajeRespaldo, setMensajeRespaldo] = useState<string | null>(null);
+  /** Un error se ve igual que un éxito si los dos son texto gris — CLAUDE.md
+   * §4: «un color, un significado». */
+  const [errorRespaldo, setErrorRespaldo] = useState(false);
   const archivoRef = useRef<HTMLInputElement | null>(null);
 
   /**
@@ -52,6 +55,7 @@ export function Ajustes({ volver }: { volver: () => void }) {
   const compartirRespaldo = async () => {
     setCompartiendo(true);
     setMensajeRespaldo(null);
+    setErrorRespaldo(false);
     try {
       const json = JSON.stringify(await generarRespaldo(), null, 2);
       const nombre = `don-pio-respaldo-${hoyISO()}.json`;
@@ -79,6 +83,7 @@ export function Ajustes({ volver }: { volver: () => void }) {
       }
     } catch {
       avisoAtencion();
+      setErrorRespaldo(true);
       setMensajeRespaldo("No se pudo armar el respaldo.");
     } finally {
       setCompartiendo(false);
@@ -93,6 +98,7 @@ export function Ajustes({ volver }: { volver: () => void }) {
 
     setRestaurando(true);
     setMensajeRespaldo(null);
+    setErrorRespaldo(false);
     try {
       const datos = JSON.parse(await archivo.text());
       await restaurarRespaldo(datos);
@@ -100,6 +106,7 @@ export function Ajustes({ volver }: { volver: () => void }) {
       setMensajeRespaldo("Listo, se restauró el respaldo.");
     } catch (e) {
       avisoAtencion();
+      setErrorRespaldo(true);
       setMensajeRespaldo(
         e instanceof Error ? e.message : "Ese archivo no se pudo leer como respaldo.",
       );
@@ -300,7 +307,14 @@ export function Ajustes({ volver }: { volver: () => void }) {
           />
 
           {mensajeRespaldo && (
-            <div style={{ fontSize: 13, color: "var(--texto-3)", marginTop: 10, lineHeight: 1.5 }}>
+            <div
+              style={{
+                fontSize: 13,
+                color: errorRespaldo ? "var(--rojo)" : "var(--verde)",
+                marginTop: 10,
+                lineHeight: 1.5,
+              }}
+            >
               {mensajeRespaldo}
             </div>
           )}
