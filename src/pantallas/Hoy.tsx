@@ -152,25 +152,42 @@ export function Hoy({
           flex: "none",
           padding: "6px 20px 16px",
           borderBottom: "1px solid var(--linea)",
+          // Tres columnas: la figura | salí-me quedan | piernas-pechos-tiendas.
+          // La figura tiene columna propia y todo el alto del encabezado, así
+          // que puede ir grande sin empujar a nada — antes vivía dentro de la
+          // fila del título y había que encogerla con márgenes negativos para
+          // que no la engordara.
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
         }}
       >
-        <div
+        {/*
+          Escala con el ancho: a 96px fijos, en un teléfono de 360 (de los
+          más comunes) le comía tanto sitio a las otras dos columnas que
+          «ME QUEDAN» y cada contador se partían en dos líneas.
+        */}
+        <img
+          src={logo}
+          alt=""
+          className="logo-marca"
           style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: 18,
+            flex: "none",
+            objectFit: "contain",
+            width: "clamp(58px, 19vw, 96px)",
+            height: "clamp(58px, 19vw, 96px)",
           }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <img
-              src={logo}
-              alt=""
-              className="logo-marca"
-              width={72}
-              height={72}
-              style={{ flex: "none", objectFit: "contain", marginTop: -6, marginBottom: -6 }}
-            />
+        />
+
+        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: 10,
+            }}
+          >
             <div
               style={{
                 fontFamily: "var(--fuente-titulo)",
@@ -182,27 +199,26 @@ export function Hoy({
             >
               {diaCorto(fecha)}
             </div>
+            {/*
+              «jornada» con un punto: verde mientras está abierta, rojo cuando ya
+              se cerró. Se lee de un vistazo y sin leer, que es de lo que se trata
+              con el teléfono en una mano.
+            */}
+            <div style={{ display: "flex", alignItems: "center", gap: 7, flex: "none" }}>
+              <span style={{ fontSize: 14, color: "var(--texto-3)" }}>jornada</span>
+              <span
+                aria-label={`jornada ${jornada.estado}`}
+                style={{
+                  width: 11,
+                  height: 11,
+                  borderRadius: "50%",
+                  flex: "none",
+                  background:
+                    jornada.estado === "cerrada" ? "var(--rojo)" : "var(--verde)",
+                }}
+              />
+            </div>
           </div>
-          {/*
-            «jornada» con un punto: verde mientras está abierta, rojo cuando ya
-            se cerró. Se lee de un vistazo y sin leer, que es de lo que se trata
-            con el teléfono en una mano.
-          */}
-          <div style={{ display: "flex", alignItems: "center", gap: 7, flex: "none" }}>
-            <span style={{ fontSize: 14, color: "var(--texto-3)" }}>jornada</span>
-            <span
-              aria-label={`jornada ${jornada.estado}`}
-              style={{
-                width: 11,
-                height: 11,
-                borderRadius: "50%",
-                flex: "none",
-                background:
-                  jornada.estado === "cerrada" ? "var(--rojo)" : "var(--verde)",
-              }}
-            />
-          </div>
-        </div>
 
         {/*
           Sin stock cargado no se puede decir cuánto queda, así que se enseña
@@ -213,14 +229,12 @@ export function Hoy({
           onClick={abrirStock}
           style={{
             display: "flex",
-            // `stretch` (el valor por defecto, puesto explícito): el bloque
-            // de la izquierda toma el alto de la columna de la derecha —que
-            // es la más alta, con piernas/pechos/tiendas apilados— y adentro
-            // se centra de verdad, no solo se pega arriba con espacio vacío
-            // debajo.
-            alignItems: "stretch",
+            // `center`: la columna de piernas/pechos/tiendas es la más alta
+            // (tres líneas) y es la que marca el alto de la fila; centrar
+            // contra ella deja los números justo a la altura de «pechos», la
+            // línea de en medio.
+            alignItems: "center",
             gap: 14,
-            marginBottom: 14,
             width: "100%",
           }}
         >
@@ -228,10 +242,6 @@ export function Hoy({
             // `flex: 1` + `justifyContent: center`: reparte el espacio que le
             // deja el bloque de la derecha (marginLeft: auto) y centra el par
             // ahí adentro, en vez de quedarse pegado al borde izquierdo.
-            // `marginTop` en vez de centrarlo en todo el alto de la fila: con
-            // la columna de la derecha casi de la misma altura, centrarlo del
-            // todo casi no se notaba — así queda a la altura de «pechos»,
-            // la línea de en medio.
             <div
               style={{
                 display: "flex",
@@ -239,11 +249,10 @@ export function Hoy({
                 justifyContent: "center",
                 alignItems: "flex-start",
                 gap: 10,
-                marginTop: 14,
               }}
             >
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-                <div style={{ ...S.rotulo, fontSize: 14, letterSpacing: 0.9 }}>Salí con</div>
+                <div style={{ ...S.rotulo, fontSize: 14, letterSpacing: 0.9, whiteSpace: "nowrap" }}>Salí con</div>
                 <div
                   style={{ fontSize: 36, fontWeight: 600, color: "var(--verde)", lineHeight: 1.1 }}
                 >
@@ -253,7 +262,7 @@ export function Hoy({
               {/* A la altura de los números, no de los rótulos. */}
               <div style={{ fontSize: 26, color: "var(--texto-5)", marginTop: 16 }}>→</div>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-                <div style={{ ...S.rotulo, fontSize: 14, letterSpacing: 0.9 }}>Me quedan</div>
+                <div style={{ ...S.rotulo, fontSize: 14, letterSpacing: 0.9, whiteSpace: "nowrap" }}>Me quedan</div>
                 <div
                   style={{ fontSize: 36, fontWeight: 700, color: "var(--ambar)", lineHeight: 1.1 }}
                 >
@@ -279,6 +288,9 @@ export function Hoy({
               fontSize: 13,
               color: "var(--texto-3)",
               lineHeight: 1.55,
+              // Sin esto, al apretarse la fila se parten en «0 / piernas».
+              flex: "none",
+              whiteSpace: "nowrap",
             }}
           >
             <div>
@@ -299,7 +311,7 @@ export function Hoy({
             </div>
           </div>
         </button>
-
+        </div>
       </div>
 
       {/*
