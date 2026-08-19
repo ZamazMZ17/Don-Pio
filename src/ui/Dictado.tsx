@@ -359,16 +359,19 @@ export function TarjetaConfirmacion({
             }}
           >
             {/* Piernas siempre visible junto a Pollos. Pechos solo ocupa
-                sitio si lo hay o si él lo pide. */}
+                sitio si lo hay o si él lo pide. Pollos/piernas/pechos casi
+                nunca pasan de un par de dígitos, así que llevan menos flex
+                que peso y precio — que necesitan sitio para un decimal
+                («2.63», «8.00») y, en peso, el sufijo «kg» al lado. */}
             <CampoEditable
-              flex={1}
+              flex={0.7}
               rotulo={mostrarPechos ? "Enteros" : "Pollos"}
               valor={i.pollos ? String(i.pollos) : ""}
               placeholder="0"
               onGuardar={(n) => onEditar({ pollos: Math.max(0, Math.round(n)) })}
             />
             <CampoEditable
-              flex={1}
+              flex={0.7}
               rotulo="Piernas"
               valor={i.piernas ? String(i.piernas) : ""}
               placeholder="0"
@@ -376,7 +379,7 @@ export function TarjetaConfirmacion({
             />
             {mostrarPechos && (
               <CampoEditable
-                flex={1}
+                flex={0.7}
                 rotulo="Pechos"
                 valor={i.pechos ? String(i.pechos) : ""}
                 placeholder="0"
@@ -385,7 +388,7 @@ export function TarjetaConfirmacion({
             )}
             {!mostrarTandas && (
               <CampoEditable
-                flex={1.2}
+                flex={1.6}
                 rotulo="Peso"
                 valor={cuenta.peso ? (cuenta.peso / 1000).toFixed(2) : ""}
                 placeholder="sin pesar"
@@ -394,7 +397,7 @@ export function TarjetaConfirmacion({
               />
             )}
             <CampoEditable
-              flex={1.2}
+              flex={1.3}
               rotulo="Por kilo"
               valor={cuenta.precioKg ? (cuenta.precioKg / 100).toFixed(2) : ""}
               placeholder="—"

@@ -51,6 +51,7 @@ import {
   TarjetaConfirmacion,
   type Propuesta,
 } from "./ui/Dictado";
+import { HojaNovedades, useNovedades } from "./ui/Novedades";
 
 type Pantalla =
   | "hoy"
@@ -79,6 +80,8 @@ export default function App() {
   const [avisoAjuste, setAvisoAjuste] = useState<string | null>(null);
   /** Hay un cobro abierto con su teclado: los flotantes estorban. */
   const [cobroAbierto, setCobroAbierto] = useState(false);
+  /** Qué cambió desde la última vez que abrió la app, tras una actualización. */
+  const { nuevas: novedades, cerrar: cerrarNovedades } = useNovedades();
   /** Cómo cerrarlo desde el botón atrás. Lo rellena la propia Cobranza. */
   const cerrarCobro = useRef<(() => void) | null>(null);
   /** De dónde vino, para que el atrás no lleve siempre a Hoy. */
@@ -431,6 +434,10 @@ export default function App() {
    * Antes cerraba la app entera de un toque, en mitad de la ruta.
    */
   useBotonAtras(() => {
+    if (novedades.length > 0) {
+      cerrarNovedades();
+      return true;
+    }
     if (dictando) {
       rec.cancelar();
       return true;
@@ -503,7 +510,8 @@ export default function App() {
    * que se está transcribiendo. Para parar está el botón «Ya terminé» dentro
    * de la propia tarjeta, que es donde él está mirando.
    */
-  const flotantes = conMic && !propuesta && !escribiendo && !cobroAbierto;
+  const flotantes =
+    conMic && !propuesta && !escribiendo && !cobroAbierto && novedades.length === 0;
 
   return (
     <div
@@ -579,6 +587,9 @@ export default function App() {
             zIndex: 20,
           }}
         >
+          {novedades.length > 0 && (
+            <HojaNovedades cambios={novedades} onCerrar={cerrarNovedades} />
+          )}
           {escuchando && <HojaEscuchando texto={rec.parcial} onTerminar={rec.detener} />}
           {escribiendo && (
             <HojaEscribir

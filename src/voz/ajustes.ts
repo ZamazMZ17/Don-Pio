@@ -49,6 +49,11 @@ export const CLAVE_STOCK_OFRECIDO = "stockOfrecido";
  * explícito del dueño — ver estilos.css.
  */
 export const CLAVE_TEMA = "tema";
+/**
+ * Cuántas entradas de `cambios.ts` ya vio. Un número, no una fecha: evita
+ * ambigüedad cuando hay varias entradas el mismo día. Ver `ui/Novedades.tsx`.
+ */
+export const CLAVE_CAMBIOS_VISTOS = "cambiosVistos";
 
 /** Hasta qué hora tiene sentido preguntar por el stock del día. */
 export const HORA_TOPE_STOCK = 11;

@@ -120,6 +120,16 @@ intérprete que lo dictado.
 | **Cargar stock** | «¿Con cuánto sales hoy?», con la sugerencia aprendida por día de semana |
 | **Menú** | Cuadrícula de 7 fichas, detrás de la pestaña «Más» |
 
+**Novedades.** Al abrir la app tras instalar una actualización, una hoja (`ui/Novedades.tsx`,
+`useNovedades()`) le enseña qué cambió desde la última vez, tomado de `src/cambios.ts`. Se
+compara **cuántas entradas ya vio** (guardado en Ajustes, `CLAVE_CAMBIOS_VISTOS`) contra
+`CAMBIOS.length` — no la versión del build (`fecha · commit`, que cambia en cada push y no
+sirve para saber qué es «nuevo para él»). La primera vez que abre la app en un teléfono no
+hay nada que comparar, así que no se le interrumpe con la hoja: se marca el punto de partida
+en silencio. **Toda vez que se publique un cambio que él vaya a notar, hay que agregar una
+entrada al final de `CAMBIOS`** — nunca reordenar ni borrar las que ya existen, o se rompe la
+cuenta de qué es viejo y qué es nuevo para quien ya abrió la app antes.
+
 ---
 
 ## 6. La correlación de tiendas — lo más delicado
