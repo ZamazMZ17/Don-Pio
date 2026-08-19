@@ -75,6 +75,8 @@ export default function App() {
   const [propuesta, setPropuesta] = useState<Propuesta | null>(null);
   const [pensando, setPensando] = useState(false);
   const [escribiendo, setEscribiendo] = useState(false);
+  /** «Agrégale 2 piernas», «bájale medio kilo»… ver aviso en `proponer()`. */
+  const [avisoAjuste, setAvisoAjuste] = useState<string | null>(null);
   /** Hay un cobro abierto con su teclado: los flotantes estorban. */
   const [cobroAbierto, setCobroAbierto] = useState(false);
   /** Cómo cerrarlo desde el botón atrás. Lo rellena la propia Cobranza. */
@@ -142,6 +144,7 @@ export default function App() {
   const proponer = useCallback(
     async (r: Interpretacion) => {
       const { intencion, dictadoId, transcripcion } = r;
+      setAvisoAjuste(null);
 
       // Stock no necesita confirmación: es un número suyo, no de un cliente.
       if (intencion.intencion === "cargar_stock") {
@@ -152,6 +155,26 @@ export default function App() {
         );
         avisoGuardado();
         setPantalla("hoy");
+        return;
+      }
+
+      /*
+       * «Agrégale 2 piernas», «bájale medio kilo por merma»… el parser las
+       * reconoce como corrección a una entrega YA registrada (parserLocal.ts),
+       * no como una entrega nueva: los números que trae son una diferencia a
+       * sumar o restar, no un total. No hay todavía forma de saber con
+       * certeza a cuál entrega corregir ni si sumar o restar, así que dejarla
+       * caer al camino de siempre la registraba como si fuera una entrega
+       * nueva con esos números como total — una entrega fantasma pegada a la
+       * tienda que le tocara por contexto de ruta. Mejor avisar y que la
+       * corrija tocando la entrega (Detalle), que es lo que ya funciona bien.
+       */
+      if (intencion.intencion === "ajuste_entrega") {
+        avisoAtencion();
+        await descartarDictado(dictadoId);
+        setAvisoAjuste(
+          "Ese tipo de corrección por voz todavía no se aplica sola. Abre la entrega y corrígela ahí.",
+        );
         return;
       }
 
@@ -226,6 +249,7 @@ export default function App() {
     }
 
     setPropuesta(null);
+    setAvisoAjuste(null);
     // Modo teclado: se abre el cuadro de escribir y él usa el micrófono de su
     // teclado. Un toque más, pero con mejor transcripción.
     if (modoTeclado) {
@@ -563,6 +587,22 @@ export default function App() {
               }}
             >
               {rec.error}
+            </div>
+          )}
+          {avisoAjuste && (
+            <div
+              style={{
+                pointerEvents: "auto",
+                margin: "0 18px 14px",
+                background: "var(--superficie)",
+                borderRadius: "var(--radio)",
+                padding: 16,
+                fontSize: 15,
+                color: "var(--ambar)",
+                border: "1px solid var(--borde)",
+              }}
+            >
+              {avisoAjuste}
             </div>
           )}
           {propuesta && (

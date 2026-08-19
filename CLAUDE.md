@@ -319,6 +319,21 @@ una tienda existente en silencio: **el emparejamiento siempre se muestra antes d
   pasó), que para una entrega es su secuencia de ruta y para un cobro es cuándo lo cobró.
   «Por pendientes» ordena por lo que falta cobrar, y un cobro suelto (falta 0) cae al fondo
   con las entregas ya pagadas.
+- **«Agrégale 2 piernas» creaba una entrega fantasma, no corregía la que tocaba.**
+  `parserLocal.ts` reconoce frases de corrección («agrégale», «quítale», «bájale», «merma»…)
+  como `ajuste_entrega` y las prueba (`parserLocal.test.ts`) esperando que los números sean
+  una **diferencia** a aplicar sobre una entrega ya registrada, no un total. Pero
+  `confirmar()` en App.tsx nunca tuvo una rama para ese caso — solo distingue pagos — así que
+  caía al camino de siempre y llamaba a `registrarEntrega()`: creaba una entrega **nueva**
+  tratando esa diferencia como si fuera el total, para la tienda que le tocara por contexto
+  de ruta (`contextoDeRuta`, «quién fue justo antes» — casi siempre la misma tienda de la
+  entrega que se quería corregir). Esa entrega fantasma quedaba marcada como «ya entregada
+  hoy»; si después se tocaba esa tienda en la vista de Ruta, abría su Detalle —no una tarjeta
+  en blanco— con esos números ya puestos, y lo que él tecleara ahí a mano se sumaba encima sin
+  que lo notara. Mientras no haya una forma confiable de saber **a cuál** entrega corregir y
+  si sumar o restar, `proponer()` (App.tsx) corta esas frases antes de la tarjeta: avisa con
+  sonido y un aviso en pantalla, y no registra nada — se corrige tocando la entrega, que es lo
+  que ya funciona.
 
 ---
 
