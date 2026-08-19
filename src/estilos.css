@@ -292,3 +292,17 @@ input {
 :root[data-theme="claro"] .logo-marca {
   filter: none;
 }
+
+/*
+ * Los campos de la tarjeta de dictado (Pollos, Piernas, Peso, Por kilo) usan
+ * 24px para el número, grande a propósito — es lo que se toca con el dedo.
+ * Pero un placeholder como «sin pesar» a ese mismo tamaño no entra en una
+ * columna angosta y se corta a la mitad («sin p»). El número ya escrito no
+ * tiene este problema (rara vez pasa de 2-3 cifras); solo el texto de aviso
+ * cuando el campo todavía está vacío necesita ir más chico. Los estilos
+ * inline no pueden tocar `::placeholder`, así que va aquí.
+ */
+.campo-editable::placeholder {
+  font-size: 14px;
+  font-weight: 500;
+}

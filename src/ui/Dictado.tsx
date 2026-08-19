@@ -739,6 +739,7 @@ function CampoEditable({
       <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
         <input
           key={valor}
+          className="campo-editable"
           defaultValue={valor}
           placeholder={placeholder}
           inputMode="decimal"
