@@ -159,7 +159,7 @@ export function Hoy({
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            marginBottom: 10,
+            marginBottom: 18,
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -169,9 +169,19 @@ export function Hoy({
               className="logo-marca"
               width={72}
               height={72}
-              style={{ flex: "none", objectFit: "contain", marginTop: -10, marginBottom: -18 }}
+              style={{ flex: "none", objectFit: "contain", marginTop: -6, marginBottom: -6 }}
             />
-            <div style={{ fontSize: 22, fontWeight: 600 }}>{diaCorto(fecha)}</div>
+            <div
+              style={{
+                fontFamily: "var(--fuente-titulo)",
+                fontSize: 27,
+                letterSpacing: 0.4,
+                textTransform: "uppercase",
+                lineHeight: 1,
+              }}
+            >
+              {diaCorto(fecha)}
+            </div>
           </div>
           {/*
             «jornada» con un punto: verde mientras está abierta, rojo cuando ya

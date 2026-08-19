@@ -18,8 +18,9 @@ export const S = {
     border: "1px solid var(--linea)",
   } as CSSProperties,
   rotulo: {
-    fontSize: 12,
-    letterSpacing: 1,
+    fontFamily: "var(--fuente-titulo)",
+    fontSize: 13,
+    letterSpacing: 1.2,
     textTransform: "uppercase",
     color: "var(--texto-4)",
   } as CSSProperties,
@@ -69,8 +70,18 @@ export function Cabecera({
         </button>
       )}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 22, fontWeight: 600 }}>{titulo}</div>
-        {sub && <div style={{ fontSize: 13, color: "var(--texto-4)", marginTop: 2 }}>{sub}</div>}
+        <div
+          style={{
+            fontFamily: "var(--fuente-titulo)",
+            fontSize: 27,
+            letterSpacing: 0.4,
+            textTransform: "uppercase",
+            lineHeight: 1,
+          }}
+        >
+          {titulo}
+        </div>
+        {sub && <div style={{ fontSize: 13, color: "var(--texto-4)", marginTop: 4 }}>{sub}</div>}
       </div>
       {derecha}
     </div>

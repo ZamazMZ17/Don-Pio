@@ -3,6 +3,10 @@ import { SplashScreen } from "@capacitor/splash-screen";
 import { StatusBar, Style } from "@capacitor/status-bar";
 
 import "@fontsource-variable/inter";
+// Para los títulos: condensada, geométrica, toda en mayúsculas — ver
+// `--fuente-titulo` en estilos.css. Cargada local igual que Inter, por la
+// misma razón: a las 5 a.m. no hay red para pedirle nada a Google Fonts.
+import "@fontsource/bebas-neue";
 import "./estilos.css";
 
 import App from "./App";

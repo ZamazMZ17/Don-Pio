@@ -74,6 +74,15 @@
   --radio-lg: 16px;
   --radio-xl: 20px;
 
+  /*
+   * Solo para títulos: los nombres de pantalla («Cobranza», «Tiendas»…),
+   * los rótulos en mayúsculas (S.rotulo) y el día de Hoy. Todo lo demás —
+   * lo que se lee de corrido, el dinero, los menús — se queda en Inter; una
+   * condensada así rinde peor en textos largos. No depende del tema:
+   * mismo valor en oscuro y claro.
+   */
+  --fuente-titulo: "Bebas Neue", "Arial Narrow", sans-serif;
+
   color-scheme: dark;
 }
 
