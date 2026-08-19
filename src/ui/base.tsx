@@ -112,7 +112,12 @@ export function BotonPrincipal({
         alignItems: "center",
         justifyContent: "center",
         borderRadius: "var(--radio)",
-        border: "1.5px solid var(--acento)",
+        // 2.5px y no el 1.5 del resto de la app: en estos botones el relleno
+        // casi no se despega del fondo, así que el contorno *es* el botón, y
+        // a 1.5px en una pantalla densa se veía como un pelo — flaco para lo
+        // que es la acción principal de la pantalla. Los bordes de tarjetas,
+        // chips y campos se quedan en 1.5: ahí el borde solo delimita.
+        border: "2.5px solid var(--acento)",
         background: "var(--acento-900)",
         color: "var(--acento-200)",
         fontSize: 18,

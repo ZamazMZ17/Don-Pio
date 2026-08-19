@@ -632,7 +632,10 @@ export function TarjetaConfirmacion({
             flex: 1,
             height: 62,
             borderRadius: "var(--radio-md)",
-            border: "1.5px solid var(--borde)",
+            // 2.5px como el Confirmar de al lado y como BotonPrincipal: son
+            // los botones grandes de acción, donde el contorno es lo que los
+            // dibuja. Ver la nota en ui/base.tsx.
+            border: "2.5px solid var(--borde)",
             color: "var(--texto-2)",
             display: "flex",
             alignItems: "center",
@@ -656,7 +659,7 @@ export function TarjetaConfirmacion({
             flex: 1.4,
             height: 62,
             borderRadius: "var(--radio-md)",
-            border: "1.5px solid var(--acento)",
+            border: "2.5px solid var(--acento)",
             background: "var(--acento-900)",
             color: "var(--acento-200)",
             display: "flex",
