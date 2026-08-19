@@ -107,6 +107,13 @@ export function BotonPrincipal({
       className="pulsable-acento"
       style={{
         height: alto,
+        // Sin esto se aplasta. Casi siempre cuelga de una columna flex (el
+        // área de scroll de la pantalla), y ahí un item flex se encoge por
+        // debajo de su `height` en cuanto el contenido desborda: en el
+        // Detalle de una entrega larga medía 30px en vez de 62 —la mitad, y
+        // por debajo del mínimo táctil de 52—, que es lo que lo hacía verse
+        // flaco. Mismo fallo que el de los íconos del Menú (CLAUDE.md §7 bis).
+        flex: "none",
         width: "100%",
         display: "flex",
         alignItems: "center",
@@ -145,6 +152,8 @@ export function BotonSecundario({
       className="pulsable"
       style={{
         height: alto,
+        // Igual que BotonPrincipal: sin esto se encoge en una columna flex.
+        flex: "none",
         width: "100%",
         display: "flex",
         alignItems: "center",
