@@ -34,7 +34,7 @@ export function Ajustes({ volver }: { volver: () => void }) {
   const modoTeclado = useAjusteBool(CLAVE_MODO_TECLADO, true);
   const redondeo = useAjusteBool(CLAVE_REDONDEO);
   const sonido = useAjusteBool(CLAVE_SONIDO, true);
-  const tema = useAjuste(CLAVE_TEMA, "oscuro") as Tema;
+  const tema = useAjuste(CLAVE_TEMA, "claro") as Tema;
 
   const tiendas = useLiveQuery(() => db.tiendas.count(), []) ?? 0;
   const [verKey, setVerKey] = useState(false);

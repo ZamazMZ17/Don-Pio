@@ -74,7 +74,7 @@ export type Tema = "oscuro" | "claro" | "sistema";
  * que se note.
  */
 export function useTema(): void {
-  const tema = useAjuste(CLAVE_TEMA, "oscuro") as Tema;
+  const tema = useAjuste(CLAVE_TEMA, "claro") as Tema;
 
   useEffect(() => {
     const metaColor = document.querySelector('meta[name="theme-color"]');

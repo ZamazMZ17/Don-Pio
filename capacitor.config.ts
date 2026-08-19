@@ -5,9 +5,12 @@ const config: CapacitorConfig = {
   appName: "Don Pio",
   webDir: "dist",
   android: {
-    // El fondo detrás de la WebView mientras carga: si no, parpadea en blanco,
-    // y a las 5 a.m. un fogonazo blanco en la cara es lo último que quieres.
-    backgroundColor: "#161826",
+    // El fondo detrás de la WebView mientras carga: sin esto parpadea en
+    // blanco antes de que React pinte. Crema, no oscuro — el tema por
+    // defecto es claro (ver estilos.css); con el fondo oscuro de antes,
+    // ahora sería el splash cerrándose sobre un fogonazo oscuro en vez de
+    // uno blanco, mismo problema con el color cambiado.
+    backgroundColor: "#f3ecdd",
   },
   plugins: {
     LocalNotifications: {

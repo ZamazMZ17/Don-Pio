@@ -65,9 +65,10 @@ Tokens exactos en `src/estilos.css`. Los de estado:
 
 Reglas que no se rompen:
 
-- **Por defecto la app es oscura.** Se usa de madrugada, y una actualización no le
-  puede cambiar la pantalla sin que él lo pida. El modo claro existe (Ajustes →
-  Apariencia: Oscuro/Claro/Sistema), pero **nunca es el arranque por defecto**.
+- **Por defecto la app es clara** — pedido explícito del dueño (antes era oscura por
+  defecto; se reabrió esa decisión). Actualizar la app no le puede cambiar la
+  pantalla sin que él lo pida: ni oscuro ni «sistema» son el arranque por defecto,
+  aunque los dos siguen ahí (Ajustes → Apariencia: Oscuro/Claro/Sistema).
   Cada token de color mantiene su rol en los dos temas (ver `src/estilos.css`,
   bloque `:root[data-theme="claro"]`) — no es el oscuro con los valores invertidos,
   los verdes/ámbares/rojos pastel del oscuro se recalcularon más saturados para
@@ -80,7 +81,11 @@ Reglas que no se rompen:
 - **Íconos de `lucide-react`, nunca emojis.** El prototipo usa glifos unicode
   (`▤ ↩ ☷ ⋯ 🎙`) porque era un mockup; en Android cada fabricante los dibuja distinto.
 - Tipografía **Inter**, cargada localmente con `@fontsource-variable`. A las 5 a.m. no
-  hay red para pedirle nada a Google Fonts.
+  hay red para pedirle nada a Google Fonts. Para lo que actúa como título —los
+  nombres de pantalla (`Cabecera`), los rótulos en mayúsculas (`S.rotulo`) y el día
+  en Hoy— hay una segunda familia, **Bebas Neue** (`--fuente-titulo` en
+  `estilos.css`), condensada y en mayúsculas: cargada local igual que Inter. Todo lo
+  que se lee de corrido —texto, dinero, menús— se queda en Inter.
 - Todo el código en español: archivos, tipos, variables, comentarios.
 
 ---

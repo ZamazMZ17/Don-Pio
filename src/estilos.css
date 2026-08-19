@@ -7,12 +7,17 @@
  * ninguna zona táctil baja de 52px. Y se añaden tres colores de estado porque
  * pendiente / parcial / pagado no se distingue en monocromo.
  *
- * Por defecto la app sigue siendo oscura — se usa de madrugada y en la calle,
- * y un fogonazo blanco a las 5 a.m. es justo lo que se quería evitar. El modo
- * claro existe como algo que él elige a propósito desde Ajustes (o que sigue
- * al tema del teléfono si así lo prefiere), nunca como el arranque por
- * defecto: instalar una versión nueva no le puede cambiar la pantalla a la
- * que ya está acostumbrado sin que lo pida.
+ * Por defecto la app es clara — pedido explícito del dueño. El oscuro sigue
+ * ahí (Ajustes → Apariencia), y «sistema» sigue al tema del teléfono si así
+ * lo prefiere; ninguno de los dos es el arranque por defecto.
+ *
+ * Nota técnica: el bloque `:root` de abajo trae los valores **oscuros** y
+ * `:root[data-theme="claro"]` los reemplaza — así era desde que el oscuro
+ * era el arranque por defecto. `useTema()` (lib/ganchos.ts) siempre pone
+ * `data-theme` a mano, "claro" u "oscuro", nunca lo deja sin poner, así que
+ * cuál de los dos bloques es el «de base» en el CSS no cambia qué se ve al
+ * abrir la app — eso lo decide el valor por defecto de `useAjuste(CLAVE_TEMA,
+ * ...)`, no el orden de estas reglas.
  *
  * El claro no es el oscuro con los colores invertidos a lo bruto: cada token
  * mantiene su **rol** (superficie encima de fondo, texto-2 menos presente que
