@@ -302,9 +302,16 @@ export function Hoy({
             </div>
             {/* Siempre visible, igual que piernas — no solo cuando hay
                 pollos partidos, para que se vea de un vistazo que la
-                cuenta sigue en cero y no que falta por cargar. */}
+                cuenta sigue en cero y no que falta por cargar. Con stock
+                cargado enseña los pechos sueltos por vender (pechosLibres),
+                no los entregados: es lo que le queda por vender, igual que
+                «me quedan» pollos y piernas — no un contador de reparto. */}
             <div>
-              {resumen.repartidoPechos} {resumen.repartidoPechos === 1 ? "pecho" : "pechos"}
+              {(() => {
+                const pechos =
+                  resumen.stockPollos > 0 ? resumen.pechosLibres : resumen.repartidoPechos;
+                return `${pechos} ${pechos === 1 ? "pecho" : "pechos"}`;
+              })()}
             </div>
             <div>
               {resumen.tiendas} {resumen.tiendas === 1 ? "tienda" : "tiendas"}
