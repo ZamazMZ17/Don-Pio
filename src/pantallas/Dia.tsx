@@ -213,6 +213,12 @@ export function Dia({ fecha, volver }: { fecha: DiaISO; volver: () => void }) {
           const estado = estadoDe(e.totalCalculado, cobrado);
           const saldo = e.totalCalculado - cobrado;
           const debiaAntes = deudaAntesPorTienda.get(e.tiendaId) ?? 0;
+          // Lo que además se abonó a la deuda vieja en el mismo cobro (puede
+          // ser la suma de varios abonos ese día): "Cobrado" solo enseña lo
+          // que se aplicó a esta entrega, y como la deuda se paga primero
+          // (CLAUDE.md §7), un pago que alcanza para las dos cosas se veía
+          // acá como si hubiera cobrado de menos.
+          const deudaHoy = deudaPorTienda.get(e.tiendaId) ?? 0;
 
           return (
             <div key={e.id} style={{ ...S.tarjeta, padding: "15px 16px" }}>
@@ -277,6 +283,9 @@ export function Dia({ fecha, volver }: { fecha: DiaISO; volver: () => void }) {
                 />
                 <Dato rotulo="Total" valor={money(e.totalCalculado)} />
                 <Dato rotulo="Cobrado" valor={money(e.totalCobrado)} color="var(--verde)" />
+                {deudaHoy > 0 && (
+                  <Dato rotulo="De deuda anterior" valor={money(deudaHoy)} color="var(--verde)" />
+                )}
                 <Dato
                   rotulo="Quedó debiendo"
                   valor={saldo > 0 ? money(saldo) : "—"}
