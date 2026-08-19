@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { db } from "../db/db";
 import { CAMBIOS, type Cambio } from "../cambios";
 import { CLAVE_CAMBIOS_VISTOS, guardarAjuste, leerAjuste } from "../voz/ajustes";
 import { BotonPrincipal, S } from "./base";
@@ -6,10 +7,17 @@ import { BotonPrincipal, S } from "./base";
 /**
  * Qué le falta ver del registro de cambios, y cómo marcarlo como visto.
  *
- * Se resuelve con una lectura puntual (`leerAjuste`, no `useLiveQuery`): la
- * primera vez que abre la app en un teléfono no hay nada guardado todavía, y
- * ahí no hay «novedades» que anunciar — solo se marca el punto de partida en
- * silencio, para no recibirlo con una pantalla que no venía a cuento.
+ * Se resuelve con una lectura puntual (`leerAjuste`, no `useLiveQuery`).
+ *
+ * `CLAVE_CAMBIOS_VISTOS` no existir no siempre significa «recién instaló la
+ * app»: la primera vez que se publica esta función, **nadie** la tiene
+ * guardada todavía, ni siquiera quien ya la venía usando hace días. Sin
+ * distinguir los dos casos, a un teléfono con historial la hoja no le decía
+ * nada la primera vez — que es justo cuando más tiene sentido enseñarle qué
+ * cambió. Por eso se mira si ya hay algo suyo guardado (una tienda, una
+ * jornada): si lo hay, es un teléfono que ya venía usando la app y se le
+ * enseña **todo** el registro; si no hay nada de nada, recién instaló y no
+ * hay nada que comparar — ahí sí se marca el punto de partida en silencio.
  */
 export function useNovedades(): { nuevas: Cambio[]; cerrar: () => void } {
   const [nuevas, setNuevas] = useState<Cambio[]>([]);
@@ -18,7 +26,12 @@ export function useNovedades(): { nuevas: Cambio[]; cerrar: () => void } {
     void (async () => {
       const guardado = await leerAjuste(CLAVE_CAMBIOS_VISTOS);
       if (guardado === undefined) {
-        await guardarAjuste(CLAVE_CAMBIOS_VISTOS, String(CAMBIOS.length));
+        const yaUsaba = (await db.tiendas.count()) > 0 || (await db.jornadas.count()) > 0;
+        if (yaUsaba) {
+          setNuevas(CAMBIOS);
+        } else {
+          await guardarAjuste(CLAVE_CAMBIOS_VISTOS, String(CAMBIOS.length));
+        }
         return;
       }
       const vistos = Number(guardado) || 0;

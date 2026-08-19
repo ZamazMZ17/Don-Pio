@@ -124,11 +124,14 @@ intérprete que lo dictado.
 `useNovedades()`) le enseña qué cambió desde la última vez, tomado de `src/cambios.ts`. Se
 compara **cuántas entradas ya vio** (guardado en Ajustes, `CLAVE_CAMBIOS_VISTOS`) contra
 `CAMBIOS.length` — no la versión del build (`fecha · commit`, que cambia en cada push y no
-sirve para saber qué es «nuevo para él»). La primera vez que abre la app en un teléfono no
-hay nada que comparar, así que no se le interrumpe con la hoja: se marca el punto de partida
-en silencio. **Toda vez que se publique un cambio que él vaya a notar, hay que agregar una
-entrada al final de `CAMBIOS`** — nunca reordenar ni borrar las que ya existen, o se rompe la
-cuenta de qué es viejo y qué es nuevo para quien ya abrió la app antes.
+sirve para saber qué es «nuevo para él»). Si `CLAVE_CAMBIOS_VISTOS` no existe todavía, no
+asumas que es una instalación nueva sin más: mira si ya hay una tienda o una jornada
+guardada. Si las hay, es un teléfono que ya venía usando la app **antes de que esta función
+existiera** y toca enseñarle el registro entero; solo si de verdad no hay nada de nada es una
+instalación nueva, y ahí sí no hay nada que comparar — se marca el punto de partida en
+silencio, sin interrumpir. **Toda vez que se publique un cambio que él vaya a notar, hay que
+agregar una entrada al final de `CAMBIOS`** — nunca reordenar ni borrar las que ya existen, o
+se rompe la cuenta de qué es viejo y qué es nuevo para quien ya abrió la app antes.
 
 ---
 
@@ -364,6 +367,16 @@ una tienda existente en silencio: **el emparejamiento siempre se muestra antes d
   vacía para la tienda que el emparejador encontrara. Arreglo: `proponer()` intercepta ambas
   intenciones antes de armar la propuesta, descarta el dictado, y muestra un aviso
   explicando qué hacer en su lugar.
+- **La hoja de Novedades no le decía nada la primera vez, que era justo cuando más
+  importaba.** `useNovedades()` trataba «`CLAVE_CAMBIOS_VISTOS` no existe» como sinónimo de
+  «instalación nueva, nada que anunciar» y se sembraba en silencio. Pero la primera vez que
+  se publicó esta función, esa clave no existía en **ningún** teléfono — ni siquiera en el
+  suyo, que ya venía usando la app hace días con el directorio lleno. Confundir «la clave es
+  nueva» con «el teléfono es nuevo» dejó la actualización sin avisar nada, la primera vez que
+  tenía algo que avisar. Arreglo: si la clave no existe, se mira si ya hay una tienda o una
+  jornada guardada — si las hay, es un teléfono con historial y se le enseña el registro
+  entero (`CAMBIOS` completo); solo si de verdad no hay nada de nada es una instalación nueva
+  y ahí sí se siembra en silencio.
 
 ---
 
