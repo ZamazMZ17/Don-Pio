@@ -31,19 +31,30 @@
  */
 
 :root {
-  /* Superficies */
-  --fondo: #161826;
-  --superficie: #232532;
-  --hundido: #1b1d2c;
-  --linea: #2c2f3d;
-  --borde: #3f424d;
+  /*
+   * Superficies. Se separaron a propósito respecto de la primera versión:
+   * la tarjeta apenas se despegaba del fondo (1.16 de contraste) y su borde
+   * era todavía menos visible (1.14), así que las listas se veían planas —
+   * una mancha oscura sin bordes. En el claro el borde llega a 1.39 y **eso**
+   * es lo que dibuja la tarjeta; aquí ahora hace lo mismo (fondo más hondo,
+   * superficie más alta, línea bien por encima de las dos).
+   */
+  --fondo: #101220;
+  --superficie: #282b3c;
+  --hundido: #191b28;
+  --linea: #3d4154;
+  --borde: #525668;
 
-  /* Texto, de más a menos presente */
-  --texto: #e9e9ed;
-  --texto-2: #b2b6ca;
-  --texto-3: #9397ab;
-  --texto-4: #75798c;
-  --texto-5: #595d6c;
+  /*
+   * Texto, de más a menos presente. Los tres últimos subieron: `texto-4` es
+   * el de los rótulos en mayúsculas y se quedaba en 3.5 sobre la tarjeta,
+   * por debajo del mínimo legible a sol directo con el teléfono en la mano.
+   */
+  --texto: #eceef4;
+  --texto-2: #b8bccf;
+  --texto-3: #a4a8bd;
+  --texto-4: #8a8fa4;
+  --texto-5: #6e7385;
 
   /* Acento */
   --acento: #9184d9;
@@ -51,8 +62,15 @@
   --acento-200: #e7e5fe;
   --acento-300: #d2cefd;
   --acento-700: #5d5294;
-  --acento-800: #423a6a;
-  --acento-900: #2b2741;
+  /*
+   * `acento-900` es fondo de píldora activa (Agenda/Ruta, los modos) y de
+   * tarjeta resaltada; `acento-800` es el «pulsado» encima de ella. Los dos
+   * subieron al aclarar `--superficie`: con los valores viejos la tarjeta
+   * resaltada quedaba a 1.02 de la normal — o sea, idéntica — y el pulsado
+   * casi no se notaba sobre la píldora.
+   */
+  --acento-800: #4d4380;
+  --acento-900: #3a2f63;
 
   /* Estado. Un color, un significado; si se usan para otra cosa dejan de servir. */
   --verde: #7bbf8f; /* pagado · cobrado · stock inicial */

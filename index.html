@@ -12,7 +12,12 @@
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content"
     />
-    <meta name="theme-color" content="#161826" />
+    <!--
+      El valor de arranque, antes de que corra el JS: crema, porque el tema
+      por defecto es el claro. En cuanto monta, `useTema()` lo reemplaza por
+      el que corresponda al ajuste guardado.
+    -->
+    <meta name="theme-color" content="#f3ecdd" />
     <!--
       Los dos disponibles: cuál manda de verdad lo decide el `color-scheme`
       de estilos.css, que cambia con el tema elegido en Ajustes.

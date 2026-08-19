@@ -84,7 +84,7 @@ export function useTema(): void {
       document.documentElement.dataset.theme = claro ? "claro" : "oscuro";
       // El navegador tiñe la barra de direcciones con esto en modo PWA; sin
       // actualizarlo quedaba oscuro aunque la app ya hubiera pasado a claro.
-      metaColor?.setAttribute("content", claro ? "#f3ecdd" : "#161826");
+      metaColor?.setAttribute("content", claro ? "#f3ecdd" : "#101220");
       // Solo el color de los íconos: la barra de estado sigue transparente
       // (`overlay: true`, puesto por `cerrarSplash()` en main.tsx al cerrar
       // el splash) y sin eso `--seguro-arriba` da 0 — se rompe el espaciado
