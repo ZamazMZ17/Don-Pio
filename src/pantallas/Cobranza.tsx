@@ -854,7 +854,7 @@ export function Cobranza({
                           lineHeight: 1.4,
                         }}
                       >
-                        Los {money(reparto.restante)} que faltan son descuento, no deuda
+                        Ya no cobrar {money(reparto.restante)}
                       </span>
                       <span
                         style={{
