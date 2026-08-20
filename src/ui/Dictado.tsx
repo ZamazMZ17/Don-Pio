@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Keyboard, Mic, Plus, Square, Trash2 } from "lucide-react";
 import type { Candidata, Emparejamiento } from "../tiendas/emparejar";
 import type { Intencion } from "../voz/intencion";
@@ -163,19 +163,54 @@ export function TarjetaConfirmacion({
   onCrearNueva,
   onCorregir,
   onEditar,
+  onBuscar,
 }: {
   propuesta: Propuesta;
   precioDefectoKg: number;
   onConfirmar: (tiendaId: number) => void;
-  onElegirOtra: (tiendaId: number) => void;
+  onElegirOtra: (candidata: Candidata) => void;
   onCrearNueva: (nombre: string) => void;
   onCorregir: () => void;
   /** Corrige a mano lo que se entendió mal, antes de confirmar. */
   onEditar: (cambios: Partial<Intencion>) => void;
+  /**
+   * Busca tiendas parecidas al nombre escrito a mano — el mismo emparejador
+   * que ya usa el dictado, para que escribir «Olga» en el «+» de Ruta
+   * también encuentre a la Olga que ya existe, en vez de dejarlo crear un
+   * duplicado en silencio.
+   */
+  onBuscar: (nombre: string) => Promise<Candidata[]>;
 }) {
   const { intencion: i, emparejamiento: em } = propuesta;
   const [eligiendo, setEligiendo] = useState(em.decision === "ambiguo" || !em.mejor);
   const [nombreNuevo, setNombreNuevo] = useState(em.mejor?.tienda.nombre ?? i.cliente);
+  // Una vez que él toca el campo, las sugerencias siguen lo que escribe en
+  // vez de las del dictado original — si estaba corrigiendo un nombre mal
+  // oído, seguir mostrando las candidatas de la transcripción vieja ya no
+  // tiene sentido.
+  const [tocoNombre, setTocoNombre] = useState(false);
+  const [candidatasBuscadas, setCandidatasBuscadas] = useState<Candidata[]>([]);
+
+  useEffect(() => {
+    if (!tocoNombre) return;
+    const q = nombreNuevo.trim();
+    if (q.length < 2) {
+      setCandidatasBuscadas([]);
+      return;
+    }
+    let cancelado = false;
+    const id = setTimeout(() => {
+      void onBuscar(q).then((cs) => {
+        if (!cancelado) setCandidatasBuscadas(cs);
+      });
+    }, 250);
+    return () => {
+      cancelado = true;
+      clearTimeout(id);
+    };
+  }, [nombreNuevo, tocoNombre, onBuscar]);
+
+  const candidatasAMostrar = tocoNombre ? candidatasBuscadas.slice(0, 4) : em.candidatas;
   /**
    * Piernas va siempre junto a Pollos — pedido explícito: son casi tan
    * comunes como los pollos enteros. Pechos sigue siendo la excepción de
@@ -223,17 +258,24 @@ export function TarjetaConfirmacion({
       {eligiendo ? (
         <div style={{ marginBottom: 14 }}>
           <div style={{ fontSize: 15, color: "var(--texto-2)", marginBottom: 10 }}>
-            {em.candidatas.length > 1
-              ? `Hay ${em.candidatas.length} que se llaman parecido. ¿Cuál es?`
+            {candidatasAMostrar.length > 1
+              ? `Hay ${candidatasAMostrar.length} que se llaman parecido. ¿Cuál es?`
               : "¿A quién le dejaste?"}
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {em.candidatas.map((c) => (
+            {candidatasAMostrar.map((c) => (
               <Candidato
                 key={c.tienda.id}
                 candidata={c}
                 onClick={() => {
-                  onElegirOtra(c.tienda.id!);
+                  onElegirOtra(c);
+                  // El botón «Confirmar» de más abajo decide si es la tienda
+                  // encontrada o una nueva comparando el nombre escrito con
+                  // el de `em.mejor` — sin esto, elegir «Olga» dejaba el
+                  // campo con lo que llevaba tecleado a medias («Olg») y
+                  // confirmar creaba una tienda nueva en vez de usar la
+                  // que se acaba de elegir.
+                  setNombreNuevo(c.tienda.nombre);
                   setEligiendo(false);
                 }}
               />
@@ -242,12 +284,17 @@ export function TarjetaConfirmacion({
               Escribir el nombre a mano. Hace falta de verdad: cuando el
               dictado se corta o el ruido se come el nombre, la tarjeta se
               quedaba con «sin nombre» y no había forma de arreglarlo sin
-              descartar la entrega entera y repetirla.
+              descartar la entrega entera y repetirla. Mientras escribe, se
+              buscan tiendas parecidas (arriba, `candidatasAMostrar`) para no
+              crear un duplicado de alguien que ya está en el directorio.
             */}
             <div style={{ display: "flex", gap: 8 }}>
               <input
                 value={nombreNuevo}
-                onChange={(ev) => setNombreNuevo(ev.target.value)}
+                onChange={(ev) => {
+                  setNombreNuevo(ev.target.value);
+                  setTocoNombre(true);
+                }}
                 placeholder="Escribe el nombre"
                 autoComplete="off"
                 style={{

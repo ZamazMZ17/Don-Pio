@@ -164,6 +164,11 @@ Al confirmar, `aprender()` actualiza las señales. **En frío todo es tienda nue
 precisión sube sola con el uso. Nunca se crea un duplicado en silencio ni se secuestra
 una tienda existente en silencio: **el emparejamiento siempre se muestra antes de guardar**.
 
+Esto también vale para el nombre escrito a mano, no solo el dictado: el botón **+** de
+Ruta abre la tarjeta en blanco y, según se escribe, busca en vivo con el mismo emparejador
+(`identificar()`, con `debounce` de 250 ms) — si ya existe una «Olga» parecida, aparece
+como sugerencia antes de tocar «Crear», igual que la lista de candidatas del dictado.
+
 ---
 
 ## 7. Reglas de negocio
@@ -421,6 +426,21 @@ una tienda existente en silencio: **el emparejamiento siempre se muestra antes d
   pero Hoy usa su propio `deudasPorTienda()`, que no pasaba por ese filtro. Arreglo: las tres
   cifras de deuda que enseña Hoy (Agenda, Ruta y el «a cobrar» combinado con lo de hoy) pasan
   por `aCobrar()`, y si eso redondea a 0 no se enseña la línea — igual que en Cobranza.
+- **El «+» de Ruta para dar de alta a alguien nuevo nunca sugería tiendas parecidas —
+  escribir «Olga» no encontraba a la Olga que ya existía.** La tarjeta en blanco arranca con
+  `candidatas: []` a propósito (no hay nada que dictar todavía), pero nada corría el
+  emparejador **según se escribía** el nombre, así que la lista se quedaba vacía para
+  siempre y «Crear» terminaba armando un duplicado. Arreglo: `TarjetaConfirmacion` recibe un
+  nuevo `onBuscar` (App.tsx, `buscarCandidatas` — el mismo `identificar()` de siempre) y lo
+  llama con `debounce` de 250 ms mientras escribe; las sugerencias en vivo reemplazan a las
+  del dictado original en cuanto toca el campo (`tocoNombre`), porque si estaba corrigiendo
+  un nombre mal oído, las candidatas de la transcripción vieja ya no sirven de nada.
+  Al arreglarlo salió un segundo bug, más viejo: elegir una candidata de la lista (por voz o
+  por esta búsqueda nueva) nunca actualizaba el campo de nombre en pantalla, que se quedaba
+  con lo último escrito a mano. El botón «Confirmar» decide si es la tienda encontrada o una
+  nueva **comparando ese campo contra `em.mejor.tienda.nombre`** — con el campo desactualizado
+  («Olg» en vez de «Olga»), confirmar creaba una tienda nueva aunque él acabara de elegir la
+  correcta. Arreglo: elegir una candidata también pone su nombre real en el campo.
 
 ---
 

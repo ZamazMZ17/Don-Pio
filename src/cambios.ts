@@ -83,4 +83,9 @@ export const CAMBIOS: Cambio[] = [
     texto:
       "Corregido: si un día dictabas solo el total (sin decir el precio por kilo), la diferencia de precio aprendida de esa tienda no se actualizaba y se quedaba pegada a un valor viejo. Ahora aprende de lo que el total realmente implicó.",
   },
+  {
+    fecha: "2026-08-20",
+    texto:
+      "El botón «+» de Ruta (dar de alta a alguien nuevo) ahora sugiere tiendas parecidas mientras escribes el nombre, igual que hace el dictado — para no crear un duplicado de alguien que ya está en el directorio.",
+  },
 ];

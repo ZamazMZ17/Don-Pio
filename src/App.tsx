@@ -381,16 +381,39 @@ export default function App() {
   }, []);
 
   const elegirOtra = useCallback(
-    (tiendaId: number) => {
+    (candidata: Candidata) => {
       if (!propuesta) return;
-      const candidata = propuesta.emparejamiento.candidatas.find((c) => c.tienda.id === tiendaId);
-      if (!candidata) return;
+      // La candidata puede venir de la búsqueda en vivo del nombre escrito a
+      // mano (§«escribe el nombre»), no solo de las que ya traía la
+      // propuesta — por eso se recibe entera, no un id a buscar en la lista
+      // vieja.
+      const yaEstaba = propuesta.emparejamiento.candidatas.some(
+        (c) => c.tienda.id === candidata.tienda.id,
+      );
       setPropuesta({
         ...propuesta,
-        emparejamiento: { ...propuesta.emparejamiento, decision: "encontrada", mejor: candidata },
+        emparejamiento: {
+          ...propuesta.emparejamiento,
+          decision: "encontrada",
+          mejor: candidata,
+          candidatas: yaEstaba
+            ? propuesta.emparejamiento.candidatas
+            : [candidata, ...propuesta.emparejamiento.candidatas],
+        },
       });
     },
     [propuesta],
+  );
+
+  /**
+   * Sugerencias en vivo mientras escribe un nombre a mano — el «+» de Ruta o
+   * corrigiendo lo mal oído. Mismo emparejador que ya usa el dictado: sin
+   * esto, escribir «Olga» ahí nunca encontraba a la Olga que ya existe y
+   * dejaba crear un duplicado en silencio.
+   */
+  const buscarCandidatas = useCallback(
+    async (nombre: string) => (await identificar(nombre, fecha)).resultado.candidatas,
+    [fecha],
   );
 
   const descartar = useCallback(() => {
@@ -642,6 +665,7 @@ export default function App() {
               onCrearNueva={(nombre) => void confirmar(null, nombre)}
               onCorregir={descartar}
               onEditar={editarPropuesta}
+              onBuscar={buscarCandidatas}
             />
           )}
 
