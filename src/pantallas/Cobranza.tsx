@@ -316,16 +316,18 @@ export function Cobranza({
         tiendas de hoy en orden real, cobradas o no — para ir tocando de
         vuelta sin que el scroll salte). Mismo patrón que Agenda/Ruta en Hoy.
       */}
-      <div style={{ flex: "none", padding: "10px 18px 0", display: "flex", gap: 8 }}>
-        <ModoBtn activo={modo === "deudas"} onClick={() => void guardarAjuste(CLAVE_MODO_COBRANZA, "deudas")}>
-          Deudas
-        </ModoBtn>
-        <ModoBtn activo={modo === "ruta"} onClick={() => void guardarAjuste(CLAVE_MODO_COBRANZA, "ruta")}>
-          Ruta
-        </ModoBtn>
-      </div>
+      {abierta === null && (
+        <div style={{ flex: "none", padding: "10px 18px 0", display: "flex", gap: 8 }}>
+          <ModoBtn activo={modo === "deudas"} onClick={() => void guardarAjuste(CLAVE_MODO_COBRANZA, "deudas")}>
+            Deudas
+          </ModoBtn>
+          <ModoBtn activo={modo === "ruta"} onClick={() => void guardarAjuste(CLAVE_MODO_COBRANZA, "ruta")}>
+            Ruta
+          </ModoBtn>
+        </div>
+      )}
 
-      {hayBuscador && (
+      {abierta === null && hayBuscador && (
         <div style={{ flex: "none", padding: "12px 18px 4px" }}>
           <div
             style={{

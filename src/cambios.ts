@@ -63,4 +63,9 @@ export const CAMBIOS: Cambio[] = [
     texto:
       "La tarjeta de cobro en Cobranza es más compacta: «A cobrar» y «Cuánto te dio» ahora van en la misma fila.",
   },
+  {
+    fecha: "2026-08-20",
+    texto:
+      "Al abrir «Me dio otra cantidad» en Cobranza, el buscador y los botones Deudas/Ruta se esconden mientras cobras, y vuelven al cancelar o confirmar.",
+  },
 ];
