@@ -589,25 +589,65 @@ export function Cobranza({
                 </div>
               )}
 
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "baseline",
-                  paddingTop: 10,
-                  marginTop: 8,
-                  borderTop: "1px solid var(--borde)",
-                }}
-              >
-                <span style={{ ...S.rotulo, fontSize: 13 }}>
-                  {c.tieneSinPesar && c.total === 0 ? "Por cobrar" : "A cobrar"}
-                </span>
-                {c.tieneSinPesar && c.total === 0 ? (
-                  <span style={{ fontSize: 16, fontWeight: 600, color: "var(--ambar)" }}>Sin precio aún</span>
-                ) : (
-                  <span style={{ fontSize: 26, fontWeight: 700 }}>{money(c.total)}</span>
-                )}
-              </div>
+              {estaAbierta ? (
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 16,
+                    paddingTop: 10,
+                    marginTop: 8,
+                    borderTop: "1px solid var(--borde)",
+                  }}
+                >
+                  <div style={{ flex: 1 }}>
+                    <span style={{ ...S.rotulo, fontSize: 13, display: "block" }}>
+                      {c.tieneSinPesar && c.total === 0 ? "Por cobrar" : "A cobrar"}
+                    </span>
+                    {c.tieneSinPesar && c.total === 0 ? (
+                      <div style={{ fontSize: 14, fontWeight: 600, color: "var(--ambar)", marginTop: 4 }}>
+                        Sin precio aún
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: 22, fontWeight: 700, marginTop: 2 }}>{money(c.total)}</div>
+                    )}
+                  </div>
+                  <div style={{ flex: 1, textAlign: "right" }}>
+                    <span style={{ ...S.rotulo, fontSize: 13, display: "block" }}>Cuánto te dio</span>
+                    <div
+                      style={{
+                        fontSize: 26,
+                        fontWeight: 700,
+                        lineHeight: 1,
+                        letterSpacing: -1,
+                        marginTop: 2,
+                        color: monto ? "var(--texto)" : "var(--texto-5)",
+                      }}
+                    >
+                      S/ {monto || "0"}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "baseline",
+                    paddingTop: 10,
+                    marginTop: 8,
+                    borderTop: "1px solid var(--borde)",
+                  }}
+                >
+                  <span style={{ ...S.rotulo, fontSize: 13 }}>
+                    {c.tieneSinPesar && c.total === 0 ? "Por cobrar" : "A cobrar"}
+                  </span>
+                  {c.tieneSinPesar && c.total === 0 ? (
+                    <span style={{ fontSize: 16, fontWeight: 600, color: "var(--ambar)" }}>Sin precio aún</span>
+                  ) : (
+                    <span style={{ fontSize: 26, fontWeight: 700 }}>{money(c.total)}</span>
+                  )}
+                </div>
+              )}
 
               {!estaAbierta && !porConfirmar && (
                 <>
@@ -736,29 +776,6 @@ export function Cobranza({
                     animation: "dpup .2s ease-out",
                   }}
                 >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "baseline",
-                      justifyContent: "space-between",
-                      gap: 10,
-                      marginBottom: 14,
-                    }}
-                  >
-                    <span style={{ ...S.rotulo, fontSize: 13 }}>Cuánto te dio</span>
-                    <span
-                      style={{
-                        fontSize: 36,
-                        fontWeight: 700,
-                        lineHeight: 1,
-                        letterSpacing: -1,
-                        color: monto ? "var(--texto)" : "var(--texto-5)",
-                      }}
-                    >
-                      S/ {monto || "0"}
-                    </span>
-                  </div>
-
                   {/* El desglose en vivo: qué pasa con esa plata antes de tocar nada. */}
                   <div
                     style={{

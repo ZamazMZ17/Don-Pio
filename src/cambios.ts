@@ -58,4 +58,9 @@ export const CAMBIOS: Cambio[] = [
     texto:
       "Al cobrar, el máximo que se puede perdonar como descuento (en vez de quedar como deuda) subió de S/ 5 a S/ 20.",
   },
+  {
+    fecha: "2026-08-20",
+    texto:
+      "La tarjeta de cobro en Cobranza es más compacta: «A cobrar» y «Cuánto te dio» ahora van en la misma fila.",
+  },
 ];
