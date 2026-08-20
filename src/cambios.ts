@@ -68,4 +68,9 @@ export const CAMBIOS: Cambio[] = [
     texto:
       "Al abrir «Me dio otra cantidad» en Cobranza, el buscador y los botones Deudas/Ruta se esconden mientras cobras, y vuelven al cancelar o confirmar.",
   },
+  {
+    fecha: "2026-08-20",
+    texto:
+      "El logo del pollo en Hoy se ve igual en modo oscuro que en claro, con su placa clara detrás — antes se volvía blanco liso y perdía el dibujo.",
+  },
 ];
