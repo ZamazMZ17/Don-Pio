@@ -71,6 +71,6 @@ export const CAMBIOS: Cambio[] = [
   {
     fecha: "2026-08-20",
     texto:
-      "El logo del pollo en Hoy se ve igual en modo oscuro que en claro, con su placa clara detrás — antes se volvía blanco liso y perdía el dibujo.",
+      "El logo del pollo en Hoy se ve igual en modo oscuro que en claro: mismo trazo marrón, con el interior de la figura pintado de crema — antes se volvía blanco liso y perdía el dibujo.",
   },
 ];

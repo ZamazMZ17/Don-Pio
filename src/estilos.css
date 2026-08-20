@@ -280,24 +280,13 @@ input {
 }
 
 /*
- * El logo de Hoy es un dibujo a líneas marrones sobre transparente, pensado
- * para leerse sobre crema/blanco. Invertirlo a blanco liso para el oscuro (lo
- * que hacía antes) le quitaba toda la gracia al dibujo — pedido explícito del
- * dueño fue enseñar la misma figura en los dos temas. Se deja el dibujo tal
- * cual y, en oscuro, se le pone detrás el mismo crema del fondo del tema
- * claro, en forma de placa redonda, para que el marrón siga leyéndose.
+ * El logo de Hoy ya trae su propio relleno crema (#f3ecdd, el mismo del
+ * fondo claro) por dentro del trazo marrón, y transparente por fuera. En
+ * claro eso lo hace invisible sobre la página — el crema del relleno es
+ * igual al de fondo — y en oscuro el relleno resalta contra el azulado,
+ * sin filtro ni placa aparte. Antes se invertía a blanco liso en oscuro y
+ * el dibujo perdía toda la gracia; ahora es la misma figura en los dos.
  */
-.logo-marca {
-  border-radius: 50%;
-  background: #f3ecdd;
-  padding: 7px;
-  box-sizing: border-box;
-}
-
-:root[data-theme="claro"] .logo-marca {
-  background: none;
-  padding: 0;
-}
 
 /*
  * Los campos de la tarjeta de dictado (Pollos, Piernas, Peso, Por kilo) usan
