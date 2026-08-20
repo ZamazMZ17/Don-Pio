@@ -43,4 +43,19 @@ export const CAMBIOS: Cambio[] = [
     fecha: "2026-08-19",
     texto: "La app avisa de las novedades cada vez que instalas una actualización — como esta pantalla.",
   },
+  {
+    fecha: "2026-08-19",
+    texto:
+      "Restaurar un respaldo en otro teléfono ya no puede mezclar el historial de una tienda borrada con una tienda real de ese teléfono que no tiene nada que ver.",
+  },
+  {
+    fecha: "2026-08-19",
+    texto:
+      "El aviso de «Compartir respaldo» / «Restaurar» ahora se ve en rojo cuando algo falla y en verde cuando queda listo — antes los dos se veían igual.",
+  },
+  {
+    fecha: "2026-08-19",
+    texto:
+      "Al cobrar, el máximo que se puede perdonar como descuento (en vez de quedar como deuda) subió de S/ 5 a S/ 20.",
+  },
 ];

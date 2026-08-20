@@ -119,13 +119,14 @@ export interface Reparto {
 /**
  * Hasta cuánto puede perdonarse como descuento en vez de quedar como deuda.
  *
- * Cinco soles, porque no siempre es un redondeo: a veces un ala viene mal y le
- * baja un sol, o le rebaja cinco por producto en mal estado. Por encima de eso
- * ya es que se quedó debiendo, y perdonarlo le escondería plata.
+ * Veinte soles, porque no siempre es un redondeo: a veces un ala viene mal y
+ * le baja un sol, o le rebaja bastante más por producto en mal estado. Por
+ * encima de eso ya es que se quedó debiendo, y perdonarlo le escondería
+ * plata. (Empezó en cinco soles; subido a veinte a pedido del dueño.)
  *
  * **Nunca se aplica solo**: él lo marca en la pantalla de cobro.
  */
-export const TOPE_REDONDEO = 500;
+export const TOPE_REDONDEO = 2000;
 
 /**
  * Reparte un pago entre la deuda vieja y lo del día. **La deuda va primero**:

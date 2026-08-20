@@ -113,12 +113,12 @@ describe("reparto de un pago", () => {
   });
 
   it("no llama redondeo a lo que es una deuda de verdad", () => {
-    // Cinco soles es el tope, inclusive: hasta ahí puede ser un descuento por
+    // Veinte soles es el tope, inclusive: hasta ahí puede ser un descuento por
     // producto en mal estado. Por encima se quedó debiendo, y perdonarlo solo
     // le escondería plata.
-    expect(repartirPago(aCentimos(51.9), 0, aCentimos(56.9)).esRedondeo).toBe(true);
-    expect(repartirPago(aCentimos(51.89), 0, aCentimos(56.9)).esRedondeo).toBe(false);
-    expect(repartirPago(aCentimos(40), 0, aCentimos(56.9)).esRedondeo).toBe(false);
+    expect(repartirPago(aCentimos(36.9), 0, aCentimos(56.9)).esRedondeo).toBe(true);
+    expect(repartirPago(aCentimos(36.89), 0, aCentimos(56.9)).esRedondeo).toBe(false);
+    expect(repartirPago(aCentimos(20), 0, aCentimos(56.9)).esRedondeo).toBe(false);
   });
 
   it("registra el vuelto cuando da de más", () => {
