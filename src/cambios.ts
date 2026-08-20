@@ -71,6 +71,16 @@ export const CAMBIOS: Cambio[] = [
   {
     fecha: "2026-08-20",
     texto:
-      "El logo del pollo en Hoy se ve igual en modo oscuro que en claro: mismo trazo marrón, con el interior de la figura pintado de crema — antes se volvía blanco liso y perdía el dibujo.",
+      "El logo del pollo en Hoy ahora tiene su propia versión para el modo oscuro (trazo dorado) — antes se volvía blanco liso y perdía el dibujo.",
+  },
+  {
+    fecha: "2026-08-20",
+    texto:
+      "Las deudas que enseña Hoy («Debe S/ X de antes») ahora se redondean a la moneda de 10 céntimos, igual que en Cobranza — y una migaja de menos de 10 céntimos ya no se enseña, porque no se puede cobrar.",
+  },
+  {
+    fecha: "2026-08-20",
+    texto:
+      "Corregido: si un día dictabas solo el total (sin decir el precio por kilo), la diferencia de precio aprendida de esa tienda no se actualizaba y se quedaba pegada a un valor viejo. Ahora aprende de lo que el total realmente implicó.",
   },
 ];

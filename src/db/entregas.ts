@@ -64,9 +64,20 @@ export async function registrarEntrega(
 
   await aprenderDeEntrega(datos.tiendaId, ctx, {
     dictado: opciones.dictado,
-    // Solo se recuerda el precio si vino del dictado, no el implícito de un
-    // total redondo: si no, un «son 40 soles» le cambiaría el precio por kilo.
-    precioKg: datos.precioKg,
+    /*
+     * Se aprende de `cuenta.precioKg` — lo que de verdad resultó cobrado por
+     * kilo — no de `datos.precioKg`, que cuando no dictó un precio explícito
+     * es solo la sugerencia de siempre (base + su diferencia ya conocida).
+     * Usar esa sugerencia como si fuera lo dictado es un no-op casi siempre
+     * (la diferencia sale igual a la que ya tenía), pero cuando dicta un
+     * total («son 17.68 soles») y el precio real que eso implica ya no
+     * coincide con la sugerencia vieja, la diferencia se quedaba pegada al
+     * valor de siempre y nunca se corregía — aunque llevara días cobrando
+     * otra cosa. `cuenta.precioKg` es 0 en las entregas sin pesar (se cobra
+     * por pollo, no por kilo), y `aprenderDeEntrega` ya ignora un precio en
+     * 0, así que esas no aprenden nada — como debe ser.
+     */
+    precioKg: cuenta.precioKg,
     precioPollo: datos.precioPollo,
     sinPesar: datos.sinPesar,
     precioBaseKg: jornada.precioBaseKg,

@@ -280,13 +280,22 @@ input {
 }
 
 /*
- * El logo de Hoy ya trae su propio relleno crema (#f3ecdd, el mismo del
- * fondo claro) por dentro del trazo marrón, y transparente por fuera. En
- * claro eso lo hace invisible sobre la página — el crema del relleno es
- * igual al de fondo — y en oscuro el relleno resalta contra el azulado,
- * sin filtro ni placa aparte. Antes se invertía a blanco liso en oscuro y
- * el dibujo perdía toda la gracia; ahora es la misma figura en los dos.
+ * El logo de Hoy son dos imágenes distintas, una por tema — no la misma con
+ * un filtro. Dos <img> superpuestos en Hoy.tsx, y aquí se decide cuál se ve:
+ * por defecto (oscuro) manda el trazo crema pensado para ese fondo; en claro
+ * se cambia al dibujo a líneas marrones de siempre.
  */
+.logo-marca-claro {
+  display: none;
+}
+
+:root[data-theme="claro"] .logo-marca-claro {
+  display: block;
+}
+
+:root[data-theme="claro"] .logo-marca-oscuro {
+  display: none;
+}
 
 /*
  * Los campos de la tarjeta de dictado (Pollos, Piernas, Peso, Por kilo) usan

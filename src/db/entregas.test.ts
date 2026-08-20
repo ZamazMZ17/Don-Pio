@@ -57,6 +57,55 @@ describe("registrar una entrega", () => {
     expect(aprendida?.precioKgDefecto).toBe(aCentimos(9.5));
   });
 
+  it("un total dictado corrige la diferencia de precio aprendida, no solo un precio dictado directo", async () => {
+    /*
+     * Caso real: Olga tenía una diferencia vieja de -0.80 aprendida cuando el
+     * base era más alto. El base bajó y ahora, cobrándole exactamente el
+     * base (diferencia real 0), si solo dicta el total —no «a 8 el kilo»—
+     * la tarjeta ya trae precargado el precio con la diferencia vieja
+     * (`datos.precioKg`, la sugerencia). Antes del arreglo, `aprenderDeEntrega`
+     * volvía a aprender de esa sugerencia en vez de lo que el total
+     * realmente implicaba, y la diferencia se quedaba pegada en -0.80 para
+     * siempre. Tiene que corregirse sola con lo que el total dice de verdad.
+     */
+    const t = await crearTienda("Olga", { precioKgDefecto: aCentimos(8) });
+    await db.tiendas.update(t.id!, { precioOffsetKg: -aCentimos(0.8) });
+    await db.jornadas.put({
+      fecha: HOY,
+      stockPollos: 40,
+      stockPiernas: 4,
+      precioBaseKg: aCentimos(8),
+      horaCierre: "19:30",
+      estado: "abierta",
+      cajaContada: null,
+      cuadro: null,
+      creada: Date.now(),
+      cerradaEn: null,
+    });
+
+    // Lo que App.tsx le pasaría como `datos.precioKg`: la sugerencia vieja
+    // (base 8 + diferencia -0.80 = 7.20), porque no dictó un precio por
+    // kilo explícito — solo el total. 2.21 kg a 8 soles el kilo = 17.68.
+    await registrarEntrega(
+      {
+        tiendaId: t.id!,
+        pollos: 3,
+        peso: aGramos(2.21),
+        precioKg: aCentimos(7.2),
+        totalDictado: aCentimos(17.68),
+      },
+      ctx(15, 424),
+      { fecha: HOY },
+    );
+
+    const e = (await db.entregas.toArray())[0];
+    // Lo que de verdad implica el total dictado: 8.00/kg, no 7.20.
+    expect(e.precioKg).toBe(aCentimos(8));
+
+    const aprendida = await db.tiendas.get(t.id!);
+    expect(aprendida?.precioOffsetKg).toBe(0);
+  });
+
   it("no mezcla dos entregas del mismo día a la misma tienda", async () => {
     const t = await crearTienda("Chifa Wong");
     const datos = { tiendaId: t.id!, pollos: 5, sinPesar: true, totalDictado: aCentimos(140) };

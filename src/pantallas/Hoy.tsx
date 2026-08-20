@@ -6,7 +6,7 @@ import { deudasPorTienda } from "../db/tiendas";
 import { descripcionEntrega, estadoDe, COLOR_ESTADO, TEXTO_ESTADO } from "../dominio/calculo";
 import { mediana } from "../tiendas/emparejar";
 import { diaCorto, diaLargo, horaTxt, type DiaISO } from "../lib/fecha";
-import { money } from "../lib/dinero";
+import { aCobrar, money } from "../lib/dinero";
 import { useAjuste, useHolguraMic } from "../lib/ganchos";
 import { Plus } from "lucide-react";
 import { guardarAjuste, CLAVE_ORDEN, CLAVE_MODO_HOY } from "../voz/ajustes";
@@ -16,6 +16,10 @@ import { S, Vacio } from "../ui/base";
 // se resolvía dentro del WebView del APK aunque en el navegador sí. Así lo
 // procesa Vite igual que a las fuentes y queda con la misma garantía.
 import logo from "../assets/logo.png";
+// Versión aparte para el oscuro, no el mismo dibujo con un filtro: el trazo
+// crema sobre fondo transparente que manda el dueño, recortado a su propio
+// contorno.
+import logoOscuro from "../assets/logo-oscuro.png";
 
 /**
  * La pantalla principal. Todo el estado del día sin desplazar: con cuánto
@@ -170,7 +174,18 @@ export function Hoy({
         <img
           src={logo}
           alt=""
-          className="logo-marca"
+          className="logo-marca logo-marca-claro"
+          style={{
+            flex: "none",
+            objectFit: "contain",
+            width: "clamp(58px, 19vw, 96px)",
+            height: "clamp(58px, 19vw, 96px)",
+          }}
+        />
+        <img
+          src={logoOscuro}
+          alt=""
+          className="logo-marca logo-marca-oscuro"
           style={{
             flex: "none",
             objectFit: "contain",
@@ -455,6 +470,10 @@ export function Hoy({
           const cobrado = e.totalCobrado + e.descuentoRedondeo;
           const estado = estadoDe(e.totalCalculado, cobrado);
           const deuda = deudas.get(e.tiendaId) ?? 0;
+          // Hacia abajo a los 10 céntimos: es lo que se le puede cobrar de
+          // verdad. Una deuda que redondea a 0 (las migajas que ya se
+          // perdonaron al cobrar) no es deuda de nadie — no se enseña.
+          const deudaCobrable = aCobrar(deuda);
 
           return (
             <button
@@ -485,9 +504,9 @@ export function Hoy({
                   {tienda?.nombre ?? "Sin nombre"}
                 </div>
                 <div style={{ fontSize: 14, color: "var(--texto-3)" }}>{descripcionEntrega(e)}</div>
-                {deuda > 0 && (
+                {deudaCobrable > 0 && (
                   <div style={{ fontSize: 13, color: "var(--ambar)", marginTop: 5 }}>
-                    + {money(deuda)} que debía de antes
+                    + {money(deudaCobrable)} que debía de antes
                   </div>
                 )}
               </div>
@@ -499,12 +518,12 @@ export function Hoy({
                     lineHeight: 1.2,
                     // Con deuda, lo de hoy es solo una parte: se apaga para que
                     // el número grande sea el que de verdad tiene que cobrar.
-                    color: deuda > 0 ? "var(--texto-3)" : "var(--texto)",
+                    color: deudaCobrable > 0 ? "var(--texto-3)" : "var(--texto)",
                   }}
                 >
                   {money(e.totalCalculado)}
                 </div>
-                {deuda > 0 && (
+                {deudaCobrable > 0 && (
                   <div
                     style={{
                       fontSize: 22,
@@ -514,11 +533,11 @@ export function Hoy({
                       color: "var(--ambar)",
                     }}
                   >
-                    {money(e.totalCalculado - e.totalCobrado - e.descuentoRedondeo + deuda)}
+                    {money(aCobrar(e.totalCalculado - e.totalCobrado - e.descuentoRedondeo + deuda))}
                   </div>
                 )}
                 <div style={{ fontSize: 13, marginTop: 3, color: COLOR_ESTADO[estado] }}>
-                  {deuda > 0 ? "a cobrar" : TEXTO_ESTADO[estado]}
+                  {deudaCobrable > 0 ? "a cobrar" : TEXTO_ESTADO[estado]}
                 </div>
               </div>
             </button>
@@ -647,6 +666,7 @@ function RutaLista({
         else if (!t.pesa) meta.push("sin pesar");
 
         const deuda = deudas.get(t.id!) ?? 0;
+        const deudaCobrable = aCobrar(deuda);
 
         return (
           <button
@@ -685,9 +705,9 @@ function RutaLista({
                     ? meta.join(" · ")
                     : "sin ruta todavía"}
               </div>
-              {deuda > 0 && (
+              {deudaCobrable > 0 && (
                 <div style={{ fontSize: 12, color: "var(--ambar)", fontWeight: 500, marginTop: 2 }}>
-                  Debe {money(deuda)} de antes
+                  Debe {money(deudaCobrable)} de antes
                 </div>
               )}
             </div>

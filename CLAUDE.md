@@ -389,6 +389,38 @@ una tienda existente en silencio: **el emparejamiento siempre se muestra antes d
   que no era. Arreglo: todo `tiendaId` de una entrega/pago/deuda que no venga en la lista de
   tiendas del respaldo se remapea a una tienda de reemplazo nueva («Tienda borrada»), una
   sola por id huérfano, nunca al número crudo.
+- **La diferencia de precio de una tienda se quedaba pegada al valor viejo cuando solo se
+  dictaba el total.** `aprenderDeEntrega()` recibía `datos.precioKg` para reaprender la
+  diferencia (offset) — pero cuando no dictó un precio por kilo explícito, ese campo no era
+  el precio real de la entrega: era la **sugerencia** con la que se armó la tarjeta
+  (`precioEfectivoKg`, base + la diferencia ya conocida), fijada en `App.tsx` antes de saber
+  qué iba a pasar. Reaprender de la propia sugerencia es casi siempre un no-op (sale la misma
+  diferencia que ya tenía) — el problema es que **siempre** es un no-op, así que si un día
+  dictaba solo el total («son 17.68 soles») y ese total ya no coincidía con la sugerencia
+  vieja, la diferencia real que eso implicaba (`cuenta.precioKg`, la que de verdad se guarda
+  en la entrega) se perdía y la vieja quedaba pegada para siempre — aunque llevara días
+  cobrando otra cosa. Arreglo: `registrarEntrega()` le pasa a `aprenderDeEntrega()` el
+  `cuenta.precioKg` que de verdad resultó calculado (coincide con `entrega.precioKg`, lo que
+  ya se guarda), no la sugerencia de entrada. En las entregas sin pesar `cuenta.precioKg` es
+  0 y `aprenderDeEntrega` ya ignora un precio en 0, así que esas siguen sin aprender nada,
+  como corresponde.
+- **El logo de Hoy no tenía una versión propia para el oscuro — se le aplicaba un filtro.**
+  Invertirlo a blanco liso (`brightness(0) invert(1)`) le quitaba toda la gracia al dibujo.
+  Se probó ponerle un relleno crema por dentro del mismo trazo marrón (con flood-fill,
+  separando los huecos transparentes que tocan el borde de la imagen —exterior— de los que
+  quedan encerrados por el trazo —interior—), pero el dueño pidió mejor una figura hecha a
+  propósito para el oscuro: trazo dorado sobre transparente, recortada de una imagen que
+  traía fondo azul marino sólido (chroma-key contra el color de fondo real de la muestra,
+  no un valor fijo, para no dejar bordes duros). Ahora son dos `<img>` distintos en
+  `Hoy.tsx` (`logo.png` / `logo-oscuro.png`), alternados por CSS según `[data-theme]` —
+  igual que ya hacía el filtro, pero sin filtro: cada tema tiene su propia figura.
+- **Las deudas de Hoy se enseñaban con los céntimos exactos, no con lo que de verdad se
+  puede cobrar.** «Debe S/ 18.72 de antes» no se puede cobrar con monedas de 10 céntimos
+  (`aCobrar`, §7), y «Debe S/ 0.02 de antes» es una migaja que ya no vale la pena perseguir
+  — Cobranza ya no las lista (`cuentasPendientes()` filtra las que redondean a 0, ver arriba)
+  pero Hoy usa su propio `deudasPorTienda()`, que no pasaba por ese filtro. Arreglo: las tres
+  cifras de deuda que enseña Hoy (Agenda, Ruta y el «a cobrar» combinado con lo de hoy) pasan
+  por `aCobrar()`, y si eso redondea a 0 no se enseña la línea — igual que en Cobranza.
 
 ---
 
