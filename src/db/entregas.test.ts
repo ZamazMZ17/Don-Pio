@@ -11,8 +11,8 @@ import {
   registrarCobro,
   registrarEntrega,
 } from "./entregas";
-import { cerrarDia, cerrarDiasPasados, resumenDe } from "./jornada";
-import { agregarDeuda, crearTienda } from "./tiendas";
+import { cerrarDia, cerrarDiasPasados, guardarStock, limpiarMigajas, resumenDe } from "./jornada";
+import { agregarDeuda, crearTienda, precioEfectivoKg } from "./tiendas";
 import { aCentimos, aGramos, money } from "../lib/dinero";
 import type { Contexto } from "../tiendas/emparejar";
 
@@ -815,6 +815,120 @@ describe("migajas de redondeo por debajo de la moneda", () => {
     const cuentas = await cuentasPendientes(HOY);
     expect(cuentas).toHaveLength(1);
     expect(money(cuentas[0].total)).toBe("S/ 0.10");
+  });
+
+  it("al cerrar, un resto que ninguna moneda cubre se perdona en vez de quedar como deuda", async () => {
+    /*
+     * 5 kg a 9.01 = 45.05, y le cobra los 45.00 que sí se pueden contar, pero
+     * **sin** marcar el redondeo (le pagó y ya). Los 5 céntimos que sobran no
+     * los cubre ninguna moneda: al cerrar no pueden volverse una deuda de
+     * S/ 0.05 con un «Cobrar aquí» que no hace nada.
+     */
+    const t = await crearTienda("Ayde");
+    await registrarEntrega(
+      { tiendaId: t.id!, pollos: 3, peso: aGramos(5), precioKg: aCentimos(9.01) },
+      ctx(1),
+      { fecha: HOY },
+    );
+    await registrarCobro(t.id!, aCentimos(45), { fecha: HOY });
+
+    await cerrarDia(HOY, null, null);
+
+    expect(await db.deudas.toArray()).toHaveLength(0);
+    const e = (await db.entregas.toArray())[0];
+    expect(money(e.descuentoRedondeo)).toBe("S/ 0.05");
+    expect(e.estadoPago).toBe("pagado");
+  });
+
+  it("limpiarMigajas cierra las deudas viejas que ya no se pueden cobrar", async () => {
+    // Las que nacieron antes del arreglo de arriba y se quedaron colgadas.
+    const t = await crearTienda("Ayde");
+    await agregarDeuda(t.id!, 5, AYER);
+
+    expect(await limpiarMigajas()).toBe(1);
+    expect((await db.deudas.toArray())[0].cerrada).toBe(1);
+    expect(await cuentasPendientes(HOY)).toHaveLength(0);
+  });
+
+  it("limpiarMigajas no toca las que juntas sí llegan a una moneda", async () => {
+    const t = await crearTienda("Bodega Sarita");
+    for (let i = 0; i < 3; i++) await agregarDeuda(t.id!, 4, AYER);
+
+    expect(await limpiarMigajas()).toBe(0);
+    expect(await cuentasPendientes(HOY)).toHaveLength(1);
+  });
+});
+
+describe("aprender el precio de la tienda al corregirlo a mano", () => {
+  it("corregir el precio por kilo en el Detalle actualiza la diferencia de la tienda", async () => {
+    /*
+     * El caso real de Chela: su diferencia se aprendió cuando el base era
+     * 8.80 y le cobraba 8.50 (−0.30). El base bajó a 8.00, así que la tarjeta
+     * le propone 7.70 — pero de verdad le cobra 7.00, y lo corrige en el
+     * Detalle. Antes la entrega quedaba bien y la tienda no se enteraba: al
+     * día siguiente volvía a proponer 7.70.
+     */
+    await guardarStock(HOY, 40, 4, aCentimos(8));
+    const t = await crearTienda("Chela", { precioKgDefecto: aCentimos(8.5) });
+    await db.tiendas.update(t.id!, { precioOffsetKg: -aCentimos(0.3) });
+
+    // Acepta la sugerencia (7.70): no hay nada nuevo que aprender todavía.
+    await registrarEntrega(
+      { tiendaId: t.id!, pollos: 3, peso: aGramos(8.4), precioKg: aCentimos(7.7) },
+      ctx(3),
+      { fecha: HOY },
+    );
+    expect((await db.tiendas.get(t.id!))?.precioOffsetKg).toBe(-aCentimos(0.3));
+
+    const e = (await db.entregas.toArray())[0];
+    await editarEntrega(e.id!, { precioKg: aCentimos(7) });
+
+    const aprendida = await db.tiendas.get(t.id!);
+    expect(aprendida?.precioKgDefecto).toBe(aCentimos(7));
+    // 7.00 − 8.00 de base = −1.00, y con el mismo base mañana propone 7.00.
+    expect(aprendida?.precioOffsetKg).toBe(-aCentimos(1));
+    expect(precioEfectivoKg(aprendida, aCentimos(8))).toBe(aCentimos(7));
+  });
+
+  it("corregir el precio no vuelve a contar la parada en la ruta", async () => {
+    await guardarStock(HOY, 40, 4, aCentimos(8));
+    const t = await crearTienda("Marina");
+    await registrarEntrega(
+      { tiendaId: t.id!, pollos: 2, peso: aGramos(5), precioKg: aCentimos(8) },
+      ctx(7, 430),
+      { fecha: HOY },
+    );
+    const antes = await db.tiendas.get(t.id!);
+
+    const e = (await db.entregas.toArray())[0];
+    await editarEntrega(e.id!, { precioKg: aCentimos(7.4) });
+
+    const despues = await db.tiendas.get(t.id!);
+    expect(despues?.precioKgDefecto).toBe(aCentimos(7.4));
+    // La hora, la parada y las veces vistas se quedan como estaban: esa
+    // entrega ya las aportó al registrarse, y contarlas dos veces torcería
+    // la correlación de §6.
+    expect(despues?.minutos).toEqual(antes?.minutos);
+    expect(despues?.posiciones).toEqual(antes?.posiciones);
+    expect(despues?.vistas).toBe(antes?.vistas);
+  });
+
+  it("poner el total a mano también enseña el precio por kilo que salió", async () => {
+    await guardarStock(HOY, 40, 4, aCentimos(8));
+    const t = await crearTienda("Olga", { precioKgDefecto: aCentimos(8) });
+    await registrarEntrega(
+      { tiendaId: t.id!, pollos: 3, peso: aGramos(2.21), precioKg: aCentimos(8) },
+      ctx(15),
+      { fecha: HOY },
+    );
+
+    // «Son 15.47 soles» sobre 2.21 kg = 7.00 el kilo.
+    const e = (await db.entregas.toArray())[0];
+    await fijarTotal(e.id!, aCentimos(15.47));
+
+    const aprendida = await db.tiendas.get(t.id!);
+    expect(aprendida?.precioKgDefecto).toBe(aCentimos(7));
+    expect(aprendida?.precioOffsetKg).toBe(-aCentimos(1));
   });
 });
 

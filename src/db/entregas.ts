@@ -3,7 +3,7 @@ import { leerJornada } from "./jornada";
 import { hoyISO, type DiaISO } from "../lib/fecha";
 import { aCobrar, type Centimos, type Gramos } from "../lib/dinero";
 import { calcular, estadoDe, repartirPago, sumarTandas, TOPE_REDONDEO } from "../dominio/calculo";
-import { aprenderDeEntrega } from "./tiendas";
+import { aprenderDeEntrega, aprenderPrecioDeEntrega } from "./tiendas";
 import type { Contexto } from "../tiendas/emparejar";
 
 export interface DatosEntrega {
@@ -125,6 +125,20 @@ export async function editarEntrega(
     totalCalculado: total,
     estadoPago: estadoDe(total, e.totalCobrado + e.descuentoRedondeo),
   });
+
+  /*
+   * Corregir el precio aquí también enseña. Es como él trabaja de verdad:
+   * registra la entrega y al rato cuadra el precio en el Detalle. Sin esto,
+   * la entrega quedaba con el precio bueno pero la tienda no se enteraba, y
+   * al día siguiente volvía a proponer el de antes.
+   *
+   * Se mide contra el base de **su** jornada, no el de hoy: una entrega de un
+   * día cerrado se corrige contra el precio que regía ese día.
+   */
+  if (precioKg > 0 && precioKg !== e.precioKg) {
+    const jornada = await leerJornada(e.fecha);
+    await aprenderPrecioDeEntrega(e.tiendaId, precioKg, jornada.precioBaseKg);
+  }
 }
 
 /**
@@ -138,11 +152,19 @@ export async function editarEntrega(
 export async function fijarTotal(id: number, total: Centimos): Promise<void> {
   const e = await db.entregas.get(id);
   if (!e) return;
+  const precioKg = e.peso > 0 ? Math.round((total * 1000) / e.peso) : e.precioKg;
   await db.entregas.update(id, {
     totalCalculado: Math.max(0, total),
-    precioKg: e.peso > 0 ? Math.round((total * 1000) / e.peso) : e.precioKg,
+    precioKg,
     estadoPago: estadoDe(Math.max(0, total), e.totalCobrado + e.descuentoRedondeo),
   });
+
+  // Poner el total a mano fija también el precio por kilo que salió: la
+  // tienda aprende de él igual que si lo hubiera dictado (ver `editarEntrega`).
+  if (precioKg > 0 && precioKg !== e.precioKg) {
+    const jornada = await leerJornada(e.fecha);
+    await aprenderPrecioDeEntrega(e.tiendaId, precioKg, jornada.precioBaseKg);
+  }
 }
 
 /**

@@ -193,7 +193,14 @@ export function Detalle({ entregaId, volver }: { entregaId: number; volver: () =
           </div>
         )}
 
-        {deuda.monto > 0 && (
+        {/*
+          Lo que se enseña —y se ofrece cobrar— es lo que de verdad se puede
+          cobrar con monedas. Una deuda que redondea a 0 no se lista: tocar
+          «Cobrar aquí» con S/ 0.05 no hacía nada (cobrar cero no mueve nada)
+          y la migaja se quedaba ahí para siempre. `limpiarMigajas()` las
+          cierra al abrir la app; esto es la otra mitad del mismo arreglo.
+        */}
+        {aCobrar(deuda.monto) > 0 && (
           <button
             className="pulsable"
             onClick={() => {
@@ -214,7 +221,7 @@ export function Detalle({ entregaId, volver }: { entregaId: number; volver: () =
             }}
           >
             <div style={{ fontSize: 16, color: "var(--ambar)" }}>
-              Debe {money(deuda.monto)}
+              Debe {money(aCobrar(deuda.monto))}
               {deuda.desde && ` del ${diaCorto(deuda.desde).toLowerCase()}`}
             </div>
             <div style={{ fontSize: 15, fontWeight: 600, color: "var(--acento-300)", flex: "none" }}>

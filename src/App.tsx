@@ -3,7 +3,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { LayoutList, MoreHorizontal, Store, Undo2 } from "lucide-react";
 
 import { db, type Tienda } from "./db/db";
-import { cerrarDiasPasados, guardarStock, leerJornada } from "./db/jornada";
+import { cerrarDiasPasados, guardarStock, leerJornada, limpiarMigajas } from "./db/jornada";
 import { registrarEntrega } from "./db/entregas";
 import { registrarCobro } from "./db/entregas";
 import { contextoDeRuta, crearTienda, identificar, precioEfectivoKg } from "./db/tiendas";
@@ -114,7 +114,9 @@ export default function App() {
    * cierre la jornada a mano, un olvido escondería esa plata para siempre.
    */
   useEffect(() => {
-    void cerrarDiasPasados(fecha);
+    // Cerrar primero y barrer después: al cerrar puede quedar alguna deuda
+    // vieja por debajo de la moneda, y así se limpia en la misma pasada.
+    void cerrarDiasPasados(fecha).then(() => limpiarMigajas());
     void limpiarAudiosViejos();
   }, [fecha]);
 

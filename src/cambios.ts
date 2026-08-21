@@ -88,4 +88,14 @@ export const CAMBIOS: Cambio[] = [
     texto:
       "El botón «+» de Ruta (dar de alta a alguien nuevo) ahora sugiere tiendas parecidas mientras escribes el nombre, igual que hace el dictado — para no crear un duplicado de alguien que ya está en el directorio.",
   },
+  {
+    fecha: "2026-08-21",
+    texto:
+      "Ahora sí: cuando corriges el precio por kilo (o el total) de una entrega ya registrada, la tienda lo aprende. Antes la entrega quedaba bien pero la tienda no se enteraba, y al día siguiente volvía a proponerte el precio viejo.",
+  },
+  {
+    fecha: "2026-08-21",
+    texto:
+      "Se acabaron las deudas de céntimos imposibles de cobrar. Un resto por debajo de S/ 0.10 ya no queda como deuda al cerrar el día —se perdona, que es lo que era— y las que ya tenías colgadas («Debe S/ 0.05») se limpian solas al abrir la app.",
+  },
 ];

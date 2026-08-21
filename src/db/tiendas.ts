@@ -154,6 +154,38 @@ export async function aprenderDeEntrega(
   await db.tiendas.put(actualizada);
 }
 
+/**
+ * Aprende **solo el precio** de una entrega que se corrigió a mano después de
+ * registrarla (en Detalle: el precio por kilo, o el total, que lo implica).
+ *
+ * Es lo que faltaba para que la diferencia por tienda funcione de verdad: al
+ * registrar se aprende del precio con que se confirmó la tarjeta, pero si él
+ * lo corrige después —que es como trabaja: entrega, y al rato cuadra el
+ * precio— la tienda no se enteraba nunca. La diferencia se quedaba pegada al
+ * valor viejo y al día siguiente volvía a proponer el precio de antes, aunque
+ * llevara días cobrándole otra cosa.
+ *
+ * A diferencia de `aprenderDeEntrega`, **no toca las señales de ruta** —hora,
+ * parada, a quién siguió—: esa entrega ya las aportó cuando se registró, y
+ * volver a sumarlas por editar un número contaría la misma parada dos veces y
+ * torcería la correlación.
+ */
+export async function aprenderPrecioDeEntrega(
+  tiendaId: number,
+  precioKg: Centimos,
+  precioBaseKg?: Centimos,
+): Promise<void> {
+  if (!precioKg || precioKg <= 0) return;
+  const t = await db.tiendas.get(tiendaId);
+  if (!t) return;
+
+  const cambios: Partial<Tienda> = { precioKgDefecto: precioKg };
+  // Sin base fijado ese día no hay diferencia que sacar: se guarda solo el
+  // precio absoluto, como en `aprenderDeEntrega`.
+  if (precioBaseKg && precioBaseKg > 0) cambios.precioOffsetKg = precioKg - precioBaseKg;
+  await db.tiendas.update(tiendaId, cambios);
+}
+
 /** Lo que debe una tienda de días ya cerrados. */
 export async function deudaDe(tiendaId: number): Promise<Centimos> {
   const deudas = await db.deudas.where("tiendaId").equals(tiendaId).toArray();

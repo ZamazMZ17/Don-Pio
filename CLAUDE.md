@@ -441,6 +441,31 @@ como sugerencia antes de tocar «Crear», igual que la lista de candidatas del d
   nueva **comparando ese campo contra `em.mejor.tienda.nombre`** — con el campo desactualizado
   («Olg» en vez de «Olga»), confirmar creaba una tienda nueva aunque él acabara de elegir la
   correcta. Arreglo: elegir una candidata también pone su nombre real en el campo.
+- **Corregir el precio en el Detalle no le enseñaba nada a la tienda.** Es la otra mitad del
+  fallo de arriba, y la que de verdad lo mantenía roto: `registrarEntrega()` aprende, pero
+  **`editarEntrega()` y `fijarTotal()` no llamaban a nadie**. Y así es como él trabaja: deja
+  la entrega y al rato cuadra el precio en el Detalle. Resultado — la entrega quedaba con el
+  precio bueno y la tienda seguía con la diferencia vieja, así que al día siguiente volvía a
+  proponer el de antes. Se vio con Chela: su entrega del 19-ago está guardada a 7.00 con base
+  8.00 (diferencia real −1.00), pero la tienda tenía `precioOffsetKg` −0.30, aprendido el 18
+  cuando el base era 8.80 — y por eso el 20 le proponía 7.70. Arreglo: `aprenderPrecioDeEntrega()`
+  (tiendas.ts), que **solo** toca `precioKgDefecto`/`precioOffsetKg`, llamada desde
+  `editarEntrega` y `fijarTotal` cuando el precio cambia de verdad. No reusa `aprenderDeEntrega`
+  a propósito: esa además apila hora, parada y precedente, y editar un número no es una parada
+  nueva — contarla dos veces torcería la correlación de §6. Se mide contra el base de **su**
+  jornada (`e.fecha`), no el de hoy: una entrega de un día cerrado se corrige contra el precio
+  que regía ese día.
+- **Al cerrar el día nacían deudas que ninguna moneda puede pagar.** `cerrarDia()` convertía en
+  deuda **cualquier** saldo > 0, incluidos los restos por debajo de la moneda de 10 céntimos.
+  Esos quedaban como «Debe S/ 0.05 del jueves» con un «Cobrar aquí» que no hacía nada —
+  `aCobrar(5)` es 0 y cobrar cero no mueve nada—, así que la migaja reaparecía cada día y no
+  había forma de saldarla («por más que cobre me sale así»). Es el mismo redondeo a favor del
+  cliente que el modelo ya da por perdonado (§7), solo que llegando por otra puerta. Dos
+  arreglos: `cerrarDia()` suma ese resto a `descuentoRedondeo` de la entrega en vez de crear la
+  deuda (raíz), y `limpiarMigajas()` —que corre al abrir la app, después de `cerrarDiasPasados()`—
+  cierra las que ya existían. El umbral mira el **saldo entero de la tienda**, no cada deuda
+  suelta: tres migajas de 4 céntimos sí suman una moneda y esas se dejan en paz. Y en Detalle
+  el aviso de deuda se enseña y se ofrece cobrar solo si `aCobrar()` da más de 0.
 
 ---
 

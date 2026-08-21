@@ -1,6 +1,6 @@
 import { db, type Jornada } from "./db";
 import { diaSemana, hoyISO, type DiaISO } from "../lib/fecha";
-import type { Centimos } from "../lib/dinero";
+import { aCobrar, type Centimos } from "../lib/dinero";
 import { estadoDe } from "../dominio/calculo";
 
 /** Hora de cierre por defecto. Se cambia desde Ajustes. */
@@ -175,6 +175,24 @@ export async function cerrarDia(
     for (const e of entregas) {
       const saldo = e.totalCalculado - e.totalCobrado - e.descuentoRedondeo;
       if (saldo <= 0) continue;
+
+      /*
+       * Un resto por debajo de la moneda más chica no es una deuda: **no hay
+       * con qué pagarlo**. Dejarlo como deuda lo volvía una migaja perpetua
+       * —«Debe S/ 0.05», y en Cobranza «A cobrar S/ 0.00»— que reaparecía
+       * cada día y no había forma de saldar por más que cobrara. Es el
+       * redondeo a favor del cliente que el modelo ya da por perdonado
+       * (§7), así que se registra como descuento, que es lo que de hecho es.
+       */
+      if (aCobrar(saldo) === 0) {
+        const perdonado = e.descuentoRedondeo + saldo;
+        await db.entregas.update(e.id!, {
+          descuentoRedondeo: perdonado,
+          estadoPago: estadoDe(e.totalCalculado, e.totalCobrado + perdonado),
+        });
+        continue;
+      }
+
       await db.deudas.add({
         tiendaId: e.tiendaId,
         entregaId: e.id ?? null,
@@ -224,6 +242,40 @@ export async function cerrarDiasPasados(hoy: DiaISO = hoyISO()): Promise<number>
     await cerrarDia(fecha, null, null);
   }
   return pendientes.size;
+}
+
+/**
+ * Cierra las deudas que ya no se pueden cobrar con monedas.
+ *
+ * `cerrarDia()` ya no las crea, pero las que nacieron antes del arreglo se
+ * quedaron colgadas: «Debe S/ 0.05 del jueves» con un «Cobrar aquí» que no
+ * hace nada, porque `aCobrar(5)` es 0 y cobrar cero no mueve nada. Se
+ * barren al abrir la app, junto con los días que quedaron sin cerrar.
+ *
+ * El umbral mira el **saldo entero de la tienda**, no cada deuda suelta:
+ * tres migajas de 4 céntimos sí suman una moneda, y esa sí se cobra — así que
+ * esas se dejan en paz.
+ */
+export async function limpiarMigajas(): Promise<number> {
+  const abiertas = (await db.deudas.toArray()).filter((d) => !d.cerrada);
+
+  const porTienda = new Map<number, typeof abiertas>();
+  for (const d of abiertas) {
+    const suyas = porTienda.get(d.tiendaId) ?? [];
+    suyas.push(d);
+    porTienda.set(d.tiendaId, suyas);
+  }
+
+  let cerradas = 0;
+  for (const suyas of porTienda.values()) {
+    const saldo = suyas.reduce((a, d) => a + (d.monto - d.saldado), 0);
+    if (aCobrar(Math.max(0, saldo)) > 0) continue;
+    for (const d of suyas) {
+      await db.deudas.update(d.id!, { cerrada: 1 });
+      cerradas += 1;
+    }
+  }
+  return cerradas;
 }
 
 /**
