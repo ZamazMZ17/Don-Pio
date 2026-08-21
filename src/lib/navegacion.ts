@@ -1,0 +1,66 @@
+/**
+ * A dónde lleva el atrás desde cada pantalla.
+ *
+ * Vive aparte de `App.tsx` para poder probarlo: este fallo ya volvió una vez.
+ * La primera versión llevaba una **pila** de por dónde había pasado, y el
+ * «volver» de cada pantalla la alimentaba sin querer — `ir()` guardaba el
+ * origen cuando no era pestaña, así que *retroceder apilaba*. Salir del
+ * Detalle dejaba un "detalle" quemado en la pila, con la entrega vieja
+ * todavía seleccionada; bastaba un día de reparto y luego Más → Historial →
+ * un día → atrás para que lo sacara de ahí y abriera a editar una entrega
+ * cualquiera. Con "dia" pasaba lo mismo y Historial-Día se quedaba dando
+ * vueltas entre las dos.
+ *
+ * Aquí no hay estado que ensuciar: el destino del atrás es una propiedad fija
+ * de cada pantalla. El botón atrás de Android y el «volver» de la pantalla
+ * leen los dos de la misma tabla, así que no pueden discrepar.
+ */
+
+export type Pantalla =
+  | "hoy"
+  | "cobranza"
+  | "detalle"
+  | "cierre"
+  | "tiendas"
+  | "historial"
+  | "dia"
+  | "ajustes"
+  | "stock"
+  | "gastos"
+  | "menu";
+
+/** Las pestañas: la raíz de la navegación, de ellas no se sale hacia atrás. */
+export const RAIZ = ["hoy", "cobranza", "tiendas", "menu"] as const;
+
+export type Raiz = (typeof RAIZ)[number];
+/** Todo lo que no es pestaña, y por tanto tiene una pantalla de arriba. */
+export type Rama = Exclude<Pantalla, Raiz>;
+
+export const esRaiz = (p: Pantalla): p is Raiz => (RAIZ as readonly Pantalla[]).includes(p);
+
+/**
+ * La pantalla de arriba de cada rama. Al agregar una pantalla nueva,
+ * TypeScript obliga a decir a dónde sale — que es justo lo que se olvidó
+ * la vez pasada.
+ */
+export const PADRE: Record<Rama, Pantalla> = {
+  detalle: "hoy",
+  cierre: "hoy",
+  historial: "hoy",
+  stock: "hoy",
+  ajustes: "hoy",
+  dia: "historial",
+  // Se abre solo desde Menú, y su «volver» ya llevaba ahí: el atrás de
+  // Android tiene que coincidir, o la misma pantalla sale a un sitio
+  // distinto según cuál de los dos botones se toque.
+  gastos: "menu",
+};
+
+/**
+ * A dónde va el atrás desde `p`. Desde una pestaña que no es Hoy, a Hoy;
+ * desde Hoy, `null` — no queda nada que cerrar y la app pasa a segundo plano.
+ */
+export function atrasDesde(p: Pantalla): Pantalla | null {
+  if (!esRaiz(p)) return PADRE[p];
+  return p === "hoy" ? null : "hoy";
+}

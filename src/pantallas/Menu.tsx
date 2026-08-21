@@ -8,10 +8,11 @@ import {
   Wallet,
 } from "lucide-react";
 import { Cabecera, S } from "../ui/base";
+import type { Pantalla } from "../lib/navegacion";
 
-/** La cuadrícula detrás de la pestaña «Más». Seis fichas grandes, nada más. */
-export function Menu({ ir }: { ir: (p: never) => void }) {
-  const fichas = [
+/** La cuadrícula detrás de la pestaña «Más». Siete fichas grandes, nada más. */
+export function Menu({ ir }: { ir: (p: Pantalla) => void }) {
+  const fichas: { icono: typeof Undo2; label: string; sub: string; destino: Pantalla }[] = [
     { icono: Undo2, label: "Cobranza", sub: "Cobrar de retorno", destino: "cobranza" },
     { icono: ClipboardCheck, label: "Cierre del día", sub: "Cuadrar la caja", destino: "cierre" },
     { icono: Store, label: "Tiendas", sub: "Tu directorio", destino: "tiendas" },
@@ -39,7 +40,7 @@ export function Menu({ ir }: { ir: (p: never) => void }) {
         {fichas.map(({ icono: Icono, label, sub, destino }) => (
           <button
             key={destino}
-            onClick={() => ir(destino as never)}
+            onClick={() => ir(destino)}
             className="pulsable"
             style={{
               ...S.tarjeta,

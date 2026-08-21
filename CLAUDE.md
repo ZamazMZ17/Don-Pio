@@ -231,6 +231,24 @@ como sugerencia antes de tocar «Crear», igual que la lista de candidatas del d
 - **El botón atrás de Android** se intercepta en `lib/atras.ts`. Cierra de fuera hacia
   dentro (escucha → tarjeta → cobro → pantalla) y solo manda la app a segundo plano desde
   Hoy. Por defecto Capacitor la cerraba entera de un toque, en mitad de la ruta.
+- **A dónde vuelve el atrás es una propiedad fija de cada pantalla, no un historial.**
+  Está en `lib/navegacion.ts` (`PADRE`, `atrasDesde()`), y de ahí leen **los dos** caminos:
+  el atrás de Android y el botón «volver» de la pantalla (`salir()` en App.tsx). Si cada
+  uno lleva su destino escrito a mano, acaban discrepando y la misma pantalla sale a un
+  sitio distinto según qué botón se toque.
+
+  Antes había una pila de por dónde había pasado, y **retroceder apilaba**: el `volver` de
+  cada pantalla llamaba a `ir()`, que guarda el origen cuando no es pestaña. Salir del
+  Detalle dejaba un `"detalle"` quemado en la pila —con `entregaSel` todavía apuntando a esa
+  entrega—, así que bastaba un día de reparto y luego Más → Historial → un día → atrás para
+  que lo sacara de ahí y **abriera a editar una entrega cualquiera**. Con `"dia"` pasaba lo
+  mismo y Historial-Día se quedaba dando vueltas entre las dos. Se había intentado arreglar
+  parcheando solo el lado de Android (`setPantalla` directo para `detalle`/`dia`/`gastos`),
+  pero el lado que ensuciaba la pila era el `volver` de la pantalla, así que volvió.
+
+  El arreglo es estructural: no hay pila. `Record<Rama, Pantalla>` obliga a TypeScript a
+  exigir un destino para cada pantalla nueva, y `navegacion.test.ts` comprueba que desde
+  cualquiera se llega a Hoy sin repetir ninguna — que es lo que detecta un ciclo.
 - **El reconocedor del teléfono no vale como camino principal.** Transcribe a ciegas y se
   comía el nombre del cliente: «hay de cinco pollos 12 kg 750 a 9 soles 30». Con audio,
   Gemini tiene las pausas y la entonación, que es donde está la separación entre el nombre

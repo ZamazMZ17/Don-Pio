@@ -98,4 +98,9 @@ export const CAMBIOS: Cambio[] = [
     texto:
       "Se acabaron las deudas de céntimos imposibles de cobrar. Un resto por debajo de S/ 0.10 ya no queda como deuda al cerrar el día —se perdona, que es lo que era— y las que ya tenías colgadas («Debe S/ 0.05») se limpian solas al abrir la app.",
   },
+  {
+    fecha: "2026-08-21",
+    texto:
+      "Corregido: después de un día de reparto, salir de Historial o de un día cerrado te abría a editar una entrega cualquiera en vez de volver a Hoy. El atrás ya no se acuerda de por dónde pasaste — cada pantalla sale siempre al mismo sitio.",
+  },
 ];

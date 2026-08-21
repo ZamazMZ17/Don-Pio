@@ -52,22 +52,7 @@ import {
   type Propuesta,
 } from "./ui/Dictado";
 import { HojaNovedades, useNovedades } from "./ui/Novedades";
-
-type Pantalla =
-  | "hoy"
-  | "cobranza"
-  | "detalle"
-  | "cierre"
-  | "tiendas"
-  | "historial"
-  | "dia"
-  | "ajustes"
-  | "stock"
-  | "gastos"
-  | "menu";
-
-/** Las pestañas: son la raíz de la navegación, no se apilan entre ellas. */
-const RAIZ: Pantalla[] = ["hoy", "cobranza", "tiendas", "menu"];
+import { atrasDesde, esRaiz, PADRE, type Pantalla } from "./lib/navegacion";
 
 export default function App() {
   const [pantalla, setPantalla] = useState<Pantalla>("hoy");
@@ -84,8 +69,6 @@ export default function App() {
   const { nuevas: novedades, cerrar: cerrarNovedades } = useNovedades();
   /** Cómo cerrarlo desde el botón atrás. Lo rellena la propia Cobranza. */
   const cerrarCobro = useRef<(() => void) | null>(null);
-  /** De dónde vino, para que el atrás no lleve siempre a Hoy. */
-  const pila = useRef<Pantalla[]>([]);
 
   const fecha = hoyISO();
   // Ya no hay cola de dictados que repasar: el dictado se resuelve entero en
@@ -435,22 +418,32 @@ export default function App() {
 
   /* ── Navegación ─────────────────────────────────────────────────────── */
 
+  /** Deja la pantalla limpia al cambiar: sin tarjeta, sin teclado, sin escucha. */
+  const limpiar = useCallback(() => {
+    setPropuesta(null);
+    setEscribiendo(false);
+    rec.cancelar();
+  }, [rec]);
+
+  /** Entra a una pantalla. */
   const ir = useCallback(
     (p: Pantalla) => {
-      setPantalla((actual) => {
-        // Las cuatro pestañas son la raíz: moverse entre ellas no apila nada,
-        // o el botón atrás acabaría recorriendo todo lo que tocó en el día.
-        if (actual !== p && !RAIZ.includes(actual)) {
-          pila.current = [...pila.current.filter((x) => x !== actual), actual];
-        }
-        return p;
-      });
-      setPropuesta(null);
-      setEscribiendo(false);
-      rec.cancelar();
+      setPantalla(p);
+      limpiar();
     },
-    [rec],
+    [limpiar],
   );
+
+  /**
+   * Sale de la pantalla actual hacia la de arriba (`PADRE`). Es lo que hace el
+   * botón «volver» de cada pantalla, y tiene que ser lo mismo que hace el atrás
+   * de Android — por eso los dos leen la misma tabla en vez de que cada uno
+   * lleve su destino escrito a mano.
+   */
+  const salir = useCallback(() => {
+    setPantalla((actual) => (esRaiz(actual) ? actual : PADRE[actual]));
+    limpiar();
+  }, [limpiar]);
 
   /**
    * El botón atrás de Android. Cierra lo que haya abierto, de fuera hacia
@@ -480,39 +473,14 @@ export default function App() {
       cerrarCobro.current?.();
       return true;
     }
-    // Estos tres van con `setPantalla` directo, no con `ir()`: son reglas
-    // fijas de qué hace el atrás en cada pantalla, no una navegación que
-    // haya que recordar. `ir()` apila el origen cuando no es una pestaña
-    // raíz — y como "dia" y "gastos" tampoco lo son, quedaba un "dia" o un
-    // "gastos" quemado en la pila. La siguiente vez que el atrás cayera en
-    // la rama genérica de abajo (por ejemplo, saliendo de Historial) lo
-    // sacaba de ahí en vez de mandar a Hoy, y Historial-Dia quedaba dando
-    // vueltas entre las dos sin salir nunca.
-    if (pantalla === "detalle") {
-      setPantalla("hoy");
-      return true;
-    }
-    if (pantalla === "dia") {
-      setPantalla("historial");
-      return true;
-    }
-    // Se abre solo desde Menú, y su propio botón «volver» ya lleva ahí — el
-    // atrás de Android tiene que coincidir, o la misma pantalla sale a un
-    // sitio distinto según cuál de los dos botones se toque.
-    if (pantalla === "gastos") {
-      setPantalla("menu");
-      return true;
-    }
-    if (!RAIZ.includes(pantalla)) {
-      const previa = pila.current.pop() ?? "hoy";
-      setPantalla(previa);
-      return true;
-    }
-    if (pantalla !== "hoy") {
-      setPantalla("hoy");
-      return true;
-    }
-    return false;
+    // Ya sin hojas abiertas, el atrás es el de la propia pantalla: sube por
+    // la tabla de `navegacion.ts`, la misma que usa su botón «volver», para
+    // que los dos no puedan discrepar. `null` = ya está en Hoy, no queda nada
+    // que cerrar y la app pasa a segundo plano.
+    const destino = atrasDesde(pantalla);
+    if (destino === null) return false;
+    setPantalla(destino);
+    return true;
   });
 
   /**
@@ -567,35 +535,35 @@ export default function App() {
         <Cobranza fecha={fecha} onEditando={setCobroAbierto} registrarCierre={cerrarCobro} />
       )}
       {pantalla === "detalle" && entregaSel !== null && (
-        <Detalle entregaId={entregaSel} volver={() => ir("hoy")} />
+        <Detalle entregaId={entregaSel} volver={salir} />
       )}
-      {pantalla === "cierre" && <Cierre fecha={fecha} volver={() => ir("hoy")} />}
+      {pantalla === "cierre" && <Cierre fecha={fecha} volver={salir} />}
       {pantalla === "stock" && (
         <Stock
           fecha={fecha}
           listo={() => {
             void stockAtendido();
-            ir("hoy");
+            salir();
           }}
           ahoraNo={() => {
             void stockAtendido();
-            ir("hoy");
+            salir();
           }}
         />
       )}
       {pantalla === "tiendas" && <Tiendas />}
       {pantalla === "historial" && (
         <Historial
-          volver={() => ir("hoy")}
+          volver={salir}
           abrirDia={(d) => {
             setDiaSel(d);
             setPantalla("dia");
           }}
         />
       )}
-      {pantalla === "dia" && <Dia fecha={diaSel} volver={() => ir("historial")} />}
-      {pantalla === "ajustes" && <Ajustes volver={() => ir("hoy")} />}
-      {pantalla === "gastos" && <Gastos fecha={fecha} volver={() => ir("menu")} />}
+      {pantalla === "dia" && <Dia fecha={diaSel} volver={salir} />}
+      {pantalla === "ajustes" && <Ajustes volver={salir} />}
+      {pantalla === "gastos" && <Gastos fecha={fecha} volver={salir} />}
       {pantalla === "menu" && <Menu ir={ir} />}
 
       {/* Capa de voz: micrófono, escucha y confirmación */}
