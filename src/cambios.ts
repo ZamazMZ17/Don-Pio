@@ -153,4 +153,9 @@ export const CAMBIOS: Cambio[] = [
     texto:
       "Corregidos tres casos donde la plata se podía perder sin avisar, encontrados simulando dos meses de reparto: dejarle dos veces sin pesar a la misma tienda el mismo día y cobrarle todo junto ya no le mete el dinero solo a la primera entrega; deshacer un cobro de un día ya cerrado ya no deja ese saldo invisible; y borrar una entrega vieja ya no le recorta el «cobrado» a otro día distinto donde de verdad se cobró algo.",
   },
+  {
+    fecha: "2026-08-22",
+    texto:
+      "Nueva ficha en Más → «Cómo se usa»: un tour de 10 pasos por toda la app, en el orden real del día —salir, repartir, cobrar de vuelta, cuadrar la caja—. Sirve para enseñarle a alguien más a usarla, o para recordar dónde estaba algo.",
+  },
 ];

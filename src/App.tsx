@@ -45,6 +45,7 @@ import { Dia } from "./pantallas/Dia";
 import { Ajustes } from "./pantallas/Ajustes";
 import { Menu } from "./pantallas/Menu";
 import { FichaTienda } from "./pantallas/FichaTienda";
+import { Tutorial } from "./pantallas/Tutorial";
 import { Gastos } from "./pantallas/Gastos";
 import {
   BotonMas,
@@ -626,6 +627,7 @@ export default function App() {
       )}
       {pantalla === "ajustes" && <Ajustes volver={salir} />}
       {pantalla === "gastos" && <Gastos fecha={fecha} volver={salir} />}
+      {pantalla === "tutorial" && <Tutorial volver={salir} />}
       {pantalla === "menu" && <Menu ir={ir} />}
 
       {/* Capa de voz: micrófono, escucha y confirmación */}

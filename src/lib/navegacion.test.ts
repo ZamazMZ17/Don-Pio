@@ -13,6 +13,7 @@ const TODAS: Pantalla[] = [
   "stock",
   "gastos",
   "ficha",
+  "tutorial",
   "menu",
 ];
 

@@ -2,6 +2,7 @@ import {
   CalendarClock,
   ClipboardCheck,
   Package,
+  GraduationCap,
   Settings,
   Store,
   Undo2,
@@ -10,7 +11,7 @@ import {
 import { Cabecera, S } from "../ui/base";
 import type { Pantalla } from "../lib/navegacion";
 
-/** La cuadrícula detrás de la pestaña «Más». Siete fichas grandes, nada más. */
+/** La cuadrícula detrás de la pestaña «Más». Ocho fichas grandes, nada más. */
 export function Menu({ ir }: { ir: (p: Pantalla) => void }) {
   const fichas: { icono: typeof Undo2; label: string; sub: string; destino: Pantalla }[] = [
     { icono: Undo2, label: "Cobranza", sub: "Cobrar de retorno", destino: "cobranza" },
@@ -20,6 +21,7 @@ export function Menu({ ir }: { ir: (p: Pantalla) => void }) {
     { icono: Wallet, label: "Gastos", sub: "Almuerzo, gasolina…", destino: "gastos" },
     { icono: Package, label: "Cargar stock", sub: "Con cuánto sales", destino: "stock" },
     { icono: Settings, label: "Ajustes", sub: "API key y avisos", destino: "ajustes" },
+    { icono: GraduationCap, label: "Cómo se usa", sub: "Un tour por la app", destino: "tutorial" },
   ];
 
   return (

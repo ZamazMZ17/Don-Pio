@@ -119,7 +119,8 @@ intérprete que lo dictado.
 | **Detalle de día** | Un día cerrado, entrega por entrega, cada una con **Corregir esta entrega** — y lo que cambie llega hasta la deuda del cliente (§8) |
 | **Ajustes** | Apariencia (oscuro/claro/sistema), hora de cierre, redondeo, sonido, respaldo, la API key de Gemini (solo para informes) y **Actualización**: qué versión tiene puesta y el enlace para bajar la última |
 | **Cargar stock** | «¿Con cuánto sales hoy?», con la sugerencia aprendida por día de semana |
-| **Menú** | Cuadrícula de 7 fichas, detrás de la pestaña «Más» |
+| **Menú** | Cuadrícula de 8 fichas, detrás de la pestaña «Más» |
+| **Cómo se usa** | El tour de la app, de a un paso por pantalla, en el orden real del día. El texto vive en `src/tutorial.ts` — **hay que actualizarlo cuando la app cambia**: un tutorial que describe una versión vieja enseña a buscar botones que ya no están |
 
 **5 bis. Vistas que se pueden esconder.** La Agenda de Hoy se enseña solo si él lo pide
 (`CLAVE_VER_AGENDA`, apagado por defecto). Dos reglas para cualquier vista que se esconda

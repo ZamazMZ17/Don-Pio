@@ -28,6 +28,7 @@ export type Pantalla =
   | "stock"
   | "gastos"
   | "ficha"
+  | "tutorial"
   | "menu";
 
 /** Las pestañas: la raíz de la navegación, de ellas no se sale hacia atrás. */
@@ -53,6 +54,8 @@ export const PADRE: Record<Rama, Pantalla> = {
   dia: "historial",
   // Se abre tocando un cliente en el directorio, y ahí vuelve.
   ficha: "tiendas",
+  // El tour de la app: se abre desde Menú y ahí vuelve.
+  tutorial: "menu",
   // Se abre solo desde Menú, y su «volver» ya llevaba ahí: el atrás de
   // Android tiene que coincidir, o la misma pantalla sale a un sitio
   // distinto según cuál de los dos botones se toque.
