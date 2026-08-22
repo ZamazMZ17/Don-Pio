@@ -19,6 +19,20 @@ npm run apk
 Compila, firma e instala en el dispositivo conectado por USB. Si no hay ninguno, deja
 `DonPio.apk` en la carpeta del proyecto para copiarlo a mano.
 
+### Compilar el APK con GitHub Actions
+
+Si `npm run apk` falla por restricciones de red (p. ej., proxy corporativo), usa el
+**workflow de GitHub Actions**:
+
+1. Hace push a cualquier rama (`main` o `claude/**`)
+2. O dispara manualmente: abre la [pestaña de Actions](../../actions), elige **«Compilar APK»**
+   y presiona **«Run workflow»**
+3. Espera a que termine la compilación (2–3 minutos)
+4. Abre la sección **Releases** y descarga `DonPio.apk` desde **«Don Pio — último build»**
+
+El workflow compila automáticamente cada push a `main` o a ramas `claude/**`, y actualiza
+el release con la última versión lista para instalar.
+
 ## Comandos
 
 | Comando | Qué hace |
