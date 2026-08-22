@@ -51,7 +51,7 @@ export const PASOS: PasoTutorial[] = [
       "Por la mañana la app te pregunta con cuántos pollos y piernas sales, y a qué precio por kilo va el día.",
       "No es obligatorio: si andas apurado, dale «Ahora no» y repartes igual. Solo que sin eso no puede decirte cuánto te queda en el camión.",
     ],
-    truco: "¿Se te pasó? Toca el encabezado de Hoy —donde dice «Has repartido»— y lo cargas cuando quieras.",
+    truco: "¿Se te pasó? Toca el encabezado de Hoy, donde dice «Has repartido», y lo cargas cuando quieras.",
   },
   {
     icono: "Mic",
@@ -88,7 +88,7 @@ export const PASOS: PasoTutorial[] = [
     titulo: "5 · Corregir una cuenta",
     cuerpo: [
       "Cobrando es cuando saltan los errores: le sacaste la cuenta a menos kilaje, o al precio de otro día.",
-      "Toca el lápiz en la tarjeta —la línea que dice qué le dejaste— y ahí cambias cantidades, peso, precio o total.",
+      "Toca el lápiz en la tarjeta, la línea que dice qué le dejaste, y ahí cambias cantidades, peso, precio o total.",
       "Si resulta que le cobraste de menos, la diferencia pasa a lo que te debe y te aparece para cobrar. No se pierde.",
     ],
     truco: "También sirve en las que ya cobraste, por si te diste cuenta tarde.",

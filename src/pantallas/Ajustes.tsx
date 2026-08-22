@@ -177,8 +177,8 @@ export function Ajustes({ volver }: { volver: () => void }) {
           <div
             style={{ fontSize: 14, color: "var(--texto-3)", marginBottom: 12, lineHeight: 1.5 }}
           >
-            Tu API key se guarda solo en este teléfono. Se usa para los informes —el resumen al
-            cerrar el día y el de la semana—, no para dictar: el dictado se entiende aquí mismo,
+            Tu API key se guarda solo en este teléfono. Se usa para los informes (el resumen al
+            cerrar el día y el de la semana), no para dictar: el dictado se entiende aquí mismo,
             sin internet.
           </div>
 

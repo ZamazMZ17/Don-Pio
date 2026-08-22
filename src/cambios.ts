@@ -20,7 +20,7 @@ export const CAMBIOS: Cambio[] = [
   {
     fecha: "2026-08-19",
     texto:
-      "Al decir «ya pagó todo» por voz, ahora redondea a la moneda más chica y perdona el resto — igual que el botón de Cobranza.",
+      "Al decir «ya pagó todo» por voz, ahora redondea a la moneda más chica y perdona el resto, igual que el botón de Cobranza.",
   },
   {
     fecha: "2026-08-19",
@@ -41,7 +41,7 @@ export const CAMBIOS: Cambio[] = [
   },
   {
     fecha: "2026-08-19",
-    texto: "La app avisa de las novedades cada vez que instalas una actualización — como esta pantalla.",
+    texto: "La app avisa de las novedades cada vez que instalas una actualización, como esta pantalla.",
   },
   {
     fecha: "2026-08-19",
@@ -51,7 +51,7 @@ export const CAMBIOS: Cambio[] = [
   {
     fecha: "2026-08-19",
     texto:
-      "El aviso de «Compartir respaldo» / «Restaurar» ahora se ve en rojo cuando algo falla y en verde cuando queda listo — antes los dos se veían igual.",
+      "El aviso de «Compartir respaldo» / «Restaurar» ahora se ve en rojo cuando algo falla y en verde cuando queda listo. Antes los dos se veían igual.",
   },
   {
     fecha: "2026-08-19",
@@ -71,12 +71,12 @@ export const CAMBIOS: Cambio[] = [
   {
     fecha: "2026-08-20",
     texto:
-      "El logo del pollo en Hoy ahora tiene su propia versión para el modo oscuro (trazo dorado) — antes se volvía blanco liso y perdía el dibujo.",
+      "El logo del pollo en Hoy ahora tiene su propia versión para el modo oscuro (trazo dorado). Antes se volvía blanco liso y perdía el dibujo.",
   },
   {
     fecha: "2026-08-20",
     texto:
-      "Las deudas que enseña Hoy («Debe S/ X de antes») ahora se redondean a la moneda de 10 céntimos, igual que en Cobranza — y una migaja de menos de 10 céntimos ya no se enseña, porque no se puede cobrar.",
+      "Las deudas que enseña Hoy («Debe S/ X de antes») ahora se redondean a la moneda de 10 céntimos, igual que en Cobranza, y una migaja de menos de 10 céntimos ya no se enseña, porque no se puede cobrar.",
   },
   {
     fecha: "2026-08-20",
@@ -86,7 +86,7 @@ export const CAMBIOS: Cambio[] = [
   {
     fecha: "2026-08-20",
     texto:
-      "El botón «+» de Ruta (dar de alta a alguien nuevo) ahora sugiere tiendas parecidas mientras escribes el nombre, igual que hace el dictado — para no crear un duplicado de alguien que ya está en el directorio.",
+      "El botón «+» de Ruta (dar de alta a alguien nuevo) ahora sugiere tiendas parecidas mientras escribes el nombre, igual que hace el dictado, para no crear un duplicado de alguien que ya está en el directorio.",
   },
   {
     fecha: "2026-08-21",
@@ -96,12 +96,12 @@ export const CAMBIOS: Cambio[] = [
   {
     fecha: "2026-08-21",
     texto:
-      "Se acabaron las deudas de céntimos imposibles de cobrar. Un resto por debajo de S/ 0.10 ya no queda como deuda al cerrar el día —se perdona, que es lo que era— y las que ya tenías colgadas («Debe S/ 0.05») se limpian solas al abrir la app.",
+      "Se acabaron las deudas de céntimos imposibles de cobrar. Un resto por debajo de S/ 0.10 ya no queda como deuda al cerrar el día (se perdona, que es lo que era), y las que ya tenías colgadas («Debe S/ 0.05») se limpian solas al abrir la app.",
   },
   {
     fecha: "2026-08-21",
     texto:
-      "Corregido: después de un día de reparto, salir de Historial o de un día cerrado te abría a editar una entrega cualquiera en vez de volver a Hoy. El atrás ya no se acuerda de por dónde pasaste — cada pantalla sale siempre al mismo sitio.",
+      "Corregido: después de un día de reparto, salir de Historial o de un día cerrado te abría a editar una entrega cualquiera en vez de volver a Hoy. El atrás ya no se acuerda de por dónde pasaste: cada pantalla sale siempre al mismo sitio.",
   },
   {
     fecha: "2026-08-22",
@@ -111,7 +111,7 @@ export const CAMBIOS: Cambio[] = [
   {
     fecha: "2026-08-22",
     texto:
-      "El orden de la Ruta ahora mira las dos últimas semanas, no los dos últimos días. Un día raro —una tienda cerrada, un desvío— ya no te reordena la lista entera al día siguiente; para que la ruta cambie, el cambio tiene que repetirse.",
+      "El orden de la Ruta ahora mira las dos últimas semanas, no los dos últimos días. Un día raro (una tienda cerrada, un desvío) ya no te reordena la lista entera al día siguiente; para que la ruta cambie, el cambio tiene que repetirse.",
   },
   {
     fecha: "2026-08-22",
@@ -121,7 +121,7 @@ export const CAMBIOS: Cambio[] = [
   {
     fecha: "2026-08-22",
     texto:
-      "Ya puedes corregir una entrega de un día cerrado: Más → Historial → el día → «Corregir esta entrega». Y lo más importante, la diferencia ya no se pierde — si resulta que le cobraste de menos, lo que falta pasa a lo que te debe y te sale en Cobranza. Antes esos soles desaparecían sin avisar.",
+      "Ya puedes corregir una entrega de un día cerrado: Más → Historial → el día → «Corregir esta entrega». Y lo más importante, la diferencia ya no se pierde: si resulta que le cobraste de menos, lo que falta pasa a lo que te debe y te sale en Cobranza. Antes esos soles desaparecían sin avisar.",
   },
   {
     fecha: "2026-08-22",
@@ -156,7 +156,7 @@ export const CAMBIOS: Cambio[] = [
   {
     fecha: "2026-08-22",
     texto:
-      "Nueva ficha en Más → «Cómo se usa»: un tour de 10 pasos por toda la app, en el orden real del día —salir, repartir, cobrar de vuelta, cuadrar la caja—. Sirve para enseñarle a alguien más a usarla, o para recordar dónde estaba algo.",
+      "Nueva ficha en Más → «Cómo se usa»: un tour de 10 pasos por toda la app, en el orden real del día (salir, repartir, cobrar de vuelta, cuadrar la caja). Sirve para enseñarle a alguien más a usarla, o para recordar dónde estaba algo.",
   },
   {
     fecha: "2026-08-22",

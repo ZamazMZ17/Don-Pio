@@ -27,7 +27,7 @@ export const PASOS_TOUR: PasoTour[] = [
     pantalla: "hoy",
     titulo: "Te muestro la app",
     texto:
-      "Voy a ir señalando cada botón y para qué sirve. Toca «Siguiente» —o cualquier parte de la pantalla— para avanzar.",
+      "Voy a ir señalando cada botón y para qué sirve. Toca «Siguiente» (o cualquier parte de la pantalla) para avanzar.",
   },
   {
     pantalla: "hoy",
@@ -43,7 +43,7 @@ export const PASOS_TOUR: PasoTour[] = [
     texto:
       "Esta es la lista del día. Vas tocando de uno en uno según avanzas: al que no le has dejado nada se abre para registrar, y al que ya le dejaste se abre para corregir.",
     siFalta:
-      "Aquí van a salir tus clientes en el orden en que los visitas. Todavía no tienes ninguno — se van creando solos al dictar.",
+      "Aquí van a salir tus clientes en el orden en que los visitas. Todavía no tienes ninguno: se van creando solos al dictar.",
   },
   {
     pantalla: "hoy",
@@ -57,7 +57,7 @@ export const PASOS_TOUR: PasoTour[] = [
     objetivo: "tab-cobranza",
     titulo: "La vuelta: cobrar",
     texto:
-      "Esta pestaña es para el retorno. Sale lo que te deben, del último al primero — repartes de ida y cobras de vuelta.",
+      "Esta pestaña es para el retorno. Sale lo que te deben, del último al primero: repartes de ida y cobras de vuelta.",
   },
   {
     pantalla: "cobranza",
@@ -82,7 +82,7 @@ export const PASOS_TOUR: PasoTour[] = [
     objetivo: "cobrar",
     titulo: "Cobrar",
     texto:
-      "«Me pagó todo» cobra la cuenta completa. Si te dio otra cantidad, el otro botón abre el teclado — y lo que falte le queda debiendo para mañana.",
+      "«Me pagó todo» cobra la cuenta completa. Si te dio otra cantidad, el otro botón abre el teclado, y lo que falte le queda debiendo para mañana.",
     siFalta:
       "Para cobrar hay dos botones: «Me pagó todo» cobra la cuenta completa, y «Me dio otra cantidad» abre el teclado para poner lo que te dio.",
   },
@@ -111,7 +111,7 @@ export const PASOS_TOUR: PasoTour[] = [
     objetivo: "menu-historial",
     titulo: "Los días de antes",
     texto:
-      "El Historial guarda cada día cerrado, entrega por entrega — para cuando alguien discute una cuenta. Desde ahí también puedes corregir una entrega vieja.",
+      "El Historial guarda cada día cerrado, entrega por entrega, para cuando alguien discute una cuenta. Desde ahí también puedes corregir una entrega vieja.",
   },
   {
     pantalla: "menu",

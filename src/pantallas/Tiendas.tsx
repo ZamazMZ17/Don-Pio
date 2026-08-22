@@ -493,7 +493,7 @@ export function Tiendas({ abrirFicha }: { abrirFicha: (tiendaId: number) => void
                           padding: "6px 0",
                         }}
                       >
-                        Justo ahora debe {money(noSePudo!.deuda)} de hoy — salda su cuenta en
+                        Justo ahora debe {money(noSePudo!.deuda)} de hoy. Salda su cuenta en
                         Cobranza para poder borrarla.
                       </div>
                     ) : borrando === t.id ? (
