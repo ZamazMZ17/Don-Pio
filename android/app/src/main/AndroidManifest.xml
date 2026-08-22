@@ -35,6 +35,14 @@
         </provider>
     </application>
 
+    <!-- Sin esto, en Android 11+ la app no puede ni ver el servicio de voz
+         del sistema (visibilidad de paquetes). Lo usa Reconocedor.java. -->
+    <queries>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+    </queries>
+
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />

@@ -294,6 +294,18 @@ como sugerencia antes de tocar «Crear», igual que la lista de candidatas del d
 - **`detener()` no puede esperar al plugin.** Hacía `await SpeechRecognition.stop()` antes
   de cerrar y esa promesa no resolvía en el teléfono: la escucha se quedaba abierta para
   siempre. Se cierra primero y se para el plugin después, siempre desde `soltar()`.
+- **El plugin de voz de la comunidad no bastaba: escucha propia en
+  `android/.../Reconocedor.java`.** «Le hablo y no transcribe» y «se demora mucho» tenían
+  tres causas que el plugin no dejaba tocar: (1) el servicio corta a los ~2 s de silencio y
+  cada reapertura pierde palabras — el propio pide ~4 s de tolerancia
+  (`EXTRA_SPEECH_INPUT_*`); (2) con señal débil el servicio se va a la red y se queda
+  pensando — el propio pide `EXTRA_PREFER_OFFLINE`, y si el teléfono no tiene el paquete de
+  español descargado, el lado JS (`reconocimiento.ts`) baja la bandera y reintenta por red;
+  (3) reutilizar la instancia de `SpeechRecognizer` tras un error la deja «ocupada»
+  (`ERROR_RECOGNIZER_BUSY`) — el clásico «pulso y no pasa nada» — así que cada arranque crea
+  una nueva. Además emite el resultado **final** repasado de cada tramo, no solo parciales.
+  `useReconocedor` prueba el motor propio y, si el APK es viejo y no lo trae (error «not
+  implemented»), cae al plugin de la comunidad — que sigue instalado justo para eso.
 - **El peso no siempre sale de las tandas.** Muchas entregas son de una sola pesada y se
   guardan con `peso` y sin tandas; recalcularlo desde una lista vacía lo ponía a cero, y
   cambiar el precio por kilo borraba el peso.
