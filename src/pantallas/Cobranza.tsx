@@ -325,64 +325,73 @@ export function Cobranza({
         vuelta sin que el scroll salte). Mismo patrón que Agenda/Ruta en Hoy.
       */}
       {abierta === null && (
-        <div style={{ flex: "none", padding: "10px 18px 0", display: "flex", gap: 8 }}>
-          <ModoBtn activo={modo === "deudas"} onClick={() => void guardarAjuste(CLAVE_MODO_COBRANZA, "deudas")}>
+        <div
+          style={{ flex: "none", padding: "10px 18px 4px", display: "flex", gap: 8, height: 66 }}
+        >
+          {hayBuscador && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                flex: 1,
+                minWidth: 0,
+                background: "var(--superficie)",
+                borderRadius: "var(--radio)",
+                padding: "0 14px",
+                height: 52,
+              }}
+            >
+              <Search size={19} color="var(--texto-4)" style={{ flex: "none" }} />
+              <input
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                // «Buscar una tienda» ya no cabe compartiendo fila con los dos
+                // modos; la lupa dice de sobra qué hace.
+                placeholder="Buscar"
+                style={{
+                  flex: 1,
+                  background: "none",
+                  border: "none",
+                  outline: "none",
+                  fontSize: 17,
+                  minWidth: 0,
+                }}
+              />
+              {busca && (
+                <button
+                  onClick={() => setBusca("")}
+                  aria-label="Limpiar búsqueda"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    // Mismo truco de zona táctil de 52px que el botón de orden
+                    // (§4): el margen negativo agranda lo que responde al dedo
+                    // sin agrandar la barra ni empujar al buscador.
+                    minHeight: 52,
+                    minWidth: 52,
+                    margin: "-14px -6px",
+                    flex: "none",
+                  }}
+                >
+                  <X size={18} color="var(--texto-4)" />
+                </button>
+              )}
+            </div>
+          )}
+          <ModoBtn
+            activo={modo === "deudas"}
+            onClick={() => void guardarAjuste(CLAVE_MODO_COBRANZA, "deudas")}
+          >
             Deudas
           </ModoBtn>
-          <ModoBtn activo={modo === "ruta"} onClick={() => void guardarAjuste(CLAVE_MODO_COBRANZA, "ruta")}>
+          <ModoBtn
+            activo={modo === "ruta"}
+            onClick={() => void guardarAjuste(CLAVE_MODO_COBRANZA, "ruta")}
+          >
             Ruta
           </ModoBtn>
-        </div>
-      )}
-
-      {abierta === null && hayBuscador && (
-        <div style={{ flex: "none", padding: "12px 18px 4px" }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              background: "var(--superficie)",
-              borderRadius: "var(--radio)",
-              padding: "0 14px",
-              height: 50,
-            }}
-          >
-            <Search size={19} color="var(--texto-4)" style={{ flex: "none" }} />
-            <input
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-              placeholder="Buscar una tienda"
-              style={{
-                flex: 1,
-                background: "none",
-                border: "none",
-                outline: "none",
-                fontSize: 17,
-                minWidth: 0,
-              }}
-            />
-            {busca && (
-              <button
-                onClick={() => setBusca("")}
-                aria-label="Limpiar búsqueda"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  // Mismo truco de zona táctil de 52px que el botón de orden
-                  // (§4): el margen negativo agranda lo que responde al dedo
-                  // sin agrandar la barra ni empujar al buscador.
-                  minHeight: 52,
-                  minWidth: 52,
-                  margin: "-14px -6px",
-                  flex: "none",
-                }}
-              >
-                <X size={18} color="var(--texto-4)" />
-              </button>
-            )}
-          </div>
         </div>
       )}
 
@@ -1062,7 +1071,15 @@ function EntregasCorregibles({
   );
 }
 
-/** Un botón del interruptor Deudas / Ruta. Objetivo táctil de 52px. */
+/**
+ * Un botón del interruptor Deudas / Ruta.
+ *
+ * Al ancho del texto y no a media pantalla cada uno: antes se llevaban una
+ * fila entera para sí solos y, con el buscador debajo, la lista no empezaba
+ * hasta pasada la mitad de la pantalla. Ahora comparten fila con el buscador.
+ * Los dos siguen a la vista —nada de desplegable— porque cambiar de modo en
+ * plena vuelta tiene que ser un toque, no dos.
+ */
 function ModoBtn({
   activo,
   onClick,
@@ -1077,8 +1094,11 @@ function ModoBtn({
       onClick={onClick}
       className="pulsable"
       style={{
-        flex: 1,
-        height: 44,
+        flex: "none",
+        padding: "0 14px",
+        // Los 52px de §4: la fila los da de alto, así que no hace falta el
+        // truco del margen negativo.
+        height: 52,
         borderRadius: "var(--radio)",
         border: activo ? "1.5px solid var(--acento)" : "1.5px solid var(--borde)",
         background: activo ? "var(--acento-900)" : "transparent",

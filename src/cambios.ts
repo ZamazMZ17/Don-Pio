@@ -143,4 +143,9 @@ export const CAMBIOS: Cambio[] = [
     texto:
       "El Detalle de una entrega estrena arriba un botón de reloj que abre el historial de ese cliente: ver a cómo le vienes cobrando mientras corriges su cuenta, sin dar el rodeo por Tiendas. Al salir vuelves a la entrega, no al directorio.",
   },
+  {
+    fecha: "2026-08-22",
+    texto:
+      "En Cobranza, los botones Deudas / Ruta ya no se llevan una fila entera: ahora van al ancho de su texto, compartiendo fila con el buscador. La lista empieza 54px más arriba y se ven más tiendas de una sola mirada.",
+  },
 ];
