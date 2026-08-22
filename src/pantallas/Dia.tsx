@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { Search, X } from "lucide-react";
+import { Pencil, Search, X } from "lucide-react";
 import { db } from "../db/db";
 import { leerJornada, resumenDe } from "../db/jornada";
 import { COLOR_ESTADO, estadoDe, TEXTO_ESTADO } from "../dominio/calculo";
@@ -10,7 +10,21 @@ import { normalizar, parecido } from "../tiendas/normalizar";
 import { Cabecera, Fila, S, Vacio } from "../ui/base";
 
 /** Un día cerrado, entrega por entrega. Para cuando alguien discute una cuenta. */
-export function Dia({ fecha, volver }: { fecha: DiaISO; volver: () => void }) {
+export function Dia({
+  fecha,
+  volver,
+  abrir,
+}: {
+  fecha: DiaISO;
+  volver: () => void;
+  /**
+   * Abre una entrega para corregirla. Un día cerrado no es intocable: si se
+   * dio cuenta tarde de que le sacó la cuenta a menos kilaje, esta es la
+   * única pantalla desde donde puede llegar a esa entrega — y la diferencia
+   * pasa a lo que el cliente debe (`ajustarDeudaTrasCorregir`).
+   */
+  abrir: (entregaId: number) => void;
+}) {
   /** El texto del buscador. Con muchas tiendas en un día, encontrar una en
    *  concreto a mano es lento; escribir dos letras la trae de una. */
   const [busca, setBusca] = useState("");
@@ -326,6 +340,34 @@ export function Dia({ fecha, volver }: { fecha: DiaISO; volver: () => void }) {
                   {e.notas && <div style={{ fontStyle: "italic" }}>{e.notas}</div>}
                 </div>
               )}
+
+              {/*
+                Un día cerrado no es intocable. Si se dio cuenta tarde de que
+                le sacó la cuenta a menos kilaje o al precio de otro día, esta
+                es la única puerta a esa entrega — y lo que cambie pasa a lo
+                que el cliente debe, no se pierde.
+              */}
+              <button
+                onClick={() => abrir(e.id!)}
+                className="pulsable"
+                style={{
+                  marginTop: 11,
+                  paddingTop: 10,
+                  borderTop: "1px solid var(--linea)",
+                  width: "100%",
+                  minHeight: 52,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 7,
+                  color: "var(--acento-claro)",
+                  fontSize: 15,
+                  fontWeight: 600,
+                }}
+              >
+                <Pencil size={15} strokeWidth={2} />
+                Corregir esta entrega
+              </button>
             </div>
           );
         })}

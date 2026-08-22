@@ -118,4 +118,9 @@ export const CAMBIOS: Cambio[] = [
     texto:
       "Desde Cobranza ya puedes corregir una entrega sin salir de la vuelta: toca la línea de lo que le dejaste («5 pollos · 12.4 kg · 9.50/kg») y se abre para cambiar cantidades, peso, precio o total. También en las que ya cobraste, por si te diste cuenta tarde de que le sacaste la cuenta a menos. Al terminar vuelves a Cobranza, no a Hoy.",
   },
+  {
+    fecha: "2026-08-22",
+    texto:
+      "Ya puedes corregir una entrega de un día cerrado: Más → Historial → el día → «Corregir esta entrega». Y lo más importante, la diferencia ya no se pierde — si resulta que le cobraste de menos, lo que falta pasa a lo que te debe y te sale en Cobranza. Antes esos soles desaparecían sin avisar.",
+  },
 ];

@@ -523,6 +523,19 @@ Ver `src/db/db.ts`. Notas de implementación:
 - **Al cerrar el día, el saldo pendiente pasa a `deudas` y deja de contarse como saldo del
   día.** Si se contara en los dos sitios, el «por cobrar» enseñaría el doble. Por eso
   `resumenDe()` y `cuentasPendientes()` miran el estado de la jornada.
+- **Corregir una entrega de un día cerrado tiene que llegar hasta `deudas`, y por
+  diferencia.** Es el corolario del punto anterior: una vez cerrado, lo que falta por cobrar
+  ya no vive en la entrega, así que subir su `totalCalculado` no se lo cobra a nadie — la
+  plata se evaporaba. Lo arregla `ajustarDeudaTrasCorregir()` (`entregas.ts`), llamada desde
+  `editarEntrega`, `fijarTotal` y `borrarEntrega`.
+
+  **Va por diferencia y no por absoluto**, y eso es lo delicado: cobrar una deuda mueve
+  `deudas.saldado` pero **no toca la entrega**, así que el saldo de una entrega de un día
+  cerrado se queda congelado en lo que valía al cerrar. Igualar la deuda a ese saldo
+  congelado resucitaría una deuda ya pagada. Lo único cierto es que la corrección cambió la
+  cuenta en `delta`, y eso es lo que se suma a lo que debe. `monto` nunca baja de `saldado`:
+  si corrigió tan abajo que le cobró de más, la deuda se cierra y de ahí para abajo es plata
+  que le debe al cliente, no una deuda negativa.
 - **Cerrar dos veces no puede duplicar las deudas.** `cerrarDia()` sale sin hacer nada si
   la jornada ya está cerrada.
 

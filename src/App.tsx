@@ -588,7 +588,17 @@ export default function App() {
           }}
         />
       )}
-      {pantalla === "dia" && <Dia fecha={diaSel} volver={salir} />}
+      {pantalla === "dia" && (
+        <Dia
+          fecha={diaSel}
+          volver={salir}
+          abrir={(id) => {
+            setEntregaSel(id);
+            setOrigenDetalle("dia");
+            setPantalla("detalle");
+          }}
+        />
+      )}
       {pantalla === "ajustes" && <Ajustes volver={salir} />}
       {pantalla === "gastos" && <Gastos fecha={fecha} volver={salir} />}
       {pantalla === "menu" && <Menu ir={ir} />}

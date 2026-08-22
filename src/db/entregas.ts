@@ -118,13 +118,18 @@ export async function editarEntrega(
   const total =
     precioKg > 0 && peso > 0 ? Math.round((precioKg * peso) / 1000) : e.totalCalculado;
 
-  await db.entregas.update(id, {
-    ...cambios,
-    tandas,
-    peso,
-    precioKg,
-    totalCalculado: total,
-    estadoPago: estadoDe(total, e.totalCobrado + e.descuentoRedondeo),
+  await db.transaction("rw", db.entregas, db.deudas, db.jornadas, async () => {
+    await db.entregas.update(id, {
+      ...cambios,
+      tandas,
+      peso,
+      precioKg,
+      totalCalculado: total,
+      estadoPago: estadoDe(total, e.totalCobrado + e.descuentoRedondeo),
+    });
+    // Si el día ya está cerrado, lo que quedó por cobrar vive en `deudas`: la
+    // corrección tiene que llegar hasta ahí o la diferencia se pierde.
+    await ajustarDeudaTrasCorregir(e, saldoDe(e), total - e.totalCobrado - e.descuentoRedondeo);
   });
 
   /*
@@ -154,10 +159,14 @@ export async function fijarTotal(id: number, total: Centimos): Promise<void> {
   const e = await db.entregas.get(id);
   if (!e) return;
   const precioKg = e.peso > 0 ? Math.round((total * 1000) / e.peso) : e.precioKg;
-  await db.entregas.update(id, {
-    totalCalculado: Math.max(0, total),
-    precioKg,
-    estadoPago: estadoDe(Math.max(0, total), e.totalCobrado + e.descuentoRedondeo),
+  const nuevo = Math.max(0, total);
+  await db.transaction("rw", db.entregas, db.deudas, db.jornadas, async () => {
+    await db.entregas.update(id, {
+      totalCalculado: nuevo,
+      precioKg,
+      estadoPago: estadoDe(nuevo, e.totalCobrado + e.descuentoRedondeo),
+    });
+    await ajustarDeudaTrasCorregir(e, saldoDe(e), nuevo - e.totalCobrado - e.descuentoRedondeo);
   });
 
   // Poner el total a mano fija también el precio por kilo que salió: la
@@ -193,8 +202,102 @@ export async function agregarTanda(id: number, tanda: Gramos): Promise<void> {
   await editarEntrega(id, { tandas: [...base, tanda] });
 }
 
+/** Lo que le falta por pagar a una entrega. */
+export function saldoDe(e: Pick<Entrega, "totalCalculado" | "totalCobrado" | "descuentoRedondeo">) {
+  return e.totalCalculado - e.totalCobrado - e.descuentoRedondeo;
+}
+
+/**
+ * Ajusta la deuda de una entrega de un **día ya cerrado** cuando su total
+ * cambia al corregirla.
+ *
+ * Sin esto la plata se evaporaba: al cerrar el día, lo que quedó sin cobrar
+ * pasa a `deudas` y la entrega deja de contar como saldo del día (§8). Así que
+ * corregir después «le cobré a 7 y eran 8» subía el `totalCalculado` de la
+ * entrega y nadie se enteraba — ni nacía deuda, ni salía en Cobranza al día
+ * siguiente. Los soles de diferencia simplemente desaparecían.
+ *
+ * Va por **diferencia, no por absoluto**, y esto es lo delicado: cobrar una
+ * deuda mueve `deudas.saldado` pero **no toca la entrega** (ver
+ * `registrarCobro`), así que el saldo de una entrega de un día cerrado se
+ * queda congelado en lo que valía al cerrar. Igualar la deuda a ese saldo
+ * congelado resucitaría una deuda ya pagada. Lo que sí es cierto es que la
+ * corrección cambió la cuenta en `delta`, y eso es lo que se le suma a lo que
+ * debe.
+ *
+ * @param saldoAntes  lo que le faltaba a la entrega antes de corregirla
+ * @param saldoDespues lo que le falta ya corregida
+ */
+async function ajustarDeudaTrasCorregir(
+  e: Entrega,
+  saldoAntes: Centimos,
+  saldoDespues: Centimos,
+): Promise<void> {
+  const delta = saldoDespues - saldoAntes;
+  if (delta === 0) return;
+
+  const jornada = await db.jornadas.get(e.fecha);
+  // Día abierto: manda la propia entrega y Cobranza ya la lee de ahí. Crear
+  // una deuda ahora contaría la diferencia dos veces.
+  if (jornada?.estado !== "cerrada") return;
+
+  const suyas = (await db.deudas.where("tiendaId").equals(e.tiendaId).toArray()).filter(
+    (d) => d.entregaId === e.id && !d.cerrada,
+  );
+
+  if (suyas.length > 0) {
+    // Se reparte sobre las que tenga abiertas (normalmente una sola). `monto`
+    // nunca baja de lo ya saldado: si corrigió tanto hacia abajo que le cobró
+    // de más, la deuda se cierra y de ahí para abajo es plata que le debe al
+    // cliente, no una deuda negativa.
+    let resto = delta;
+    for (const d of suyas) {
+      if (resto === 0) break;
+      const nuevo = Math.max(d.saldado, d.monto + resto);
+      resto -= nuevo - d.monto;
+      await db.deudas.update(d.id!, { monto: nuevo, cerrada: nuevo <= d.saldado ? 1 : 0 });
+    }
+    return;
+  }
+
+  // No le quedaba deuda abierta —la pagó entera, o al cerrar no quedó nada— y
+  // ahora resulta que debía más.
+  if (delta <= 0) return;
+  /*
+   * Una diferencia por debajo de la moneda más chica no es una deuda: no hay
+   * con qué pagarla. Se perdona como descuento, igual que hace `cerrarDia`,
+   * en vez de dejar una migaja imposible de cobrar (§7 bis).
+   */
+  if (aCobrar(delta) === 0) {
+    const perdonado = e.descuentoRedondeo + delta;
+    await db.entregas.update(e.id!, {
+      descuentoRedondeo: perdonado,
+      estadoPago: estadoDe(e.totalCalculado, e.totalCobrado + perdonado),
+    });
+    return;
+  }
+  await db.deudas.add({
+    tiendaId: e.tiendaId,
+    entregaId: e.id ?? null,
+    fechaOrigen: e.fecha,
+    monto: delta,
+    saldado: 0,
+    cerrada: 0,
+    creada: Date.now(),
+  });
+}
+
 export async function borrarEntrega(id: number): Promise<void> {
-  await db.transaction("rw", db.entregas, db.pagos, async () => {
+  await db.transaction("rw", db.entregas, db.pagos, db.deudas, async () => {
+    const e = await db.entregas.get(id);
+    // Si era de un día cerrado, su deuda se va con ella: dejarla suelta le
+    // seguiría cobrando al cliente algo que ya no existe.
+    if (e) {
+      const suyas = (await db.deudas.where("tiendaId").equals(e.tiendaId).toArray()).filter(
+        (d) => d.entregaId === id && !d.cerrada,
+      );
+      for (const d of suyas) await db.deudas.update(d.id!, { cerrada: 1 });
+    }
     await db.pagos.where("entregaId").equals(id).delete();
     await db.entregas.delete(id);
   });

@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "./db";
 import {
   agregarTanda,
+  borrarEntrega,
   cuentasDelDia,
   cuentasPendientes,
   editarEntrega,
@@ -1038,5 +1039,108 @@ describe("cerrar el día", () => {
     expect(money(r.cobrado)).toBe("S/ 168.00");
     expect(money(r.porCobrarDelDia)).toBe("S/ 42.00");
     expect(r.tiendas).toBe(2);
+  });
+});
+
+describe("corregir una entrega de un día ya cerrado", () => {
+  /** Entrega 10 kg a 5.00/kg = S/ 50, y el día se cierra. */
+  async function jornadaCerrada(cobrado: number) {
+    await guardarStock(HOY, 100, 0, aCentimos(5));
+    const t = await crearTienda("Doña Elsa");
+    await registrarEntrega(
+      { tiendaId: t.id!, pollos: 5, tandas: [aGramos(10)], precioKg: aCentimos(5) },
+      ctx(1),
+      { fecha: HOY },
+    );
+    const e = (await db.entregas.where("fecha").equals(HOY).toArray())[0];
+    if (cobrado > 0) await registrarCobro(t.id!, aCentimos(cobrado), { fecha: HOY });
+    await cerrarDia(HOY, null, null);
+    return { t, e };
+  }
+
+  const debe = async (tiendaId: number) =>
+    (await db.deudas.where("tiendaId").equals(tiendaId).toArray())
+      .filter((d) => !d.cerrada)
+      .reduce((a, d) => a + (d.monto - d.saldado), 0);
+
+  /**
+   * El fallo: la plata se evaporaba. Al cerrar, lo que falta pasa a `deudas` y
+   * la entrega deja de contar como saldo del día; corregir después subía el
+   * total y nadie se enteraba.
+   */
+  it("le cobré de menos y ya lo había cobrado todo: la diferencia queda por cobrar", async () => {
+    const { t, e } = await jornadaCerrada(50);
+    expect(await debe(t.id!)).toBe(0);
+
+    // Eran 6.00/kg, no 5.00.
+    await editarEntrega(e.id!, { precioKg: aCentimos(6) });
+
+    expect(money(await debe(t.id!))).toBe("S/ 10.00");
+    const pend = await cuentasPendientes("2026-08-08");
+    expect(pend.find((c) => c.tienda.id === t.id)?.total).toBe(aCentimos(10));
+  });
+
+  it("corregir hacia arriba con la deuda a medio pagar suma la diferencia, sin resucitar lo pagado", async () => {
+    const { t, e } = await jornadaCerrada(20); // quedó debiendo 30
+    expect(money(await debe(t.id!))).toBe("S/ 30.00");
+    await registrarCobro(t.id!, aCentimos(30), { fecha: "2026-08-08" }); // salda la deuda
+    expect(await debe(t.id!)).toBe(0);
+
+    await editarEntrega(e.id!, { precioKg: aCentimos(6) }); // +10
+    // Solo los 10 nuevos: lo ya pagado no vuelve.
+    expect(money(await debe(t.id!))).toBe("S/ 10.00");
+  });
+
+  it("corregir hacia abajo reduce lo que debe", async () => {
+    const { t, e } = await jornadaCerrada(0); // debe los 50
+    expect(money(await debe(t.id!))).toBe("S/ 50.00");
+    await editarEntrega(e.id!, { precioKg: aCentimos(4) }); // 40
+    expect(money(await debe(t.id!))).toBe("S/ 40.00");
+  });
+
+  it("corregir tan abajo que le cobró de más no deja una deuda negativa", async () => {
+    const { t, e } = await jornadaCerrada(50);
+    await editarEntrega(e.id!, { precioKg: aCentimos(3) }); // 30, ya le pagó 50
+    expect(await debe(t.id!)).toBe(0);
+  });
+
+  it("una diferencia por debajo de la moneda se perdona, no crea una migaja", async () => {
+    const { t, e } = await jornadaCerrada(50);
+    await fijarTotal(e.id!, aCentimos(50.04));
+    expect(await debe(t.id!)).toBe(0);
+    const dsp = await db.entregas.get(e.id!);
+    expect(dsp!.descuentoRedondeo).toBe(aCentimos(0.04));
+  });
+
+  it("fijar el total a mano también llega a la deuda", async () => {
+    const { t, e } = await jornadaCerrada(50);
+    await fijarTotal(e.id!, aCentimos(75));
+    expect(money(await debe(t.id!))).toBe("S/ 25.00");
+  });
+
+  it("borrar la entrega se lleva su deuda: no se cobra algo que ya no existe", async () => {
+    const { t, e } = await jornadaCerrada(0);
+    expect(money(await debe(t.id!))).toBe("S/ 50.00");
+    await borrarEntrega(e.id!);
+    expect(await debe(t.id!)).toBe(0);
+  });
+
+  it("con el día abierto no toca deudas: la entrega ya es el saldo del día", async () => {
+    await guardarStock(HOY, 100, 0, aCentimos(5));
+    const t = await crearTienda("Rosa");
+    await registrarEntrega(
+      { tiendaId: t.id!, pollos: 5, tandas: [aGramos(10)], precioKg: aCentimos(5) },
+      ctx(1),
+      { fecha: HOY },
+    );
+    const e = (await db.entregas.where("fecha").equals(HOY).toArray())[0];
+    await registrarCobro(t.id!, aCentimos(50), { fecha: HOY });
+
+    await editarEntrega(e.id!, { precioKg: aCentimos(6) });
+
+    // Nada en `deudas`: lo lleva la propia entrega, y Cobranza lo lee de ahí.
+    expect(await db.deudas.count()).toBe(0);
+    const pend = await cuentasPendientes(HOY);
+    expect(pend.find((c) => c.tienda.id === t.id)?.total).toBe(aCentimos(10));
   });
 });

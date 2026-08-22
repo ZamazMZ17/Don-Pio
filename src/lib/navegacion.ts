@@ -59,18 +59,19 @@ export const PADRE: Record<Rama, Pantalla> = {
 /**
  * De qué lista se abrió el Detalle.
  *
- * Es el **único** destino que no es fijo, porque al Detalle se llega desde dos
- * sitios —la lista de Hoy y una tarjeta de Cobranza— y tiene que volver al que
- * lo abrió: salir a Hoy después de corregir una entrega desde Cobranza, en
- * plena vuelta cobrando, es perder el sitio.
+ * Es el **único** destino que no es fijo, porque al Detalle se llega desde tres
+ * sitios —la lista de Hoy, una tarjeta de Cobranza y una entrega de un día
+ * cerrado en el Historial— y tiene que volver al que lo abrió: salir a Hoy
+ * después de corregir una entrega desde Cobranza, en plena vuelta cobrando, es
+ * perder el sitio.
  *
  * Ojo con la diferencia respecto de la pila que se quitó: esto es **un solo
  * dato, puesto al abrir**, no un registro de por dónde se pasó. No lo alimenta
- * el retroceder, no crece, y los dos valores posibles son pestañas, así que no
- * puede formar un ciclo. Si algún día el Detalle se abre desde una tercera
- * pantalla, se agrega aquí y `atrasDesde` sigue siendo una función pura.
+ * el retroceder y no crece. `"dia"` no es pestaña, así que sí encadena un paso
+ * más (detalle → dia → historial → hoy), pero sigue siendo un camino que
+ * termina: `navegacion.test.ts` lo comprueba con cada origen.
  */
-export type OrigenDetalle = Extract<Pantalla, "hoy" | "cobranza">;
+export type OrigenDetalle = Extract<Pantalla, "hoy" | "cobranza" | "dia">;
 
 /**
  * A dónde va el atrás desde `p`. Desde una pestaña que no es Hoy, a Hoy;

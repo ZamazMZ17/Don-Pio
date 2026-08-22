@@ -93,6 +93,10 @@ describe("el Detalle vuelve a la lista que lo abrió", () => {
     expect(atrasDesde("detalle", "cobranza")).toBe("cobranza");
   });
 
+  it("abierto desde un día del Historial, sale a ese día", () => {
+    expect(atrasDesde("detalle", "dia")).toBe("dia");
+  });
+
   it("sin origen sabido vuelve a Hoy, como dice la tabla", () => {
     expect(atrasDesde("detalle")).toBe("hoy");
   });
@@ -105,7 +109,7 @@ describe("el Detalle vuelve a la lista que lo abrió", () => {
   });
 
   it("con cualquier origen se sigue llegando a Hoy sin ciclos", () => {
-    for (const origen of ["hoy", "cobranza"] as const) {
+    for (const origen of ["hoy", "cobranza", "dia"] as const) {
       const camino: Pantalla[] = [];
       let actual: Pantalla | null = "detalle";
       for (let i = 0; i < TODAS.length + 1 && actual !== null; i++) {
