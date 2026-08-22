@@ -256,6 +256,53 @@ describe("pollos partidos en pecho y pierna", () => {
     expect(r.restantePiernas).toBe(0);
     expect(r.restantePollos).toBe(117); // 120 - 3 partidos solo por la pierna
   });
+
+  /*
+   * El caso justo en la frontera, dictado por el dueño: los pechos que entrega
+   * **agrandan** el montón de piernas, y solo cuando ese montón ya agrandado se
+   * agota, la siguiente pierna empieza a dejar pechos libres. Es el punto donde
+   * las dos direcciones del despiece se tocan (`piernasDisponibles` en
+   * `resumenDe`), y ninguna de las dos pruebas de arriba lo cruza: una solo
+   * suma piernas al montón y la otra parte de un montón que nunca creció.
+   */
+  it("el pecho agranda el montón de piernas, y solo al agotarlo aparece un pecho libre", async () => {
+    await conStock(100, 10);
+    const t = await crearTienda("Rosa");
+
+    // Un pecho: gasta un pollo entero y deja una pierna suelta → 11 disponibles.
+    await registrarEntrega(
+      { tiendaId: t.id!, pollos: 0, pechos: 1, peso: aGramos(1.2), precioKg: aCentimos(9) },
+      ctx(1),
+      { fecha: HOY },
+    );
+    const conPecho = await resumenDe(HOY);
+    expect(conPecho.restantePiernas).toBe(11);
+    expect(conPecho.restantePollos).toBe(99);
+    expect(conPecho.pechosLibres).toBe(0);
+
+    // Se entregan esas 11 justas: el montón queda en cero, sin partir de más.
+    await registrarEntrega(
+      { tiendaId: t.id!, pollos: 0, piernas: 11, peso: aGramos(7.7), precioKg: aCentimos(9) },
+      ctx(2),
+      { fecha: HOY },
+    );
+    const justo = await resumenDe(HOY);
+    expect(justo.restantePiernas).toBe(0);
+    expect(justo.pechosLibres).toBe(0);
+    expect(justo.restantePollos).toBe(99);
+
+    // Y una pierna más, ya sin sueltas: solo pudo salir de partir otro pollo
+    // entero, y ese deja su pecho sin vender.
+    await registrarEntrega(
+      { tiendaId: t.id!, pollos: 0, piernas: 1, peso: aGramos(0.7), precioKg: aCentimos(9) },
+      ctx(3),
+      { fecha: HOY },
+    );
+    const cruzando = await resumenDe(HOY);
+    expect(cruzando.pechosLibres).toBe(1);
+    expect(cruzando.restantePiernas).toBe(0);
+    expect(cruzando.restantePollos).toBe(98);
+  });
 });
 
 describe("corregir a mano una entrega", () => {

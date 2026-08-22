@@ -10,14 +10,26 @@
  * `cuentasPendientes()` en entregas.ts): si alguna vez divergen, es una señal
  * fuerte de un bug real, no de que una de las dos esté "más actualizada".
  *
- * Así se encontraron y arreglaron tres bugs reales de plata perdida (ver
- * CLAUDE.md §7 bis): dos entregas sin precio el mismo día que se comían el
- * pago de la segunda, deshacer un cobro de un día ya cerrado que dejaba el
- * saldo atrapado sin que nadie lo viera, y borrar una entrega vieja que
- * podía recortarle el "cobrado" a un día completamente distinto y ya
- * cerrado. Esta simulación se deja corriendo (semilla fija, reproducible)
- * para que una regresión futura en cualquiera de esos caminos se note aquí
- * antes que en el teléfono.
+ * **Lo que esta simulación NO hizo, y conviene no olvidarlo:** no encontró
+ * ninguno de los tres bugs de plata perdida que se arreglaron junto con ella
+ * (ver CLAUDE.md §7 bis). Se comprobó a posteriori — corriéndola contra el
+ * código de antes del arreglo — y pasa con 0 anomalías. Los tres salieron de
+ * sondas dirigidas, escritas a mano tras leer el código y preguntarse «¿y si
+ * pasa esto?»; esta simulación llegó después.
+ *
+ * El motivo es instructivo: recorre mucho camino pero comprueba **poco** en
+ * cada punto. Los tres bugs dejaban la base en un estado que sus dos
+ * verificaciones no distinguen de uno sano — dinero que se queda atascado en
+ * una entrega sigue siendo un número no negativo y coherente consigo mismo, y
+ * `fichaDe()` y `cuentasPendientes()` **comparten** la misma fuente para lo
+ * cerrado (`deudas`), así que cuando el bug corrompe esa fuente las dos
+ * mienten igual y coinciden. Un cruce entre dos lectores del mismo dato solo
+ * caza discrepancias entre ellos, no un dato malo.
+ *
+ * Sirve igual y por eso se queda: es una red de regresión barata que ejercita
+ * caminos que ningún test unitario recorre juntos, y con semilla fija es
+ * reproducible. Pero para buscar bugs nuevos vale más una sonda dirigida que
+ * subir el número de días simulados.
  */
 import "fake-indexeddb/auto";
 import { beforeEach, describe, expect, it } from "vitest";

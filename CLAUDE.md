@@ -480,8 +480,12 @@ como sugerencia antes de tocar «Crear», igual que la lista de candidatas del d
   veces sin pesar el mismo día y luego se cobra todo junto. Arreglo: el resto se reparte entre
   **todas** las que faltan, a prorrata de pollos (o en partes iguales si son puras piernas/pechos
   sueltos, con 0 pollos); la última se lleva el resto exacto para que la suma nunca falle por
-  redondeo. Se encontró en una auditoría dirigida, no por un usuario — una sonda que reproducía
-  el escenario a propósito antes de tocar código.
+  redondeo. Se encontró con una **sonda dirigida**: leer el código, preguntarse «¿y si le deja
+  dos veces sin pesar el mismo día?» y escribir el caso a propósito. Conviene recordar cómo NO
+  se encontró: la simulación de dos meses (`db/simulacion.test.ts`) pasa con 0 anomalías contra
+  el código roto — comprobado a posteriori. Recorre mucho camino pero comprueba poco en cada
+  punto, y este bug deja la base en un estado que sus verificaciones no distinguen de uno sano.
+  Para buscar bugs nuevos vale más una sonda dirigida que simular más días.
 - **Deshacer un cobro de un día ya cerrado hacía desaparecer la plata.** `deshacerCobro()`
   restaba `totalCobrado` (y, si aplicaba, ponía `totalCalculado` en 0) directo sobre la
   entrega, pero **nunca llamaba a `ajustarDeudaTrasCorregir()`** — el mismo paso que
