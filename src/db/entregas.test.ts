@@ -79,6 +79,7 @@ describe("registrar una entrega", () => {
       fecha: HOY,
       stockPollos: 40,
       stockPiernas: 4,
+stockPechos: 0,
       precioBaseKg: aCentimos(8),
       horaCierre: "19:30",
       estado: "abierta",
@@ -125,11 +126,12 @@ describe("registrar una entrega", () => {
 
 describe("pollos partidos en pecho y pierna", () => {
   /** Una jornada con stock puesto, para poder mirar lo que queda. */
-  async function conStock(pollos: number, piernas: number) {
+  async function conStock(pollos: number, piernas: number, pechos = 0) {
     await db.jornadas.put({
       fecha: HOY,
       stockPollos: pollos,
       stockPiernas: piernas,
+      stockPechos: pechos,
       horaCierre: "19:30",
       estado: "abierta",
       cajaContada: null,
@@ -302,6 +304,65 @@ describe("pollos partidos en pecho y pierna", () => {
     expect(cruzando.pechosLibres).toBe(1);
     expect(cruzando.restantePiernas).toBe(0);
     expect(cruzando.restantePollos).toBe(98);
+  });
+});
+
+describe("pechos comprados sueltos (stockPechos)", () => {
+  async function conStock(pollos: number, piernas: number, pechos: number) {
+    await db.jornadas.put({
+      fecha: HOY,
+      stockPollos: pollos,
+      stockPiernas: piernas,
+      stockPechos: pechos,
+      horaCierre: "19:30",
+      estado: "abierta",
+      cajaContada: null,
+      cuadro: null,
+      creada: Date.now(),
+      cerradaEn: null,
+    });
+  }
+
+  it("entregar un pecho comprado suelto no toca el stock de pollos ni suma una pierna", async () => {
+    // Caso reportado por el dueño: le compró 2 pechos a otro repartidor
+    // porque le faltó mercadería. Entregar esos 2 no debería romper ningún
+    // pollo propio ni inflar el montón de piernas por vender.
+    await conStock(120, 18, 2);
+    const t = await crearTienda("Julieta");
+    await registrarEntrega(
+      { tiendaId: t.id!, pollos: 0, pechos: 2, peso: aGramos(4.49), precioKg: aCentimos(8) },
+      ctx(1),
+      { fecha: HOY },
+    );
+
+    const r = await resumenDe(HOY);
+    expect(r.restantePollos).toBe(120); // ningún pollo propio se partió
+    expect(r.restantePiernas).toBe(18); // el montón de piernas no se movió
+    expect(r.pechosLibres).toBe(0); // los 2 comprados ya se entregaron
+  });
+
+  it("entregar más pechos de los comprados sueltos rompe pollos propios por el resto", async () => {
+    // Compró 2 pechos sueltos pero entregó 5: los 3 de más solo pudieron
+    // salir de partir 3 pollos propios, y cada uno deja una pierna suelta.
+    await conStock(120, 18, 2);
+    const t = await crearTienda("Julieta");
+    await registrarEntrega(
+      { tiendaId: t.id!, pollos: 0, pechos: 5, peso: aGramos(9), precioKg: aCentimos(8) },
+      ctx(1),
+      { fecha: HOY },
+    );
+
+    const r = await resumenDe(HOY);
+    expect(r.restantePollos).toBe(117); // 120 - 3 partidos por el resto de pechos
+    expect(r.restantePiernas).toBe(21); // 18 + 3 piernas sueltas de esos partidos
+    expect(r.pechosLibres).toBe(0);
+  });
+
+  it("pechos comprados sueltos y sin entregar quedan como pechosLibres", async () => {
+    await conStock(120, 18, 5);
+    const r = await resumenDe(HOY);
+    expect(r.pechosLibres).toBe(5);
+    expect(r.restantePollos).toBe(120);
   });
 });
 
@@ -1063,6 +1124,7 @@ describe("cerrar el día", () => {
       fecha: HOY,
       stockPollos: 120,
       stockPiernas: 40,
+stockPechos: 0,
       horaCierre: "19:30",
       estado: "abierta",
       cajaContada: null,

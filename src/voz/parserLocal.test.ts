@@ -225,7 +225,16 @@ describe("las demás intenciones", () => {
     expect(i.intencion).toBe("cargar_stock");
     expect(i.stockPollos).toBe(120);
     expect(i.stockPiernas).toBe(40);
+    expect(i.stockPechos).toBe(null);
     expect(i.cliente).toBe("");
+  });
+
+  it("«Salgo con 120 pollos, 40 piernas y 5 pechos sueltos»", () => {
+    const i = interpretarLocal("Salgo con 120 pollos, 40 piernas y 5 pechos sueltos");
+    expect(i.intencion).toBe("cargar_stock");
+    expect(i.stockPollos).toBe(120);
+    expect(i.stockPiernas).toBe(40);
+    expect(i.stockPechos).toBe(5);
   });
 
   it("«¿Cuánto me debe la bodega Milagros?»", () => {

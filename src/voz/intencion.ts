@@ -41,6 +41,8 @@ export interface Intencion {
   /** Para cargar_stock. */
   stockPollos: number | null;
   stockPiernas: number | null;
+  /** Pechos comprados ya sueltos, aparte del pollo entero. */
+  stockPechos: number | null;
   notas: string;
 }
 
@@ -60,6 +62,7 @@ export function intencionVacia(): Intencion {
     pagoTodo: false,
     stockPollos: null,
     stockPiernas: null,
+    stockPechos: null,
     notas: "",
   };
 }
@@ -115,6 +118,7 @@ export function sanear(bruto: Partial<Intencion> & Record<string, unknown>): Int
     pagoTodo: bruto.pagoTodo === true,
     stockPollos: positivo(bruto.stockPollos),
     stockPiernas: positivo(bruto.stockPiernas),
+    stockPechos: positivo(bruto.stockPechos),
     notas: typeof bruto.notas === "string" ? bruto.notas.trim() : "",
   };
 }

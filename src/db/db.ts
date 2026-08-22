@@ -65,6 +65,13 @@ export interface Jornada {
   stockPollos: number;
   stockPiernas: number;
   /**
+   * Pechos que compró ya sueltos, aparte del pollo entero — típico cuando le
+   * faltó mercadería y le compró a otro repartidor. Se entregan sin tocar el
+   * stock de pollos ni sumar una pierna suelta, a diferencia de un pecho que
+   * sale de partir uno de sus propios pollos (ver `resumenDe` en `jornada.ts`).
+   */
+  stockPechos: number;
+  /**
    * El precio por kilo base del día, en céntimos. Se aplica a todas las
    * entregas por defecto; cada tienda lo ajusta con su `precioOffsetKg`. Hay
    * días que el precio sube o baja para todos, y aquí es donde se pone.
@@ -269,6 +276,19 @@ class BaseDonPio extends Dexie {
     this.version(4).stores({ gastos: "++id, fecha, creada" });
 
     this.version(5).stores({ informes: "clave" });
+
+    // `stockPechos` tampoco se indexa: la migración solo pone 0 en las
+    // jornadas guardadas antes de que existiera el campo.
+    this.version(6)
+      .stores({})
+      .upgrade((tx) =>
+        tx
+          .table<Jornada>("jornadas")
+          .toCollection()
+          .modify((j) => {
+            j.stockPechos = j.stockPechos ?? 0;
+          }),
+      );
   }
 }
 

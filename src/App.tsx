@@ -163,6 +163,8 @@ export default function App() {
           fecha,
           intencion.stockPollos ?? jornada?.stockPollos ?? 0,
           intencion.stockPiernas ?? jornada?.stockPiernas ?? 0,
+          undefined,
+          intencion.stockPechos ?? jornada?.stockPechos ?? 0,
         );
         avisoGuardado();
         setPantalla("hoy");

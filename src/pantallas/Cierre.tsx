@@ -137,20 +137,22 @@ export function Cierre({ fecha, volver }: { fecha: DiaISO; volver: () => void })
               <>
                 <b style={{ fontWeight: 700 }}>{resumen.repartidoPiernas}</b>{" "}
                 <span style={{ color: "var(--texto-4)", fontWeight: 400 }}>
-                  de {resumen.stockPiernas + resumen.repartidoPechos}
+                  de {resumen.piernasDisponibles}
                 </span>
               </>
             }
             tam={17}
           />
-          {resumen.repartidoPechos > 0 && (
+          {(resumen.stockPechos > 0 || resumen.repartidoPechos > 0) && (
             <Fila
               label="Pechos"
               valor={
                 <>
                   <b style={{ fontWeight: 700 }}>{resumen.repartidoPechos}</b>{" "}
                   <span style={{ color: "var(--texto-4)", fontWeight: 400 }}>
-                    pollos partidos
+                    {/* Sin pechos comprados, todo lo entregado salió de
+                        partir pollos propios — "de 0" leería raro. */}
+                    {resumen.stockPechos > 0 ? `de ${resumen.stockPechos}` : "pollos partidos"}
                   </span>
                 </>
               }
@@ -162,7 +164,7 @@ export function Cierre({ fecha, volver }: { fecha: DiaISO; volver: () => void })
               label={resumen.restantePollos < 0 ? "Te faltaron" : "Te sobraron"}
               valor={`${Math.abs(resumen.restantePollos)} pollos · ${Math.abs(
                 resumen.restantePiernas,
-              )} piernas`}
+              )} piernas${resumen.pechosLibres > 0 ? ` · ${resumen.pechosLibres} pechos` : ""}`}
               color="var(--ambar)"
               tam={17}
             />

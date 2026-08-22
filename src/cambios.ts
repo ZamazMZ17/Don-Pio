@@ -163,4 +163,9 @@ export const CAMBIOS: Cambio[] = [
     texto:
       "El «Cómo se usa» ahora trae un tour guiado de verdad: oscurece la app, te señala cada botón con un anillo que parpadea y te dice para qué sirve, pasando solo de pantalla en pantalla. Va sobre la app real, así que si todavía no tienes datos te explica igual qué va a salir en cada sitio.",
   },
+  {
+    fecha: "2026-08-22",
+    texto:
+      "«¿Con cuánto sales?» ahora tiene un campo aparte para los pechos que compraste ya sueltos, cuando te faltó mercadería y le compraste a otro repartidor. Antes, entregar esos pechos se contaba como si hubieras partido uno de tus propios pollos, y eso inflaba de más las piernas que te quedaban por vender.",
+  },
 ];

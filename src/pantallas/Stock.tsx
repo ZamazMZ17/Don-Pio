@@ -7,7 +7,7 @@ import { avisoGuardado } from "../lib/aviso";
 import { BotonPrincipal, S } from "../ui/base";
 import { Teclado } from "../ui/Teclado";
 
-type Campo = "pollos" | "piernas" | "precio";
+type Campo = "pollos" | "piernas" | "pechos" | "precio";
 
 /**
  * «¿Con cuánto sales hoy?». Es lo primero que se abre si la jornada empieza en
@@ -32,6 +32,13 @@ export function Stock({
 
   const [pollos, setPollos] = useState<string | null>(null);
   const [piernas, setPiernas] = useState("");
+  /**
+   * Pechos comprados ya sueltos, aparte del pollo entero — para cuando le
+   * faltó mercadería y le compró a otro repartidor. No es obligatorio: en un
+   * día normal se queda en 0 y el pecho que entrega sale de partir uno de
+   * sus propios pollos, como siempre (ver CLAUDE.md §7).
+   */
+  const [pechos, setPechos] = useState("");
   /** Precio base por kilo del día, en soles con decimales, tal como se teclea. */
   const [precio, setPrecio] = useState("");
   const [activo, setActivo] = useState<Campo>("pollos");
@@ -48,14 +55,30 @@ export function Stock({
     const base = jornada.precioBaseKg || baseSugerido || 0;
     setPollos(p ? String(p) : "");
     setPiernas(q ? String(q) : "");
+    // Sin sugerencia: comprar pechos sueltos es la excepción, no lo normal
+    // de cada día, así que no hay nada que adivinar.
+    setPechos(jornada.stockPechos ? String(jornada.stockPechos) : "");
     setPrecio(base ? (base / 100).toFixed(2) : "");
   }, [jornada, sugerencia, baseSugerido, pollos]);
 
   if (!jornada || pollos === null) return null;
 
-  const valor = activo === "pollos" ? pollos : activo === "piernas" ? piernas : precio;
+  const valor =
+    activo === "pollos"
+      ? pollos
+      : activo === "piernas"
+        ? piernas
+        : activo === "pechos"
+          ? pechos
+          : precio;
   const poner = (v: string) =>
-    activo === "pollos" ? setPollos(v) : activo === "piernas" ? setPiernas(v) : setPrecio(v);
+    activo === "pollos"
+      ? setPollos(v)
+      : activo === "piernas"
+        ? setPiernas(v)
+        : activo === "pechos"
+          ? setPechos(v)
+          : setPrecio(v);
 
   const teclear = (nuevo: string) => {
     // Al elegir un campo, el primer dígito borra lo que había: si no, teclear
@@ -80,7 +103,13 @@ export function Stock({
 
   const empezar = () => {
     const base = aCentimos(Number(precio.replace(",", ".")) || 0);
-    void guardarStock(fecha, Number(pollos) || 0, Number(piernas) || 0, base).then(() => {
+    void guardarStock(
+      fecha,
+      Number(pollos) || 0,
+      Number(piernas) || 0,
+      base,
+      Number(pechos) || 0,
+    ).then(() => {
       avisoGuardado();
       listo();
     });
@@ -139,6 +168,19 @@ export function Stock({
             onClick={() => elegir("piernas")}
           />
         </div>
+
+        {/*
+          Pechos que compró ya sueltos, aparte del pollo entero — para cuando
+          le faltó mercadería y le compró a otro repartidor. Aparte de Pollos
+          y Piernas porque es la excepción, no lo normal de cada día: en la
+          gran mayoría de jornadas se queda en 0 y no hace falta tocarlo.
+        */}
+        <Campo
+          rotulo="Pechos que compraste sueltos"
+          valor={pechos}
+          activo={activo === "pechos"}
+          onClick={() => elegir("pechos")}
+        />
 
         {/*
           El precio por kilo base del día: se aplica a todas las entregas, y

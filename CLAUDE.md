@@ -118,7 +118,7 @@ intérprete que lo dictado.
 | **Historial** | Días cerrados y la semana, con un botón para el informe de Gemini de esos 7 días |
 | **Detalle de día** | Un día cerrado, entrega por entrega, cada una con **Corregir esta entrega** — y lo que cambie llega hasta la deuda del cliente (§8) |
 | **Ajustes** | Apariencia (oscuro/claro/sistema), hora de cierre, redondeo, sonido, respaldo, la API key de Gemini (solo para informes) y **Actualización**: qué versión tiene puesta y el enlace para bajar la última |
-| **Cargar stock** | «¿Con cuánto sales hoy?», con la sugerencia aprendida por día de semana |
+| **Cargar stock** | «¿Con cuánto sales hoy?», con la sugerencia aprendida por día de semana. Un tercer campo, aparte, para los pechos que compró ya sueltos cuando le faltó mercadería (§7, `stockPechos`) |
 | **Menú** | Cuadrícula de 8 fichas, detrás de la pestaña «Más» |
 | **Cómo se usa** | Dos caminos al mismo sitio. Arriba, **el tour guiado** (`ui/Tour.tsx` + `src/tour.ts`): oscurece la app, recorta un botón **de verdad** con un anillo que parpadea, y va navegando solo de pantalla en pantalla. Debajo, la guía escrita paso a paso (`src/tutorial.ts`). **Hay que actualizar los dos cuando la app cambia**: un tutorial que describe una versión vieja enseña a buscar botones que ya no están |
 
@@ -225,6 +225,17 @@ como sugerencia antes de tocar «Crear», igual que la lista de candidatas del d
   de partir pollos enteros por la pierna. Cada una gasta un pollo más y deja un
   **pecho suelto** sin vender — `pechosLibres` en `resumenDe`, y se enseña en Hoy
   junto al resto de piernas.
+
+  **`stockPechos`: pechos que compra ya sueltos, aparte del pollo entero.** A veces le
+  falta mercadería y le compra a otro repartidor — piernas sueltas ya tenía dónde ponerlas
+  (`stockPiernas`), pero pechos sueltos no, y el modelo de arriba asumía que **todo** pecho
+  entregado salía de partir un pollo propio. Con `stockPechos` puesto, un pecho entregado
+  descuenta primero de ahí — sin tocar el stock de pollos ni sumar una pierna — y **solo**
+  el resto (`pechosDeRotura`, si entrega más de los que compró sueltos) sigue el camino de
+  siempre: rompe un pollo propio y suma una pierna. Con `stockPechos` en 0 (el caso de
+  siempre) el cálculo es exactamente el de antes. Se carga junto a Pollos y Piernas en
+  «¿Con cuánto sales?», como un campo aparte porque es la excepción, no lo normal de cada
+  día.
 
 ## 7 bis. Fallos que ya costaron una versión
 
@@ -562,6 +573,17 @@ como sugerencia antes de tocar «Crear», igual que la lista de candidatas del d
   cierra las que ya existían. El umbral mira el **saldo entero de la tienda**, no cada deuda
   suelta: tres migajas de 4 céntimos sí suman una moneda y esas se dejan en paz. Y en Detalle
   el aviso de deuda se enseña y se ofrece cobrar solo si `aCobrar()` da más de 0.
+- **El «me quedan» de piernas subía solo, sin que nadie las hubiera partido.** El dueño
+  reportó 2 piernas de sobra un día en que había entregado sus 18. La cuenta estaba bien
+  hecha, pero sobre un supuesto que no siempre es cierto: `resumenDe` asumía que **todo**
+  pecho entregado salía de partir un pollo propio, y ese día había entregado 2 pechos que
+  en realidad había comprado ya sueltos a otro repartidor porque le faltó mercadería —
+  partir 2 pollos para sacarlos sumó 2 piernas de más al montón que nunca tuvo delante.
+  El modelo no tenía dónde guardar «pechos que compré aparte», así que no había forma de
+  decírselo. Arreglo: `stockPechos` en `Jornada`, cargado junto a Pollos y Piernas en
+  «¿Con cuánto sales?» (§7). Con ese campo en 0 —el día normal— el cálculo es exactamente
+  el de antes; solo cuando compra pechos sueltos aparte, entregarlos deja de tocar el
+  stock de pollos y de inflar el montón de piernas.
 
 ---
 

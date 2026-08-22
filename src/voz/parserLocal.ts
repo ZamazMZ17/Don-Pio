@@ -252,6 +252,9 @@ export function interpretarLocal(transcripcion: string): Intencion {
       cliente: "",
       stockPollos: bruto.pollos || null,
       stockPiernas: bruto.piernas || null,
+      // Pechos que compró ya sueltos, aparte del pollo entero — no se
+      // descuentan del stock de pollos ni suman una pierna (CLAUDE.md §7).
+      stockPechos: bruto.pechos || null,
     });
   }
 

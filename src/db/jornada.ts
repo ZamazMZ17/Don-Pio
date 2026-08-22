@@ -18,6 +18,7 @@ export function jornadaVacia(fecha: DiaISO): Jornada {
     fecha,
     stockPollos: 0,
     stockPiernas: 0,
+    stockPechos: 0,
     horaCierre: HORA_CIERRE_DEFECTO,
     estado: "abierta",
     cajaContada: null,
@@ -45,6 +46,12 @@ export async function guardarStock(
   stockPiernas: number,
   /** El precio base por kilo del día. Si no se pasa, se conserva el que hubiera. */
   precioBaseKg?: Centimos,
+  /**
+   * Pechos comprados ya sueltos. Igual que `precioBaseKg`: si no se pasa, se
+   * conserva el que hubiera — así el camino de voz, que todavía no dicta
+   * pechos, no se los borra sin querer.
+   */
+  stockPechos?: number,
 ): Promise<void> {
   const actual = await leerJornada(fecha);
   await db.jornadas.put({
@@ -52,6 +59,7 @@ export async function guardarStock(
     stockPollos,
     stockPiernas,
     precioBaseKg: precioBaseKg ?? actual.precioBaseKg,
+    stockPechos: stockPechos ?? actual.stockPechos,
   });
 }
 
@@ -74,17 +82,20 @@ export async function sugerirPrecioBase(fecha: DiaISO): Promise<Centimos> {
 export interface ResumenDia {
   stockPollos: number;
   stockPiernas: number;
+  stockPechos: number;
   repartidoPollos: number;
   repartidoPiernas: number;
-  /** Pechos entregados = pollos que se partieron en dos. */
+  /** Pechos entregados, sin importar si salieron de partir un pollo o de los comprados sueltos. */
   repartidoPechos: number;
   restantePollos: number;
   restantePiernas: number;
+  /** Piernas sueltas por vender, para no repetir la cuenta en cada pantalla que lo necesita. */
+  piernasDisponibles: number;
   /**
-   * Pechos sueltos por vender: el reverso del despiece. Si entregó más
-   * piernas de las que tenía sueltas o le dejaron los pechos, esa diferencia
-   * solo pudo salir de partir pollos enteros por la pierna, y cada uno dejó
-   * un pecho sin dueño todavía.
+   * Pechos sueltos por vender: los comprados que aún no entregó, más el
+   * reverso del despiece. Si entregó más piernas de las que tenía sueltas,
+   * esa diferencia solo pudo salir de partir pollos enteros por la pierna, y
+   * cada uno dejó un pecho sin dueño todavía.
    */
   pechosLibres: number;
   cobrado: Centimos;
@@ -109,29 +120,36 @@ export async function resumenDe(fecha: DiaISO): Promise<ResumenDia> {
   const repartidoPechos = entregas.reduce((a, e) => a + (e.pechos ?? 0), 0);
 
   /*
-   * El despiece va en las dos direcciones:
+   * El despiece va en las dos direcciones, y hay una tercera fuente que no
+   * rompe nada: los pechos que compró ya sueltos (`stockPechos`), aparte del
+   * pollo entero — típico cuando le faltó mercadería y le compró a otro
+   * repartidor. Esos se entregan sin tocar el stock de pollos ni sumar una
+   * pierna suelta.
    *
-   * Cada pecho entregado salió de romper un pollo entero, así que se
-   * descuenta del stock de pollos igual que uno entero. Y ese mismo pollo
-   * dejó una pierna suelta, que se suma al montón de piernas por vender —
-   * las que compró aparte más las que va sacando en ruta.
+   * Solo cuando entrega más pechos de los que compró sueltos, el resto **sí**
+   * sale de romper un pollo entero: se descuenta del stock de pollos, y la
+   * pierna que sobró entra al montón de piernas por vender — las que compró
+   * aparte más las que va sacando en ruta.
    *
-   * Si aun así entregó más piernas de las que tenía sueltas, esas de más
+   * Si aun así entrega más piernas de las que tiene sueltas, esas de más
    * solo pudieron salir de partir pollos enteros por la pierna: cada una
    * gasta un pollo más y deja un pecho suelto, todavía sin vender.
    */
-  const piernasDisponibles = jornada.stockPiernas + repartidoPechos;
+  const pechosDeRotura = Math.max(0, repartidoPechos - jornada.stockPechos);
+  const piernasDisponibles = jornada.stockPiernas + pechosDeRotura;
   const roturasPorPierna = Math.max(0, repartidoPiernas - piernasDisponibles);
 
   return {
     stockPollos: jornada.stockPollos,
     stockPiernas: jornada.stockPiernas,
+    stockPechos: jornada.stockPechos,
     repartidoPollos,
     repartidoPiernas,
     repartidoPechos,
-    restantePollos: jornada.stockPollos - repartidoPollos - repartidoPechos - roturasPorPierna,
+    restantePollos: jornada.stockPollos - repartidoPollos - pechosDeRotura - roturasPorPierna,
     restantePiernas: Math.max(0, piernasDisponibles - repartidoPiernas),
-    pechosLibres: roturasPorPierna,
+    piernasDisponibles,
+    pechosLibres: Math.max(0, jornada.stockPechos - repartidoPechos) + roturasPorPierna,
     cobrado: entregas.reduce((a, e) => a + e.totalCobrado, 0),
     // Solo mientras el día está abierto. Al cerrarlo, lo que faltaba se
     // convirtió en deuda de la tienda; seguir contándolo aquí lo sumaría dos

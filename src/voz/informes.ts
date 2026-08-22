@@ -67,7 +67,7 @@ async function datosDelDia(fecha: DiaISO): Promise<string> {
 
   const lineas = [
     `Día: ${diaLargo(fecha)}.`,
-    `Salió con ${resumen.stockPollos} pollos${resumen.stockPiernas ? ` y ${resumen.stockPiernas} piernas` : ""}.`,
+    `Salió con ${resumen.stockPollos} pollos${resumen.stockPiernas ? ` y ${resumen.stockPiernas} piernas` : ""}${resumen.stockPechos ? `, y compró ${resumen.stockPechos} pechos sueltos aparte` : ""}.`,
     `Repartió ${resumen.repartidoPollos} pollos en ${resumen.entregas} entregas, a ${resumen.tiendas} tiendas.`,
     resumen.restantePollos !== 0
       ? `Le ${resumen.restantePollos > 0 ? "sobraron" : "faltaron"} ${Math.abs(resumen.restantePollos)} pollos contra lo que cargó.`
