@@ -169,31 +169,32 @@ export function Stock({
           />
         </div>
 
-        {/*
-          Pechos que compró ya sueltos, aparte del pollo entero — para cuando
-          le faltó mercadería y le compró a otro repartidor. Aparte de Pollos
-          y Piernas porque es la excepción, no lo normal de cada día: en la
-          gran mayoría de jornadas se queda en 0 y no hace falta tocarlo.
-        */}
-        <Campo
-          rotulo="Pechos que compraste sueltos"
-          valor={pechos}
-          activo={activo === "pechos"}
-          onClick={() => elegir("pechos")}
-        />
+        <div style={{ display: "flex", gap: 10 }}>
+          {/*
+            Pechos que compró ya sueltos, aparte del pollo entero — para
+            cuando le faltó mercadería y le compró a otro repartidor. En la
+            gran mayoría de jornadas se queda en 0 y no hace falta tocarlo.
+          */}
+          <Campo
+            rotulo="Pechos"
+            valor={pechos}
+            activo={activo === "pechos"}
+            onClick={() => elegir("pechos")}
+          />
 
-        {/*
-          El precio por kilo base del día: se aplica a todas las entregas, y
-          cada tienda le suma o resta su diferencia. Hay días que sube o baja
-          para todos, y aquí es donde se pone.
-        */}
-        <Campo
-          rotulo="Precio base · por kilo"
-          valor={precio}
-          prefijo="S/ "
-          activo={activo === "precio"}
-          onClick={() => elegir("precio")}
-        />
+          {/*
+            El precio por kilo base del día: se aplica a todas las entregas, y
+            cada tienda le suma o resta su diferencia. Hay días que sube o
+            baja para todos, y aquí es donde se pone.
+          */}
+          <Campo
+            rotulo="Precio · kilo"
+            valor={precio}
+            prefijo="S/ "
+            activo={activo === "precio"}
+            onClick={() => elegir("precio")}
+          />
+        </div>
 
         {/* Enteros para las cantidades; el precio sí lleva decimales. */}
         <Teclado valor={valor} onCambio={teclear} decimales={activo === "precio"} />
