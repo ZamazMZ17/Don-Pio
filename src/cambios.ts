@@ -113,4 +113,9 @@ export const CAMBIOS: Cambio[] = [
     texto:
       "El orden de la Ruta ahora mira las dos últimas semanas, no los dos últimos días. Un día raro —una tienda cerrada, un desvío— ya no te reordena la lista entera al día siguiente; para que la ruta cambie, el cambio tiene que repetirse.",
   },
+  {
+    fecha: "2026-08-22",
+    texto:
+      "Desde Cobranza ya puedes corregir una entrega sin salir de la vuelta: toca la línea de lo que le dejaste («5 pollos · 12.4 kg · 9.50/kg») y se abre para cambiar cantidades, peso, precio o total. También en las que ya cobraste, por si te diste cuenta tarde de que le sacaste la cuenta a menos. Al terminar vuelves a Cobranza, no a Hoy.",
+  },
 ];

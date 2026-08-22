@@ -54,11 +54,17 @@ import {
   type Propuesta,
 } from "./ui/Dictado";
 import { HojaNovedades, useNovedades } from "./ui/Novedades";
-import { atrasDesde, esRaiz, PADRE, type Pantalla } from "./lib/navegacion";
+import { atrasDesde, type OrigenDetalle, type Pantalla } from "./lib/navegacion";
 
 export default function App() {
   const [pantalla, setPantalla] = useState<Pantalla>("hoy");
   const [entregaSel, setEntregaSel] = useState<number | null>(null);
+  /**
+   * De qué lista se abrió el Detalle, para que el «volver» y el atrás de
+   * Android regresen ahí. Corregir una entrega desde Cobranza y aparecer en
+   * Hoy es perder el sitio en plena vuelta cobrando.
+   */
+  const [origenDetalle, setOrigenDetalle] = useState<OrigenDetalle>("hoy");
   const [diaSel, setDiaSel] = useState<DiaISO>(hoyISO());
   const [propuesta, setPropuesta] = useState<Propuesta | null>(null);
   const [pensando, setPensando] = useState(false);
@@ -450,9 +456,9 @@ export default function App() {
    * lleve su destino escrito a mano.
    */
   const salir = useCallback(() => {
-    setPantalla((actual) => (esRaiz(actual) ? actual : PADRE[actual]));
+    setPantalla((actual) => atrasDesde(actual, origenDetalle) ?? actual);
     limpiar();
-  }, [limpiar]);
+  }, [limpiar, origenDetalle]);
 
   /**
    * El botón atrás de Android. Cierra lo que haya abierto, de fuera hacia
@@ -486,7 +492,7 @@ export default function App() {
     // la tabla de `navegacion.ts`, la misma que usa su botón «volver», para
     // que los dos no puedan discrepar. `null` = ya está en Hoy, no queda nada
     // que cerrar y la app pasa a segundo plano.
-    const destino = atrasDesde(pantalla);
+    const destino = atrasDesde(pantalla, origenDetalle);
     if (destino === null) return false;
     setPantalla(destino);
     return true;
@@ -534,6 +540,7 @@ export default function App() {
           fecha={fecha}
           abrir={(id) => {
             setEntregaSel(id);
+            setOrigenDetalle("hoy");
             setPantalla("detalle");
           }}
           abrirStock={() => setPantalla("stock")}
@@ -541,7 +548,18 @@ export default function App() {
         />
       )}
       {pantalla === "cobranza" && (
-        <Cobranza fecha={fecha} onEditando={setCobroAbierto} registrarCierre={cerrarCobro} />
+        <Cobranza
+          fecha={fecha}
+          onEditando={setCobroAbierto}
+          registrarCierre={cerrarCobro}
+          // Corregir cantidades o precio sin salir de la vuelta: la misma
+          // pantalla de siempre, y al terminar vuelve aquí, no a Hoy.
+          abrir={(id) => {
+            setEntregaSel(id);
+            setOrigenDetalle("cobranza");
+            setPantalla("detalle");
+          }}
+        />
       )}
       {pantalla === "detalle" && entregaSel !== null && (
         <Detalle entregaId={entregaSel} volver={salir} />

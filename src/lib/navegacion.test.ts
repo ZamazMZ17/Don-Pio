@@ -78,9 +78,43 @@ describe("el atrás", () => {
   });
 
   it("no depende del orden ni de cuántas veces se llame: es una función pura", () => {
-    const antes = TODAS.map(atrasDesde);
+    const antes = TODAS.map((p) => atrasDesde(p));
     for (const p of [...TODAS].reverse()) caminoAtras(p);
-    expect(TODAS.map(atrasDesde)).toEqual(antes);
+    expect(TODAS.map((p) => atrasDesde(p))).toEqual(antes);
+  });
+});
+
+describe("el Detalle vuelve a la lista que lo abrió", () => {
+  it("abierto desde Hoy, sale a Hoy", () => {
+    expect(atrasDesde("detalle", "hoy")).toBe("hoy");
+  });
+
+  it("abierto desde Cobranza, sale a Cobranza — no pierde el sitio de la vuelta", () => {
+    expect(atrasDesde("detalle", "cobranza")).toBe("cobranza");
+  });
+
+  it("sin origen sabido vuelve a Hoy, como dice la tabla", () => {
+    expect(atrasDesde("detalle")).toBe("hoy");
+  });
+
+  it("el origen no afecta a ninguna otra pantalla", () => {
+    for (const p of TODAS) {
+      if (p === "detalle") continue;
+      expect(atrasDesde(p, "cobranza")).toBe(atrasDesde(p));
+    }
+  });
+
+  it("con cualquier origen se sigue llegando a Hoy sin ciclos", () => {
+    for (const origen of ["hoy", "cobranza"] as const) {
+      const camino: Pantalla[] = [];
+      let actual: Pantalla | null = "detalle";
+      for (let i = 0; i < TODAS.length + 1 && actual !== null; i++) {
+        actual = atrasDesde(actual, origen);
+        if (actual) camino.push(actual);
+      }
+      expect(camino.at(-1)).toBe("hoy");
+      expect(new Set(camino).size).toBe(camino.length);
+    }
   });
 });
 

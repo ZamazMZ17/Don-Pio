@@ -7,8 +7,9 @@ import {
   type ReactNode,
 } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { Search, X } from "lucide-react";
+import { Pencil, Search, X } from "lucide-react";
 import { cuentasDelDia, cuentasPendientes, registrarCobro } from "../db/entregas";
+import type { Entrega } from "../db/db";
 import { descripcionEntrega, repartirPago, TOPE_REDONDEO } from "../dominio/calculo";
 import { aCentimos, money } from "../lib/dinero";
 import { diaCorto, horaTxt, type DiaISO } from "../lib/fecha";
@@ -29,12 +30,19 @@ export function Cobranza({
   fecha,
   onEditando,
   registrarCierre,
+  abrir,
 }: {
   fecha: DiaISO;
   /** Avisa arriba de que hay un teclado abierto, para esconder los flotantes. */
   onEditando: (abierto: boolean) => void;
   /** Deja aquí cómo cerrar el cobro, para que el botón atrás pueda hacerlo. */
   registrarCierre: MutableRefObject<(() => void) | null>;
+  /**
+   * Abre el Detalle de una entrega para corregirla — cantidades, peso, precio
+   * o total. Cobrando de vuelta es cuando salta que la cuenta salió mal, y
+   * hasta ahora había que buscarla en Hoy para arreglarla.
+   */
+  abrir: (entregaId: number) => void;
 }) {
   const [abierta, setAbierta] = useState<number | null>(null);
   const [monto, setMonto] = useState("");
@@ -476,16 +484,33 @@ export function Cobranza({
             }
             // Ya cobrada: entregó y/o cobró algo, y no queda nada por cobrar.
             // Se queda en su sitio marcada, en vez de desaparecer.
+            /*
+              Ya cobrada, pero **tocable**: este es justo el caso de «le cobré
+              y recién me di cuenta de que le saqué la cuenta a menos». Abre
+              su entrega más reciente, igual que hace Hoy Ruta con una tienda
+              ya entregada. Si solo hubo cobro y ninguna entrega no hay nada
+              que corregir, y se queda como estaba.
+            */
+            const ultima = c.entregas.reduce<Entrega | null>(
+              (mejor, e) => (!mejor || e.orden > mejor.orden ? e : mejor),
+              null,
+            );
+            const Marco = ultima ? "button" : "div";
             return (
-              <div
+              <Marco
                 key={c.tienda.id}
+                {...(ultima
+                  ? { onClick: () => abrir(ultima.id!), className: "pulsable" }
+                  : {})}
                 style={{
                   ...S.tarjeta,
                   padding: "13px 14px",
+                  width: "100%",
+                  textAlign: "left",
                   display: "flex",
                   gap: 14,
                   alignItems: "center",
-                  opacity: 0.62,
+                  opacity: ultima ? 0.72 : 0.62,
                 }}
               >
                 <div
@@ -502,16 +527,31 @@ export function Cobranza({
                     {c.tienda.nombre}
                   </div>
                   <div style={{ fontSize: 13, color: "var(--texto-3)", marginTop: 2 }}>
-                    {c.entregas.length > 0 ? descripcionEntrega(c.entregas[0]) : "solo cobro"}
+                    {ultima ? descripcionEntrega(ultima) : "solo cobro"}
                   </div>
                 </div>
                 <div style={{ textAlign: "right", flex: "none" }}>
                   <div style={{ fontSize: 17, fontWeight: 600, lineHeight: 1.2 }}>
                     {money(c.cobradoHoy)}
                   </div>
-                  <div style={{ fontSize: 12, marginTop: 2, color: "var(--verde)" }}>cobrado</div>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      marginTop: 2,
+                      color: "var(--verde)",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 4,
+                      justifyContent: "flex-end",
+                    }}
+                  >
+                    cobrado
+                    {ultima && (
+                      <Pencil size={12} strokeWidth={2} color="var(--acento-claro)" />
+                    )}
+                  </div>
                 </div>
-              </div>
+              </Marco>
             );
           }
 
@@ -554,10 +594,21 @@ export function Cobranza({
                 )}
               </div>
 
-              {descHoy && (
-                <div style={{ fontSize: 13, color: "var(--texto-3)", marginTop: -3, marginBottom: 8 }}>
-                  {descHoy}
-                </div>
+              {/*
+                Antes era texto muerto («5 pollos · 12.4 kg · 9.50/kg»). Ahora
+                cada entrega se toca y se corrige, que es lo que hace falta
+                cuando al cobrar salta que la cuenta no cuadra.
+              */}
+              {pendientesHoy.length > 0 ? (
+                <EntregasCorregibles entregas={pendientesHoy} abrir={abrir} />
+              ) : (
+                descHoy && (
+                  <div
+                    style={{ fontSize: 13, color: "var(--texto-3)", marginTop: -3, marginBottom: 8 }}
+                  >
+                    {descHoy}
+                  </div>
+                )
               )}
 
               {c.delDia > 0 && (
@@ -938,6 +989,54 @@ function Linea({ label, valor, color }: { label: string; valor: string; color: s
     <div style={{ display: "flex", justifyContent: "space-between", gap: 10, fontSize: 15 }}>
       <span style={{ color: "var(--texto-3)" }}>{label}</span>
       <span style={{ fontWeight: 600, color }}>{valor}</span>
+    </div>
+  );
+}
+
+/**
+ * Las entregas de hoy de una tienda, una por fila y cada una tocable para
+ * corregirla en el Detalle.
+ *
+ * Cobrando de vuelta es justo cuando salta que la cuenta salió mal —le sacó
+ * la cuenta a menos kilaje, o al precio de otro día—, y hasta ahora desde
+ * aquí no había forma de arreglarlo: había que acordarse de buscar la tienda
+ * en Hoy. Ahora se toca la fila y se corrige sin salir de la vuelta.
+ *
+ * `minHeight: 52` con margen negativo, como el botón de orden: el área que se
+ * toca cumple el mínimo de §4 sin engordar la tarjeta (CLAUDE.md §7 bis — un
+ * botón por debajo de 52px se ve bien en el navegador y el dedo no lo acierta).
+ */
+function EntregasCorregibles({
+  entregas,
+  abrir,
+}: {
+  entregas: Entrega[];
+  abrir: (entregaId: number) => void;
+}) {
+  if (entregas.length === 0) return null;
+  return (
+    <div style={{ marginTop: -3, marginBottom: 8 }}>
+      {entregas.map((e) => (
+        <button
+          key={e.id}
+          onClick={() => abrir(e.id!)}
+          className="pulsable"
+          style={{
+            width: "100%",
+            minHeight: 52,
+            margin: "-8px 0",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            textAlign: "left",
+            color: "var(--texto-3)",
+            fontSize: 13,
+          }}
+        >
+          <span style={{ flex: 1, minWidth: 0 }}>{descripcionEntrega(e)}</span>
+          <Pencil size={14} strokeWidth={2} color="var(--acento-claro)" style={{ flexShrink: 0 }} />
+        </button>
+      ))}
     </div>
   );
 }
