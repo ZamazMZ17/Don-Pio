@@ -103,4 +103,9 @@ export const CAMBIOS: Cambio[] = [
     texto:
       "Corregido: después de un día de reparto, salir de Historial o de un día cerrado te abría a editar una entrega cualquiera en vez de volver a Hoy. El atrás ya no se acuerda de por dónde pasaste — cada pantalla sale siempre al mismo sitio.",
   },
+  {
+    fecha: "2026-08-22",
+    texto:
+      "Hoy ya no trae el interruptor Agenda / Ruta: va directo a la Ruta, que es como repartes, y esa fila de arriba se la queda la lista. Si alguna vez quieres la Agenda de vuelta, se enciende y se apaga en Ajustes → «Ver la Agenda en Hoy».",
+  },
 ];

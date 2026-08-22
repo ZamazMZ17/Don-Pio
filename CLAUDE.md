@@ -109,7 +109,7 @@ intérprete que lo dictado.
 
 | Pantalla | Para qué |
 |---|---|
-| **Hoy** | Encabezado con las cuatro cifras (salí con → me quedan · cobrado · por cobrar) y, con un interruptor **Agenda / Ruta**: *Agenda* es la lista de lo ya hecho hoy, tipo agenda, con punto de color por estado; *Ruta* es **todos** los clientes en orden de ruta para ir tocando de uno en uno: al que aún no se le entregó abre la tarjeta de confirmación del dictado para registrar; al que **ya** se le entregó abre su **Detalle** para editar cantidades y precio (el precio por kilo casi siempre varía), igual que tocar su fila en Agenda. Con un **+** en lugar del micrófono para dar de alta a alguien que no está en el directorio |
+| **Hoy** | Encabezado con las cuatro cifras (salí con → me quedan · cobrado · por cobrar) y la lista. Por defecto **solo Ruta**, sin interruptor: reparte tocando la Ruta y casi no usaba la Agenda, así que esa fila se la queda la lista. El interruptor **Agenda / Ruta** se enciende y se apaga en Ajustes (`CLAVE_VER_AGENDA`, ver §5 bis). *Agenda* es la lista de lo ya hecho hoy, tipo agenda, con punto de color por estado; *Ruta* es **todos** los clientes en orden de ruta para ir tocando de uno en uno: al que aún no se le entregó abre la tarjeta de confirmación del dictado para registrar; al que **ya** se le entregó abre su **Detalle** para editar cantidades y precio (el precio por kilo casi siempre varía), igual que tocar su fila en Agenda. Con un **+** en lugar del micrófono para dar de alta a alguien que no está en el directorio |
 | **Detalle de entrega** | Cantidades con +/−, tandas de peso que se suman solas, precio por kilo, total en grande, pago y saldo, y la deuda anterior arriba |
 | **Cobranza** | El modo del retorno: solo tiendas con saldo, con la cuenta ya sacada (día + deuda). Ordenada **del último al primero** por defecto: reparte de ida y cobra de vuelta, así que la última tienda a la que dejó es la primera que reencuentra. Las que ya **abonaron una parte** (pago parcial, `tocada`) se hunden al final con una etiqueta «ya abonó», para que no estorben arriba y suba la siguiente por cobrar del todo |
 | **Cierre del día** | «Deberías tener S/ X en la caja» para cuadrar contra la plata física. Ya cerrado, un botón pide a Gemini el informe del día |
@@ -119,6 +119,20 @@ intérprete que lo dictado.
 | **Ajustes** | Apariencia (oscuro/claro/sistema), hora de cierre, redondeo, sonido, respaldo, la API key de Gemini (solo para informes) y **Actualización**: qué versión tiene puesta y el enlace para bajar la última |
 | **Cargar stock** | «¿Con cuánto sales hoy?», con la sugerencia aprendida por día de semana |
 | **Menú** | Cuadrícula de 7 fichas, detrás de la pestaña «Más» |
+
+**5 bis. Vistas que se pueden esconder.** La Agenda de Hoy se enseña solo si él lo pide
+(`CLAVE_VER_AGENDA`, apagado por defecto). Dos reglas para cualquier vista que se esconda
+así:
+
+- **Esconder no borra.** `CLAVE_MODO_HOY` se conserva intacto, así que al volver a
+  encenderla desde Ajustes reaparece donde la dejó.
+- **El modo efectivo se calcula en un solo sitio** (`modoHoyEfectivo()` en `voz/ajustes.ts`),
+  y lo leen **los dos** lados, `Hoy.tsx` y `App.tsx`. Importa por dos motivos. Uno: sin el
+  interruptor a la vista no hay forma de salir de la vista escondida, así que el modo
+  guardado no puede mandar — quien dejó Hoy en «agenda» antes de la actualización se
+  quedaría atrapado en una vista sin botones para cambiarla. Dos: App decide con ese mismo
+  modo si el flotante es el micrófono o el «+», así que si cada lado lo dedujera por su
+  cuenta acabaría el micrófono de la Agenda encima de una lista de Ruta.
 
 **Novedades.** Al abrir la app tras instalar una actualización, una hoja (`ui/Novedades.tsx`,
 `useNovedades()`) le enseña qué cambió desde la última vez, tomado de `src/cambios.ts`. Se

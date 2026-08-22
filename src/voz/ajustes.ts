@@ -14,9 +14,33 @@ export const CLAVE_ORDEN = "ordenLista";
 /**
  * Cómo se ve la pantalla Hoy: "agenda" (lo ya hecho, como siempre) o "ruta"
  * (todos los clientes en orden de ruta, para ir tocando y registrando de uno
- * en uno). Por defecto "agenda": es la vista de siempre.
+ * en uno). Solo se usa cuando la Agenda está a la vista (`CLAVE_VER_AGENDA`);
+ * si no, Hoy es siempre Ruta — ver `modoHoyEfectivo()`.
  */
 export const CLAVE_MODO_HOY = "modoHoy";
+/**
+ * Si el interruptor Agenda / Ruta se enseña en Hoy. **Apagado por defecto**:
+ * pedido del dueño, que reparte tocando la Ruta y casi no usaba la Agenda, así
+ * que el interruptor solo le ocupaba sitio arriba.
+ *
+ * Apagarlo no borra nada: la vista sigue ahí y `CLAVE_MODO_HOY` se conserva,
+ * así que al volver a encenderlo desde Ajustes reaparece donde la dejó.
+ */
+export const CLAVE_VER_AGENDA = "verAgenda";
+
+/**
+ * Cómo se ve Hoy de verdad. Con la Agenda escondida no hay forma de salir de
+ * Ruta —el interruptor no está—, así que el modo guardado no manda: si se
+ * respetara, alguien que dejó Hoy en "agenda" antes de la actualización se
+ * quedaría en una vista sin manera de cambiarla.
+ *
+ * Lo miran **los dos** lados, Hoy y App: si cada uno lo dedujera por su cuenta,
+ * App podría enseñar el micrófono de la Agenda sobre una lista de Ruta.
+ */
+export function modoHoyEfectivo(modo: string, verAgenda: boolean): "agenda" | "ruta" {
+  if (!verAgenda) return "ruta";
+  return modo === "agenda" ? "agenda" : "ruta";
+}
 /**
  * Cómo se ordena la cobranza. Por defecto `retorno`: **del último al primero**,
  * porque reparte de ida y cobra de vuelta, así que la última tienda a la que le

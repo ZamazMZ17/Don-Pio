@@ -17,9 +17,11 @@ import {
   CLAVE_MODO_TECLADO,
   CLAVE_SONIDO,
   CLAVE_STOCK_OFRECIDO,
+  CLAVE_VER_AGENDA,
   HORA_TOPE_STOCK,
   guardarAjuste,
   leerAjuste,
+  modoHoyEfectivo,
 } from "./voz/ajustes";
 import {
   descartarDictado,
@@ -75,8 +77,15 @@ export default function App() {
   // el teléfono, así que nada queda esperando señal.
   useTema();
   const sonido = useAjusteBool(CLAVE_SONIDO, true);
-  /** "agenda" (lo ya hecho) o "ruta" (todos los clientes para ir tocando). */
-  const modoHoy = useAjuste(CLAVE_MODO_HOY, "agenda");
+  /**
+   * "agenda" (lo ya hecho) o "ruta" (todos los clientes para ir tocando). Sale
+   * de `modoHoyEfectivo`, el mismo que usa Hoy: si aquí se dedujera aparte,
+   * App podría poner el micrófono de la Agenda encima de una lista de Ruta.
+   */
+  const modoHoy = modoHoyEfectivo(
+    useAjuste(CLAVE_MODO_HOY, "agenda"),
+    useAjusteBool(CLAVE_VER_AGENDA),
+  );
 
   // Las dos juntas en una consulta para que resuelvan a la vez: si el ajuste
   // llegara después, la pantalla de stock alcanzaría a saltar igualmente.

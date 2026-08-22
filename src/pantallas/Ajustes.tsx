@@ -13,6 +13,7 @@ import {
   CLAVE_SONIDO,
   CLAVE_STOCK_DEFECTO,
   CLAVE_TEMA,
+  CLAVE_VER_AGENDA,
   MODELO_POR_DEFECTO,
   guardarAjuste,
 } from "../voz/ajustes";
@@ -34,6 +35,7 @@ export function Ajustes({ volver }: { volver: () => void }) {
   const modoTeclado = useAjusteBool(CLAVE_MODO_TECLADO, true);
   const redondeo = useAjusteBool(CLAVE_REDONDEO);
   const sonido = useAjusteBool(CLAVE_SONIDO, true);
+  const verAgenda = useAjusteBool(CLAVE_VER_AGENDA);
   const tema = useAjuste(CLAVE_TEMA, "claro") as Tema;
 
   const tiendas = useLiveQuery(() => db.tiendas.count(), []) ?? 0;
@@ -237,6 +239,12 @@ export function Ajustes({ volver }: { volver: () => void }) {
           tipo="number"
         />
 
+        <Interruptor
+          label="Ver la Agenda en Hoy"
+          sub="Pone arriba el interruptor Agenda / Ruta, con la lista de lo que ya entregaste. Apagado, Hoy es solo la Ruta."
+          activo={verAgenda}
+          onCambio={(v) => void guardarAjuste(CLAVE_VER_AGENDA, v ? "1" : "0")}
+        />
         <Interruptor
           label="Dictar con el teclado"
           sub="Abre el cuadro de escribir y usas el micrófono de tu teclado. Es gratis y no gasta la cuota de Gemini."

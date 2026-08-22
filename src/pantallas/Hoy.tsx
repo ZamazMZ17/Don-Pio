@@ -7,9 +7,15 @@ import { descripcionEntrega, estadoDe, COLOR_ESTADO, TEXTO_ESTADO } from "../dom
 import { mediana } from "../tiendas/emparejar";
 import { diaCorto, diaLargo, horaTxt, type DiaISO } from "../lib/fecha";
 import { aCobrar, money } from "../lib/dinero";
-import { useAjuste, useHolguraMic } from "../lib/ganchos";
+import { useAjuste, useAjusteBool, useHolguraMic } from "../lib/ganchos";
 import { Plus } from "lucide-react";
-import { guardarAjuste, CLAVE_ORDEN, CLAVE_MODO_HOY } from "../voz/ajustes";
+import {
+  guardarAjuste,
+  modoHoyEfectivo,
+  CLAVE_ORDEN,
+  CLAVE_MODO_HOY,
+  CLAVE_VER_AGENDA,
+} from "../voz/ajustes";
 import { S, Vacio } from "../ui/base";
 // Importado como módulo, no referenciado por ruta absoluta: es el único
 // sitio de la app que pinta una imagen suelta, y `/icono-192.png` a pelo no
@@ -47,7 +53,11 @@ export function Hoy({
   registrarEnTienda: (tienda: Tienda) => void;
 }) {
   const orden = useAjuste(CLAVE_ORDEN, "ruta");
-  const modo = useAjuste(CLAVE_MODO_HOY, "agenda");
+  // Con la Agenda escondida —lo normal— no se enseña el interruptor y Hoy es
+  // siempre Ruta, aunque quede un "agenda" guardado de antes: si no, se
+  // quedaría en una vista sin manera de salir.
+  const verAgenda = useAjusteBool(CLAVE_VER_AGENDA);
+  const modo = modoHoyEfectivo(useAjuste(CLAVE_MODO_HOY, "agenda"), verAgenda);
 
   const datos = useLiveQuery(async () => {
     const [resumen, entregas, tiendas, deudas, jornada] = await Promise.all([
@@ -339,15 +349,27 @@ export function Hoy({
       {/*
         Agenda (lo ya hecho) o Ruta (todos los clientes, para ir tocando). Fija
         arriba, siempre visible: no se va con el scroll de la lista.
+
+        Escondido salvo que lo pida desde Ajustes: reparte tocando la Ruta y
+        casi no usaba la Agenda, así que el interruptor solo le quitaba sitio
+        a la lista.
       */}
-      <div style={{ flex: "none", padding: "10px 18px 2px", display: "flex", gap: 8 }}>
-        <ModoBtn activo={modo === "agenda"} onClick={() => void guardarAjuste(CLAVE_MODO_HOY, "agenda")}>
-          Agenda
-        </ModoBtn>
-        <ModoBtn activo={modo === "ruta"} onClick={() => void guardarAjuste(CLAVE_MODO_HOY, "ruta")}>
-          Ruta
-        </ModoBtn>
-      </div>
+      {verAgenda && (
+        <div style={{ flex: "none", padding: "10px 18px 2px", display: "flex", gap: 8 }}>
+          <ModoBtn
+            activo={modo === "agenda"}
+            onClick={() => void guardarAjuste(CLAVE_MODO_HOY, "agenda")}
+          >
+            Agenda
+          </ModoBtn>
+          <ModoBtn
+            activo={modo === "ruta"}
+            onClick={() => void guardarAjuste(CLAVE_MODO_HOY, "ruta")}
+          >
+            Ruta
+          </ModoBtn>
+        </div>
+      )}
 
       {/* Lista tipo agenda */}
       <div
