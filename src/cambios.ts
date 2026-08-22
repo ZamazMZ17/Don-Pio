@@ -108,4 +108,9 @@ export const CAMBIOS: Cambio[] = [
     texto:
       "Hoy ya no trae el interruptor Agenda / Ruta: va directo a la Ruta, que es como repartes, y esa fila de arriba se la queda la lista. Si alguna vez quieres la Agenda de vuelta, se enciende y se apaga en Ajustes → «Ver la Agenda en Hoy».",
   },
+  {
+    fecha: "2026-08-22",
+    texto:
+      "El orden de la Ruta ahora mira las dos últimas semanas, no los dos últimos días. Un día raro —una tienda cerrada, un desvío— ya no te reordena la lista entera al día siguiente; para que la ruta cambie, el cambio tiene que repetirse.",
+  },
 ];

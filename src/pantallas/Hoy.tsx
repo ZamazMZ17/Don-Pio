@@ -5,6 +5,7 @@ import { leerJornada, resumenDe } from "../db/jornada";
 import { deudasPorTienda } from "../db/tiendas";
 import { descripcionEntrega, estadoDe, COLOR_ESTADO, TEXTO_ESTADO } from "../dominio/calculo";
 import { mediana } from "../tiendas/emparejar";
+import { paradaDe } from "../tiendas/ruta";
 import { diaCorto, diaLargo, horaTxt, type DiaISO } from "../lib/fecha";
 import { aCobrar, money } from "../lib/dinero";
 import { useAjuste, useAjusteBool, useHolguraMic } from "../lib/ganchos";
@@ -650,20 +651,13 @@ function RutaLista({
     if (!prev || e.orden > prev.orden) ultimaDe.set(e.tiendaId, e);
   }
 
-  // El orden lo mandan los **días recientes**, no el promedio de todo el
-  // historial: si la ruta cambió, tiene que notarse ya. Se toma la parada
-  // media de las dos últimas veces que pasó por cada tienda; las que aún no
-  // tienen parada quedan al final. Ya entregada hoy, su parada de hoy es la
-  // que vale, para que la lista siga el recorrido real del día.
-  const sinRuta = 99999;
-  const paradaDe = (t: Tienda): number => {
-    const hoy = ultimaDe.get(t.id!);
-    if (hoy) return hoy.orden;
-    const recientes = t.posiciones.slice(-2);
-    if (recientes.length > 0) return recientes.reduce((a, b) => a + b, 0) / recientes.length;
-    return t.ordenRuta > 0 ? t.ordenRuta : sinRuta;
-  };
-  const orden = [...tiendas].sort((a, b) => paradaDe(a) - paradaDe(b));
+  // El orden lo mandan las **visitas recientes** (las dos últimas semanas), no
+  // el promedio de todo el historial: si la ruta cambió, tiene que notarse.
+  // Ya entregada hoy, su parada de hoy es la que vale, para que la lista siga
+  // el recorrido real del día. Ver `tiendas/ruta.ts`.
+  const orden = [...tiendas].sort(
+    (a, b) => paradaDe(a, ultimaDe.get(a.id!)?.orden) - paradaDe(b, ultimaDe.get(b.id!)?.orden),
+  );
 
   if (tiendas.length === 0) {
     return (

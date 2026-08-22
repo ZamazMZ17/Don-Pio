@@ -5,6 +5,7 @@ import { aCobrar, type Centimos, type Gramos } from "../lib/dinero";
 import { calcular, estadoDe, repartirPago, sumarTandas, TOPE_REDONDEO } from "../dominio/calculo";
 import { aprenderDeEntrega, aprenderPrecioDeEntrega } from "./tiendas";
 import type { Contexto } from "../tiendas/emparejar";
+import { paradaDe } from "../tiendas/ruta";
 
 export interface DatosEntrega {
   tiendaId: number;
@@ -403,18 +404,15 @@ export async function cuentasDelDia(fecha: DiaISO = hoyISO()): Promise<CuentaTie
 
   const cuentas = tiendas.map((t) => armarCuenta(t, entregas, deudas, pagos, diaCerrado));
 
-  // Misma lógica que la vista de ruta de Hoy: la parada de hoy manda si ya se
-  // le entregó, si no la media de sus últimas paradas, y si tampoco eso, su
-  // orden aprendido. Ascendente: primera parada primero. **No** en retorno —
-  // el pedido es que las dos vistas de ruta (Hoy y Cobranza) se lean igual.
-  const sinRuta = 99999;
-  const paradaDe = (c: CuentaTienda): number => {
-    if (c.entregas.length > 0) return Math.max(...c.entregas.map((e) => e.orden));
-    const recientes = c.tienda.posiciones.slice(-2);
-    if (recientes.length > 0) return recientes.reduce((a, b) => a + b, 0) / recientes.length;
-    return c.tienda.ordenRuta > 0 ? c.tienda.ordenRuta : sinRuta;
-  };
-  return cuentas.sort((a, b) => paradaDe(a) - paradaDe(b));
+  // Ascendente: primera parada primero. **No** en retorno — el pedido es que
+  // las dos vistas de ruta (Hoy y Cobranza) se lean igual, y por eso las dos
+  // ordenan con el mismo `paradaDe` de `tiendas/ruta.ts`.
+  const paradaCuenta = (c: CuentaTienda): number =>
+    paradaDe(
+      c.tienda,
+      c.entregas.length > 0 ? Math.max(...c.entregas.map((e) => e.orden)) : undefined,
+    );
+  return cuentas.sort((a, b) => paradaCuenta(a) - paradaCuenta(b));
 }
 
 /**
