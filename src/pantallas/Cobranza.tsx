@@ -472,10 +472,10 @@ export function Cobranza({
                     }}
                   />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 17, fontWeight: 600, lineHeight: 1.2 }}>
+                    <div style={{ fontSize: 19, fontWeight: 600, lineHeight: 1.2 }}>
                       {c.tienda.nombre}
                     </div>
-                    <div style={{ fontSize: 13, color: "var(--texto-4)", marginTop: 2 }}>
+                    <div style={{ fontSize: 15, color: "var(--texto-4)", marginTop: 3 }}>
                       {meta.length ? meta.join(" · ") : "sin ruta todavía"}
                     </div>
                   </div>
@@ -523,31 +523,31 @@ export function Cobranza({
                   }}
                 />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 17, fontWeight: 600, lineHeight: 1.2 }}>
+                  <div style={{ fontSize: 19, fontWeight: 600, lineHeight: 1.2 }}>
                     {c.tienda.nombre}
                   </div>
-                  <div style={{ fontSize: 13, color: "var(--texto-3)", marginTop: 2 }}>
+                  <div style={{ fontSize: 15, color: "var(--texto-3)", marginTop: 3 }}>
                     {ultima ? descripcionEntrega(ultima) : "solo cobro"}
                   </div>
                 </div>
                 <div style={{ textAlign: "right", flex: "none" }}>
-                  <div style={{ fontSize: 17, fontWeight: 600, lineHeight: 1.2 }}>
+                  <div style={{ fontSize: 19, fontWeight: 700, lineHeight: 1.2 }}>
                     {money(c.cobradoHoy)}
                   </div>
                   <div
                     style={{
-                      fontSize: 12,
-                      marginTop: 2,
+                      fontSize: 14,
+                      marginTop: 3,
                       color: "var(--verde)",
                       display: "flex",
                       alignItems: "center",
-                      gap: 4,
+                      gap: 5,
                       justifyContent: "flex-end",
                     }}
                   >
                     cobrado
                     {ultima && (
-                      <Pencil size={12} strokeWidth={2} color="var(--acento-claro)" />
+                      <Pencil size={18} strokeWidth={2} color="var(--acento-claro)" />
                     )}
                   </div>
                 </div>
@@ -581,14 +581,14 @@ export function Cobranza({
                 }}
               >
                 <div style={{ display: "flex", alignItems: "baseline", gap: 8, minWidth: 0 }}>
-                  <div style={{ fontSize: 18, fontWeight: 600 }}>{c.tienda.nombre}</div>
+                  <div style={{ fontSize: 20, fontWeight: 700 }}>{c.tienda.nombre}</div>
                   {/* Ya pagó una parte: por eso está aquí abajo, esperando el resto. */}
                   {c.tocada && (
-                    <div style={{ fontSize: 12, color: "var(--verde)", flex: "none" }}>ya abonó</div>
+                    <div style={{ fontSize: 14, color: "var(--verde)", flex: "none" }}>ya abonó</div>
                   )}
                 </div>
                 {c.tienda.ordenRuta > 0 && (
-                  <div style={{ fontSize: 12, color: "var(--texto-4)", flex: "none" }}>
+                  <div style={{ fontSize: 14, color: "var(--texto-4)", flex: "none" }}>
                     parada {c.tienda.ordenRuta}
                   </div>
                 )}
@@ -604,7 +604,7 @@ export function Cobranza({
               ) : (
                 descHoy && (
                   <div
-                    style={{ fontSize: 13, color: "var(--texto-3)", marginTop: -3, marginBottom: 8 }}
+                    style={{ fontSize: 16, color: "var(--texto-2)", marginTop: -3, marginBottom: 8 }}
                   >
                     {descHoy}
                   </div>
@@ -616,9 +616,9 @@ export function Cobranza({
                   style={{
                     display: "flex",
                     justifyContent: "space-between",
-                    fontSize: 14,
-                    color: "var(--texto-3)",
-                    marginBottom: 3,
+                    fontSize: 17,
+                    color: "var(--texto-2)",
+                    marginBottom: 5,
                   }}
                 >
                   <span>De hoy</span>
@@ -630,9 +630,9 @@ export function Cobranza({
                   style={{
                     display: "flex",
                     justifyContent: "space-between",
-                    fontSize: 14,
+                    fontSize: 17,
                     color: "var(--ambar)",
-                    marginBottom: 3,
+                    marginBottom: 5,
                   }}
                 >
                   <span>
@@ -1029,12 +1029,33 @@ function EntregasCorregibles({
             alignItems: "center",
             gap: 8,
             textAlign: "left",
-            color: "var(--texto-3)",
-            fontSize: 13,
+            color: "var(--texto-2)",
+            // 16, no 13: es el dato que se lee a sol directo para decidir si
+            // la cuenta está bien. El mínimo de §4 son 17–20 para el texto de
+            // corrido; esto es una línea de apoyo, pero 13 no se leía.
+            fontSize: 16,
           }}
         >
           <span style={{ flex: 1, minWidth: 0 }}>{descripcionEntrega(e)}</span>
-          <Pencil size={14} strokeWidth={2} color="var(--acento-claro)" style={{ flexShrink: 0 }} />
+          {/*
+            El lápiz es la única pista de que la línea se toca, así que tiene
+            que verse: a 14px se perdía contra el texto. El recuadro lo separa
+            del dato y le da un blanco propio.
+          */}
+          <span
+            style={{
+              flexShrink: 0,
+              width: 40,
+              height: 40,
+              borderRadius: "var(--radio-sm)",
+              border: "1.5px solid var(--borde)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Pencil size={20} strokeWidth={2} color="var(--acento-claro)" />
+          </span>
         </button>
       ))}
     </div>

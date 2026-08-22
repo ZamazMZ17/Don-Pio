@@ -516,7 +516,7 @@ export function Detalle({ entregaId, volver }: { entregaId: number; volver: () =
           */}
           {cobros.length > 0 && (
             <div style={{ marginTop: 16, borderTop: "1px solid var(--linea)", paddingTop: 12 }}>
-              <div style={{ ...S.rotulo, fontSize: 12, marginBottom: 6 }}>
+              <div style={{ ...S.rotulo, fontSize: 13, marginBottom: 8 }}>
                 Cobros de ese día
               </div>
               {cobros.map((c) => (
@@ -530,9 +530,9 @@ export function Detalle({ entregaId, volver }: { entregaId: number; volver: () =
                   }}
                 >
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 17, fontWeight: 600 }}>{money(c.monto)}</div>
+                    <div style={{ fontSize: 20, fontWeight: 700 }}>{money(c.monto)}</div>
                     {c.aDeuda > 0 && (
-                      <div style={{ fontSize: 12, color: "var(--ambar)" }}>
+                      <div style={{ fontSize: 14, color: "var(--ambar)" }}>
                         {money(c.aDeuda)} fue a deuda de antes
                       </div>
                     )}

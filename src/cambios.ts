@@ -133,4 +133,9 @@ export const CAMBIOS: Cambio[] = [
     texto:
       "Cada cliente tiene ahora su ficha: Tiendas → tócalo → «Ver su historial». Ahí ves cuánto te debe, a cómo le vienes cobrando (y entre qué precios se ha movido), cuánto te ha comprado en total, cuántas veces te quedó debiendo, lo que le has regalado en redondeos, y sus últimas entregas una por una.",
   },
+  {
+    fecha: "2026-08-22",
+    texto:
+      "Las tarjetas de Cobranza se leen más grandes: la línea de lo que le dejaste, el «De hoy» y la deuda subieron de tamaño, y el lápiz de corregir pasó a ser un botón con recuadro en vez de un icono diminuto.",
+  },
 ];
