@@ -6,6 +6,8 @@ import {
   agregarTanda as agregarTandaDB,
   borrarEntrega,
   cobrarEntrega,
+  cobrosDe,
+  deshacerCobro,
   editarEntrega,
   fijarPeso,
   fijarTotal,
@@ -68,6 +70,8 @@ export function Detalle({ entregaId, volver }: { entregaId: number; volver: () =
   const [nombreEdit, setNombreEdit] = useState("");
   /** Un solo toque no puede borrar una entrega — a veces ya tiene plata cobrada. */
   const [borrando, setBorrando] = useState(false);
+  /** Qué cobro está esperando confirmación para deshacerse. */
+  const [deshaciendo, setDeshaciendo] = useState<number | null>(null);
 
   useEffect(() => {
     if (!borrando) return;
@@ -75,14 +79,24 @@ export function Detalle({ entregaId, volver }: { entregaId: number; volver: () =
     return () => clearTimeout(id);
   }, [borrando]);
 
+  // Si lo dejó a medias, la confirmación no se queda armada esperando un
+  // toque suelto — igual que en Cobranza.
+  useEffect(() => {
+    if (deshaciendo === null) return;
+    const id = setTimeout(() => setDeshaciendo(null), 8000);
+    return () => clearTimeout(id);
+  }, [deshaciendo]);
+
   const datos = useLiveQuery(async () => {
     const entrega = await db.entregas.get(entregaId);
     if (!entrega) return null;
-    const [tienda, deuda] = await Promise.all([
+    const [tienda, deuda, cobros] = await Promise.all([
       db.tiendas.get(entrega.tiendaId),
       deudaDetalle(entrega.tiendaId),
+      // Lo que le cobró ese día, para poder deshacer uno mal tecleado.
+      cobrosDe(entrega.tiendaId, entrega.fecha),
     ]);
-    return { entrega, tienda, deuda };
+    return { entrega, tienda, deuda, cobros };
   }, [entregaId]);
 
   if (datos === undefined) return null;
@@ -91,7 +105,7 @@ export function Detalle({ entregaId, volver }: { entregaId: number; volver: () =
     return null;
   }
 
-  const { entrega: e, tienda, deuda } = datos;
+  const { entrega: e, tienda, deuda, cobros } = datos;
   const cobrado = e.totalCobrado + e.descuentoRedondeo;
   const saldo = Math.max(0, e.totalCalculado - cobrado);
 
@@ -489,6 +503,95 @@ export function Detalle({ entregaId, volver }: { entregaId: number; volver: () =
             >
               Cobrar {money(saldo)}
             </button>
+          )}
+
+          {/*
+            Lo que le cobró ese día, para poder deshacer uno mal tecleado —un
+            100 donde iban 10—. Antes no había forma: el cliente aparecía al
+            día, la caja del cierre no cuadraba, y lo único que quedaba era
+            inventarle una deuda a mano para compensar.
+
+            Confirmación de dos toques, como al borrar la entrega: deshacer un
+            cobro mueve plata de verdad.
+          */}
+          {cobros.length > 0 && (
+            <div style={{ marginTop: 16, borderTop: "1px solid var(--linea)", paddingTop: 12 }}>
+              <div style={{ ...S.rotulo, fontSize: 12, marginBottom: 6 }}>
+                Cobros de ese día
+              </div>
+              {cobros.map((c) => (
+                <div
+                  key={c.creada}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    minHeight: 52,
+                  }}
+                >
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 17, fontWeight: 600 }}>{money(c.monto)}</div>
+                    {c.aDeuda > 0 && (
+                      <div style={{ fontSize: 12, color: "var(--ambar)" }}>
+                        {money(c.aDeuda)} fue a deuda de antes
+                      </div>
+                    )}
+                  </div>
+                  {deshaciendo === c.creada ? (
+                    <>
+                      <button
+                        onClick={() => {
+                          void deshacerCobro(e.tiendaId, c.creada).then(() => {
+                            setDeshaciendo(null);
+                            avisoGuardado();
+                          });
+                        }}
+                        style={{
+                          minHeight: 44,
+                          padding: "0 14px",
+                          borderRadius: "var(--radio-sm)",
+                          border: "1.5px solid var(--rojo)",
+                          color: "var(--rojo)",
+                          fontSize: 15,
+                          fontWeight: 600,
+                          flex: "none",
+                        }}
+                      >
+                        Sí, deshacer
+                      </button>
+                      <button
+                        onClick={() => setDeshaciendo(null)}
+                        style={{
+                          minHeight: 44,
+                          padding: "0 12px",
+                          color: "var(--texto-3)",
+                          fontSize: 15,
+                          flex: "none",
+                        }}
+                      >
+                        No
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => setDeshaciendo(c.creada)}
+                      className="pulsable"
+                      style={{
+                        minHeight: 44,
+                        padding: "0 14px",
+                        borderRadius: "var(--radio-sm)",
+                        border: "1.5px solid var(--borde)",
+                        color: "var(--texto-3)",
+                        fontSize: 15,
+                        flex: "none",
+                      }}
+                    >
+                      Deshacer
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
           )}
         </div>
 

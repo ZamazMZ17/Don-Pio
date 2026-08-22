@@ -610,6 +610,9 @@ export async function registrarCobro(
           monto: resto,
           tipo: "delDia",
           creada: ahora,
+          // Este pago es el que le puso el total: si se deshace, el total se
+          // va con él (ver `deshacerCobro`).
+          totalFijado: resto,
         });
         resto = 0;
       }
@@ -665,6 +668,140 @@ export async function registrarCobro(
         cerrada: actual.saldado + perdona >= actual.monto ? 1 : 0,
       });
       porPerdonar -= perdona;
+    }
+  });
+}
+
+/* ── Deshacer un cobro ───────────────────────────────────────────────── */
+
+/**
+ * Un cobro tal y como lo hizo: una sola vez que le pagaron.
+ *
+ * `registrarCobro` reparte un solo billete entre varias filas —primero las
+ * deudas viejas, después las entregas del día—, así que lo que para él fue
+ * «Rosa me pagó 80» pueden ser tres `pagos` distintos. Se agrupan por el
+ * instante en que se guardaron (`creada`), que es lo que los hace uno solo:
+ * deshacer media entrega de plata no significa nada.
+ */
+export interface CobroHecho {
+  creada: number;
+  fecha: DiaISO;
+  tiendaId: number;
+  /** Lo que entregó en total esa vez. */
+  monto: Centimos;
+  /** Cuánto de eso fue a saldar deuda de días anteriores. */
+  aDeuda: Centimos;
+  pagos: Pago[];
+}
+
+/** Los cobros que se le hicieron a una tienda en un día, del último al primero. */
+export async function cobrosDe(tiendaId: number, fecha: DiaISO): Promise<CobroHecho[]> {
+  const pagos = (await db.pagos.where("tiendaId").equals(tiendaId).toArray()).filter(
+    (p) => p.fecha === fecha,
+  );
+
+  const porInstante = new Map<number, Pago[]>();
+  for (const p of pagos) {
+    const grupo = porInstante.get(p.creada) ?? [];
+    grupo.push(p);
+    porInstante.set(p.creada, grupo);
+  }
+
+  return [...porInstante.entries()]
+    .map(([creada, grupo]) => ({
+      creada,
+      fecha,
+      tiendaId,
+      monto: grupo.reduce((a, p) => a + p.monto, 0),
+      aDeuda: grupo
+        .filter((p) => p.tipo === "deudaAnterior")
+        .reduce((a, p) => a + p.monto, 0),
+      pagos: grupo,
+    }))
+    .sort((a, b) => b.creada - a.creada);
+}
+
+/**
+ * Devuelve a la deuda de la tienda lo que un pago le había saldado.
+ *
+ * No se puede ir directo a «la deuda de ese pago»: `Pago.entregaId` apunta a
+ * la entrega que **originó** la deuda, no a la deuda, y puede ser `null`. Así
+ * que se prefiere la que coincide en `entregaId` y se sigue por las demás que
+ * tengan algo saldado — total, son todas deuda de la misma tienda y lo que
+ * importa es que su saldo vuelva a subir exactamente lo cobrado.
+ *
+ * Si no queda dónde devolverlo (la deuda se borró con su entrega, por
+ * ejemplo), se recrea: antes que perder el rastro de la plata, una fila nueva.
+ */
+async function devolverADeuda(p: Pago): Promise<void> {
+  const candidatas = (await db.deudas.where("tiendaId").equals(p.tiendaId).toArray())
+    .filter((d) => d.saldado > 0)
+    .sort((a, b) => {
+      const suya = (d: Deuda) => (d.entregaId === p.entregaId ? 0 : 1);
+      return suya(a) - suya(b) || b.creada - a.creada;
+    });
+
+  let resto = p.monto;
+  for (const d of candidatas) {
+    if (resto <= 0) break;
+    const quita = Math.min(resto, d.saldado);
+    await db.deudas.update(d.id!, { saldado: d.saldado - quita, cerrada: 0 });
+    resto -= quita;
+  }
+
+  if (resto > 0) {
+    await db.deudas.add({
+      tiendaId: p.tiendaId,
+      entregaId: p.entregaId,
+      fechaOrigen: p.fecha,
+      monto: resto,
+      saldado: 0,
+      cerrada: 0,
+      creada: Date.now(),
+    });
+  }
+}
+
+/**
+ * Deshace un cobro entero: la plata vuelve a estar por cobrar.
+ *
+ * Hacía falta porque no había ninguna forma de arreglar un cobro mal
+ * tecleado. Un 100 donde iban 10 quedaba así para siempre: el cliente
+ * aparecía al día, la caja del cierre no cuadraba, y lo único que se podía
+ * hacer era inventarle una deuda a mano para compensar.
+ *
+ * Deshace el grupo entero (ver `CobroHecho`) y en el orden inverso a como se
+ * aplicó: lo que fue a entregas se les descuenta, lo que fue a deudas viejas
+ * vuelve a deberse, y los `pagos` se borran para que no queden contados dos
+ * veces en el resumen del día.
+ */
+export async function deshacerCobro(tiendaId: number, creada: number): Promise<void> {
+  await db.transaction("rw", db.entregas, db.deudas, db.pagos, async () => {
+    const grupo = (await db.pagos.where("tiendaId").equals(tiendaId).toArray()).filter(
+      (p) => p.creada === creada,
+    );
+
+    for (const p of grupo) {
+      if (p.tipo === "deudaAnterior") {
+        await devolverADeuda(p);
+      } else if (p.entregaId !== null) {
+        const e = await db.entregas.get(p.entregaId);
+        if (e) {
+          const cobrado = Math.max(0, e.totalCobrado - p.monto);
+          /*
+           * Si este pago fue el que le puso el total a una entrega sin precio,
+           * el total se va con él: solo existía porque pagó esa cantidad.
+           * Dejarlo pondría a deber un precio que él nunca acordó.
+           */
+          const total = p.totalFijado !== undefined ? 0 : e.totalCalculado;
+          await db.entregas.update(p.entregaId, {
+            totalCobrado: cobrado,
+            totalCalculado: total,
+            estadoPago: estadoDe(total, cobrado + e.descuentoRedondeo),
+          });
+        }
+      }
+      await db.pagos.delete(p.id!);
     }
   });
 }

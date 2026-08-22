@@ -538,6 +538,18 @@ Ver `src/db/db.ts`. Notas de implementación:
   que le debe al cliente, no una deuda negativa.
 - **Cerrar dos veces no puede duplicar las deudas.** `cerrarDia()` sale sin hacer nada si
   la jornada ya está cerrada.
+- **Un cobro se deshace por grupo, no por fila.** `registrarCobro()` reparte un solo billete
+  entre varias filas de `pagos` —primero las deudas viejas, después las entregas del día—,
+  así que lo que para él fue «Rosa me pagó 80» pueden ser tres filas. `cobrosDe()` las agrupa
+  por el instante en que se guardaron (`creada`) y `deshacerCobro()` deshace el grupo entero:
+  media entrega de plata deshecha no significa nada. Se llega desde el Detalle, que a su vez
+  se abre desde Hoy, Cobranza y un día del Historial.
+- **`Pago.totalFijado` marca el pago que le puso el total a una entrega sin precio.** La
+  última rama de `registrarCobro()` le fija `totalCalculado` a una entrega que valía 0 («sin
+  pesar», y pagó tanto). Al deshacer hay que quitarle ese total, pero sin esa marca no se
+  puede distinguir de un total dictado («son 42 soles»): las dos se ven idénticas, sin peso y
+  sin precio por kilo. No está indexado, así que no necesitó migración — los pagos viejos lo
+  traen `undefined`, que es justo «este pago no fijó ningún total».
 
 ---
 

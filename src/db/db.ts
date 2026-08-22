@@ -139,6 +139,19 @@ export interface Pago {
   monto: Centimos;
   tipo: "delDia" | "deudaAnterior";
   creada: number;
+  /**
+   * Presente solo cuando este pago fue el que le **puso el total** a una
+   * entrega que no tenía precio (la marcó «sin pesar» y pagó una cantidad:
+   * ver la última rama de `registrarCobro`).
+   *
+   * Hace falta para poder deshacerlo. Sin esta marca, al deshacer el cobro
+   * habría que adivinar si el `totalCalculado` de la entrega venía del pago
+   * —y entonces sobra— o de un total dictado («son 42 soles») —y entonces se
+   * queda. Las dos se ven idénticas: sin peso y sin precio por kilo. Al no
+   * estar indexado, no necesita migración: los pagos viejos lo traen
+   * `undefined`, que es justo «este pago no fijó ningún total».
+   */
+  totalFijado?: Centimos;
 }
 
 /**

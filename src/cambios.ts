@@ -123,4 +123,9 @@ export const CAMBIOS: Cambio[] = [
     texto:
       "Ya puedes corregir una entrega de un día cerrado: Más → Historial → el día → «Corregir esta entrega». Y lo más importante, la diferencia ya no se pierde — si resulta que le cobraste de menos, lo que falta pasa a lo que te debe y te sale en Cobranza. Antes esos soles desaparecían sin avisar.",
   },
+  {
+    fecha: "2026-08-22",
+    texto:
+      "Un cobro mal tecleado ya se puede deshacer. Abre la entrega (desde Hoy, desde Cobranza o desde el Historial), busca «Cobros de ese día» y toca Deshacer. La plata vuelve a estar por cobrar y, si parte de ese cobro había saldado una deuda vieja, esa deuda vuelve también. Pide confirmación antes, que mueve plata de verdad.",
+  },
 ];

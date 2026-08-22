@@ -4,6 +4,8 @@ import { db } from "./db";
 import {
   agregarTanda,
   borrarEntrega,
+  cobrosDe,
+  deshacerCobro,
   cuentasDelDia,
   cuentasPendientes,
   editarEntrega,
@@ -1142,5 +1144,156 @@ describe("corregir una entrega de un día ya cerrado", () => {
     expect(await db.deudas.count()).toBe(0);
     const pend = await cuentasPendientes(HOY);
     expect(pend.find((c) => c.tienda.id === t.id)?.total).toBe(aCentimos(10));
+  });
+});
+
+describe("deshacer un cobro", () => {
+  const debe = async (tiendaId: number) =>
+    (await db.deudas.where("tiendaId").equals(tiendaId).toArray())
+      .filter((d) => !d.cerrada)
+      .reduce((a, d) => a + (d.monto - d.saldado), 0);
+
+  it("un cobro de más se deshace y la plata vuelve a estar por cobrar", async () => {
+    await guardarStock(HOY, 100, 0, aCentimos(5));
+    const t = await crearTienda("Rosa");
+    await registrarEntrega(
+      { tiendaId: t.id!, pollos: 5, tandas: [aGramos(10)], precioKg: aCentimos(5) },
+      ctx(1),
+      { fecha: HOY },
+    );
+    // Tecleó 100 donde iban 10.
+    await registrarCobro(t.id!, aCentimos(100), { fecha: HOY });
+    const e1 = (await db.entregas.where("fecha").equals(HOY).toArray())[0];
+    expect(money(e1.totalCobrado)).toBe("S/ 50.00");
+
+    const [cobro] = await cobrosDe(t.id!, HOY);
+    expect(money(cobro.monto)).toBe("S/ 50.00");
+    await deshacerCobro(t.id!, cobro.creada);
+
+    const e2 = await db.entregas.get(e1.id!);
+    expect(e2!.totalCobrado).toBe(0);
+    expect(e2!.estadoPago).toBe("pendiente");
+    // Y el pago desaparece: si no, el resumen del día lo contaría igual.
+    expect(await db.pagos.count()).toBe(0);
+    const pend = await cuentasPendientes(HOY);
+    expect(pend.find((c) => c.tienda.id === t.id)?.total).toBe(aCentimos(50));
+  });
+
+  it("un cobro que saldó deuda vieja la devuelve a deber", async () => {
+    await guardarStock(AYER, 100, 0, aCentimos(5));
+    const t = await crearTienda("Chela");
+    await registrarEntrega(
+      { tiendaId: t.id!, pollos: 5, tandas: [aGramos(10)], precioKg: aCentimos(5) },
+      ctx(1),
+      { fecha: AYER },
+    );
+    await cerrarDia(AYER, null, null);
+    expect(money(await debe(t.id!))).toBe("S/ 50.00");
+
+    await registrarCobro(t.id!, aCentimos(50), { fecha: HOY });
+    expect(await debe(t.id!)).toBe(0);
+
+    const [cobro] = await cobrosDe(t.id!, HOY);
+    expect(cobro.aDeuda).toBe(aCentimos(50));
+    await deshacerCobro(t.id!, cobro.creada);
+
+    expect(money(await debe(t.id!))).toBe("S/ 50.00");
+  });
+
+  /**
+   * `registrarCobro` reparte un solo billete entre la deuda vieja y lo de hoy,
+   * así que un cobro son varias filas de `pagos`. Deshacer media entrega de
+   * plata no significa nada: se deshace el grupo entero.
+   */
+  it("un cobro repartido entre deuda vieja y lo de hoy se deshace entero", async () => {
+    await guardarStock(AYER, 100, 0, aCentimos(5));
+    const t = await crearTienda("Olga");
+    await registrarEntrega(
+      { tiendaId: t.id!, pollos: 3, tandas: [aGramos(4)], precioKg: aCentimos(5) },
+      ctx(1),
+      { fecha: AYER },
+    ); // 20 de deuda
+    await cerrarDia(AYER, null, null);
+    await guardarStock(HOY, 100, 0, aCentimos(5));
+    await registrarEntrega(
+      { tiendaId: t.id!, pollos: 5, tandas: [aGramos(10)], precioKg: aCentimos(5) },
+      ctx(1),
+      { fecha: HOY },
+    ); // 50 de hoy
+
+    await registrarCobro(t.id!, aCentimos(70), { fecha: HOY });
+    const [cobro] = await cobrosDe(t.id!, HOY);
+    expect(cobro.pagos.length).toBe(2);
+    expect(cobro.aDeuda).toBe(aCentimos(20));
+
+    await deshacerCobro(t.id!, cobro.creada);
+    expect(money(await debe(t.id!))).toBe("S/ 20.00");
+    const hoy = (await db.entregas.where("fecha").equals(HOY).toArray())[0];
+    expect(hoy.totalCobrado).toBe(0);
+  });
+
+  /**
+   * Una entrega «sin pesar» toma su total del pago. Al deshacerlo, ese total
+   * se va con él: dejarlo la pondría a deber un precio que él nunca acordó.
+   */
+  it("deshacer el pago que le puso precio a una entrega sin pesar le quita el total", async () => {
+    await guardarStock(HOY, 100, 0);
+    const t = await crearTienda("Julio");
+    await registrarEntrega({ tiendaId: t.id!, pollos: 4, sinPesar: true }, ctx(1), { fecha: HOY });
+    const e1 = (await db.entregas.where("fecha").equals(HOY).toArray())[0];
+    expect(e1.totalCalculado).toBe(0);
+
+    await registrarCobro(t.id!, aCentimos(35), { fecha: HOY });
+    const e2 = await db.entregas.get(e1.id!);
+    expect(money(e2!.totalCalculado)).toBe("S/ 35.00");
+
+    const [cobro] = await cobrosDe(t.id!, HOY);
+    await deshacerCobro(t.id!, cobro.creada);
+
+    const e3 = await db.entregas.get(e1.id!);
+    expect(e3!.totalCalculado).toBe(0);
+    expect(e3!.totalCobrado).toBe(0);
+  });
+
+  it("un total dictado sí se conserva al deshacer: ese no lo puso el pago", async () => {
+    await guardarStock(HOY, 100, 0);
+    const t = await crearTienda("Marta");
+    await registrarEntrega(
+      { tiendaId: t.id!, pollos: 4, sinPesar: true, totalDictado: aCentimos(42) },
+      ctx(1),
+      { fecha: HOY },
+    );
+    const e1 = (await db.entregas.where("fecha").equals(HOY).toArray())[0];
+    await registrarCobro(t.id!, aCentimos(42), { fecha: HOY });
+
+    const [cobro] = await cobrosDe(t.id!, HOY);
+    await deshacerCobro(t.id!, cobro.creada);
+
+    const e2 = await db.entregas.get(e1.id!);
+    expect(money(e2!.totalCalculado)).toBe("S/ 42.00");
+    expect(e2!.totalCobrado).toBe(0);
+  });
+
+  it("deshacer solo toca el cobro elegido, no los otros del mismo día", async () => {
+    await guardarStock(HOY, 100, 0, aCentimos(5));
+    const t = await crearTienda("Rosa");
+    await registrarEntrega(
+      { tiendaId: t.id!, pollos: 5, tandas: [aGramos(10)], precioKg: aCentimos(5) },
+      ctx(1),
+      { fecha: HOY },
+    );
+    await registrarCobro(t.id!, aCentimos(20), { fecha: HOY });
+    await new Promise((r) => setTimeout(r, 2));
+    await registrarCobro(t.id!, aCentimos(30), { fecha: HOY });
+
+    const cobros = await cobrosDe(t.id!, HOY);
+    expect(cobros.length).toBe(2);
+    // El más reciente primero: se deshace el de 30.
+    expect(money(cobros[0].monto)).toBe("S/ 30.00");
+    await deshacerCobro(t.id!, cobros[0].creada);
+
+    const e = (await db.entregas.where("fecha").equals(HOY).toArray())[0];
+    expect(money(e.totalCobrado)).toBe("S/ 20.00");
+    expect((await cobrosDe(t.id!, HOY)).length).toBe(1);
   });
 });
