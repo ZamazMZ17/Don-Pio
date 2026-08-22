@@ -310,3 +310,34 @@ input {
   font-size: 14px;
   font-weight: 500;
 }
+
+/*
+ * El anillo del tour guiado (`ui/Tour.tsx`): parpadea alrededor del botón del
+ * que se está hablando.
+ *
+ * Solo `opacity`, sin `transform: scale`. El latido con escala crecía hacia
+ * fuera, y sobre un elemento que ocupa todo el ancho —la lista de Hoy, una
+ * tarjeta de Cobranza— el anillo se salía por los lados y se veía cortado
+ * contra el borde de la pantalla. La opacidad la anima el compositor igual de
+ * barato y no cambia la geometría, así que no puede desbordar.
+ */
+@keyframes dptour {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.tour-anillo {
+  animation: dptour 1.4s ease-in-out infinite;
+}
+
+/* Quien pidió menos movimiento no tiene por qué aguantar un latido constante. */
+@media (prefers-reduced-motion: reduce) {
+  .tour-anillo {
+    animation: none;
+  }
+}

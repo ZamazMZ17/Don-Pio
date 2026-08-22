@@ -567,6 +567,7 @@ export function Cobranza({
           return (
             <div
               key={c.tienda.id}
+              data-tour="cuenta"
               ref={(el) => {
                 if (el) tarjetasRef.current.set(c.tienda.id!, el);
                 else tarjetasRef.current.delete(c.tienda.id!);
@@ -716,6 +717,7 @@ export function Cobranza({
                   {!c.tieneSinPesar && (
                     <button
                       className="pulsable-acento"
+                      data-tour="cobrar"
                       onClick={() => setConfirmando(c.tienda.id!)}
                       style={{
                         marginTop: 12,
@@ -1028,6 +1030,7 @@ function EntregasCorregibles({
       {entregas.map((e) => (
         <button
           key={e.id}
+          data-tour="corregir"
           onClick={() => abrir(e.id!)}
           className="pulsable"
           style={{

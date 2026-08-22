@@ -158,4 +158,9 @@ export const CAMBIOS: Cambio[] = [
     texto:
       "Nueva ficha en Más → «Cómo se usa»: un tour de 10 pasos por toda la app, en el orden real del día —salir, repartir, cobrar de vuelta, cuadrar la caja—. Sirve para enseñarle a alguien más a usarla, o para recordar dónde estaba algo.",
   },
+  {
+    fecha: "2026-08-22",
+    texto:
+      "El «Cómo se usa» ahora trae un tour guiado de verdad: oscurece la app, te señala cada botón con un anillo que parpadea y te dice para qué sirve, pasando solo de pantalla en pantalla. Va sobre la app real, así que si todavía no tienes datos te explica igual qué va a salir en cada sitio.",
+  },
 ];

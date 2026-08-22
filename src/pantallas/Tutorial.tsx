@@ -10,6 +10,7 @@ import {
   Settings,
   Store,
   Undo2,
+  Play,
   type LucideIcon,
 } from "lucide-react";
 import { PASOS, type IconoPaso } from "../tutorial";
@@ -40,7 +41,18 @@ const ICONOS: Record<IconoPaso, LucideIcon> = {
  * y en ratos sueltos, y así siempre se ve dónde va y cuánto le falta. El
  * contenido está en `tutorial.ts`.
  */
-export function Tutorial({ volver }: { volver: () => void }) {
+export function Tutorial({
+  volver,
+  empezarTour,
+}: {
+  volver: () => void;
+  /**
+   * Arranca el tour guiado: la superposición que va señalando cada botón en
+   * la app de verdad. Es el camino principal — esta pantalla escrita queda
+   * como el detalle para consultar después.
+   */
+  empezarTour: () => void;
+}) {
   const [i, setI] = useState(0);
   const paso = PASOS[i];
   const Icono = ICONOS[paso.icono];
@@ -76,6 +88,34 @@ export function Tutorial({ volver }: { volver: () => void }) {
           gap: 16,
         }}
       >
+        {/*
+          Primero el tour guiado y después la guía escrita: señalando los
+          botones de verdad se aprende antes que leyendo, sobre todo si nunca
+          abrió la app. Lo escrito queda para consultar un paso suelto.
+        */}
+        <button
+          onClick={empezarTour}
+          className="pulsable-acento"
+          style={{
+            flex: "none",
+            width: "100%",
+            minHeight: 60,
+            borderRadius: "var(--radio)",
+            border: "2.5px solid var(--acento)",
+            background: "var(--acento-900)",
+            color: "var(--acento-200)",
+            fontSize: 17,
+            fontWeight: 600,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 9,
+          }}
+        >
+          <Play size={19} strokeWidth={2.4} style={{ flexShrink: 0 }} />
+          Hacer el tour por la app
+        </button>
+
         <div
           style={{
             ...S.tarjeta,

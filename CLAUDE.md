@@ -120,7 +120,7 @@ intérprete que lo dictado.
 | **Ajustes** | Apariencia (oscuro/claro/sistema), hora de cierre, redondeo, sonido, respaldo, la API key de Gemini (solo para informes) y **Actualización**: qué versión tiene puesta y el enlace para bajar la última |
 | **Cargar stock** | «¿Con cuánto sales hoy?», con la sugerencia aprendida por día de semana |
 | **Menú** | Cuadrícula de 8 fichas, detrás de la pestaña «Más» |
-| **Cómo se usa** | El tour de la app, de a un paso por pantalla, en el orden real del día. El texto vive en `src/tutorial.ts` — **hay que actualizarlo cuando la app cambia**: un tutorial que describe una versión vieja enseña a buscar botones que ya no están |
+| **Cómo se usa** | Dos caminos al mismo sitio. Arriba, **el tour guiado** (`ui/Tour.tsx` + `src/tour.ts`): oscurece la app, recorta un botón **de verdad** con un anillo que parpadea, y va navegando solo de pantalla en pantalla. Debajo, la guía escrita paso a paso (`src/tutorial.ts`). **Hay que actualizar los dos cuando la app cambia**: un tutorial que describe una versión vieja enseña a buscar botones que ya no están |
 
 **5 bis. Vistas que se pueden esconder.** La Agenda de Hoy se enseña solo si él lo pide
 (`CLAVE_VER_AGENDA`, apagado por defecto). Dos reglas para cualquier vista que se esconda
@@ -471,6 +471,17 @@ como sugerencia antes de tocar «Crear», igual que la lista de candidatas del d
   pero Hoy usa su propio `deudasPorTienda()`, que no pasaba por ese filtro. Arreglo: las tres
   cifras de deuda que enseña Hoy (Agenda, Ruta y el «a cobrar» combinado con lo de hoy) pasan
   por `aCobrar()`, y si eso redondea a 0 no se enseña la línea — igual que en Cobranza.
+- **El tour guiado señala elementos reales, así que un `data-tour` que se borre lo rompe en
+  silencio.** `ui/Tour.tsx` busca cada objetivo por `[data-tour="..."]` y lo mide con
+  `getBoundingClientRect`. Es lo que hace que no pueda quedar desactualizado enseñando un
+  botón que ya se movió — pero también quiere decir que **renombrar o quitar un `data-tour`
+  deja su paso sin señalar**. No revienta (cae al modo centrado con el texto de `siFalta`),
+  y por eso conviene revisarlo: la degradación es elegante justo cuando hace falta —el
+  primer día, sin datos, Cobranza no tiene tarjetas que resaltar— pero también tapa un
+  descuido. Dos detalles del anillo que ya costaron un arreglo: se **recorta al viewport**
+  (un elemento a ancho completo más el aire lateral se salía y se veía cortado), y el
+  parpadeo es **solo `opacity`, nunca `transform: scale`** — la escala crecía hacia fuera y
+  sobre un elemento ancho volvía a desbordar por los lados.
 - **Dos entregas sin precio el mismo día a la misma tienda: la segunda perdía su dinero.**
   `registrarCobro()` reparte un pago entre deudas viejas, entregas ya calculadas, y por último
   las que aún no tienen total (`sinPrecioHoy`, cuando `calcular()` cayó en `origen: "incompleto"`

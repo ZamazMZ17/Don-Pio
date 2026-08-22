@@ -961,6 +961,7 @@ export function BotonMic({
 }) {
   return (
     <button
+      data-tour="flotante"
       onClick={onClick}
       aria-label={escuchando ? "Dejar de escuchar" : "Dictar"}
       style={{
@@ -1025,6 +1026,7 @@ export function BotonMic({
 export function BotonMas({ onClick }: { onClick: () => void }) {
   return (
     <button
+      data-tour="flotante"
       onClick={onClick}
       aria-label="Agregar un cliente que no está en la lista"
       style={{

@@ -56,6 +56,7 @@ import {
   type Propuesta,
 } from "./ui/Dictado";
 import { HojaNovedades, useNovedades } from "./ui/Novedades";
+import { Tour } from "./ui/Tour";
 import { atrasDesde, type OrigenDetalle, type OrigenFicha, type Pantalla } from "./lib/navegacion";
 
 export default function App() {
@@ -82,6 +83,8 @@ export default function App() {
   const { nuevas: novedades, cerrar: cerrarNovedades } = useNovedades();
   /** Cómo cerrarlo desde el botón atrás. Lo rellena la propia Cobranza. */
   const cerrarCobro = useRef<(() => void) | null>(null);
+  /** El tour guiado corriendo por encima de la app. */
+  const [tourAbierto, setTourAbierto] = useState(false);
 
   const fecha = hoyISO();
   // Ya no hay cola de dictados que repasar: el dictado se resuelve entero en
@@ -472,6 +475,10 @@ export default function App() {
    * Antes cerraba la app entera de un toque, en mitad de la ruta.
    */
   useBotonAtras(() => {
+    if (tourAbierto) {
+      setTourAbierto(false);
+      return true;
+    }
     if (novedades.length > 0) {
       cerrarNovedades();
       return true;
@@ -627,7 +634,9 @@ export default function App() {
       )}
       {pantalla === "ajustes" && <Ajustes volver={salir} />}
       {pantalla === "gastos" && <Gastos fecha={fecha} volver={salir} />}
-      {pantalla === "tutorial" && <Tutorial volver={salir} />}
+      {pantalla === "tutorial" && (
+        <Tutorial volver={salir} empezarTour={() => setTourAbierto(true)} />
+      )}
       {pantalla === "menu" && <Menu ir={ir} />}
 
       {/* Capa de voz: micrófono, escucha y confirmación */}
@@ -734,6 +743,16 @@ export default function App() {
             ))}
         </div>
       )}
+
+      {/*
+        El tour va al final y por encima de todo: oscurece la app entera y
+        recorta el botón del que habla, así que tiene que pintarse después de
+        las pestañas y de los flotantes — si no, quedarían por delante del
+        oscurecido y parecería que se pueden tocar.
+      */}
+      {tourAbierto && (
+        <Tour pantalla={pantalla} irA={ir} cerrar={() => setTourAbierto(false)} />
+      )}
     </div>
   );
 }
@@ -778,6 +797,7 @@ function BarraPestanas({ actual, ir }: { actual: Pantalla; ir: (p: Pantalla) => 
         return (
           <button
             key={destino}
+            data-tour={`tab-${destino === "menu" ? "mas" : destino}`}
             onClick={() => ir(destino)}
             style={{
               flex: 1,

@@ -252,6 +252,7 @@ export function Hoy({
           informa de nada y encima parece que la app está rota.
         */}
         <button
+          data-tour="encabezado"
           onClick={abrirStock}
           style={{
             display: "flex",
@@ -375,6 +376,7 @@ export function Hoy({
       {/* Lista tipo agenda */}
       <div
         ref={scrollRef}
+        data-tour="lista"
         onScroll={(e) => {
           memoriaScroll[modo] = e.currentTarget.scrollTop;
         }}

@@ -42,6 +42,7 @@ export function Menu({ ir }: { ir: (p: Pantalla) => void }) {
         {fichas.map(({ icono: Icono, label, sub, destino }) => (
           <button
             key={destino}
+            data-tour={`menu-${destino}`}
             onClick={() => ir(destino)}
             className="pulsable"
             style={{
