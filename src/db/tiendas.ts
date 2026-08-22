@@ -2,7 +2,7 @@ import { db, tiendaNueva, type Tienda } from "./db";
 import { normalizar } from "../tiendas/normalizar";
 import { aprender, emparejar, type Contexto, type Emparejamiento } from "../tiendas/emparejar";
 import { hoyISO, minutoDelDia, type DiaISO } from "../lib/fecha";
-import type { Centimos } from "../lib/dinero";
+import { aCobrar, type Centimos, type Gramos } from "../lib/dinero";
 
 /**
  * El directorio. **Nunca se carga a mano**: cada tienda nace del primer dictado
@@ -272,4 +272,126 @@ export async function borrarTienda(id: number): Promise<{ ok: true } | { ok: fal
   if (total > 0) return { ok: false, deuda: total };
   await db.tiendas.delete(id);
   return { ok: true };
+}
+
+/* ── La ficha del cliente ────────────────────────────────────────────── */
+
+/** Una entrega pasada, ya resumida para enseñarla en la ficha. */
+export interface EntregaFicha {
+  id: number;
+  fecha: DiaISO;
+  pollos: number;
+  piernas: number;
+  pechos: number;
+  peso: Gramos;
+  precioKg: Centimos;
+  total: Centimos;
+  /** Lo que quedó sin cobrar de esa entrega. */
+  saldo: Centimos;
+}
+
+/**
+ * Todo lo que se sabe de un cliente, junto.
+ *
+ * El directorio solo dejaba renombrar, agregarle deuda o borrarlo — nunca
+ * enseñó lo que de verdad hace falta para tratar con él: cuánto te ha
+ * comprado, a cómo le vienes cobrando, y cuántas veces te ha quedado a deber.
+ */
+export interface Ficha {
+  tienda: Tienda;
+  /** Cuántas veces le ha dejado algo. */
+  visitas: number;
+  primera: DiaISO | null;
+  ultima: DiaISO | null;
+  /** Lo que ha comprado en total, a lo largo de todo su historial. */
+  comprado: Centimos;
+  cobrado: Centimos;
+  /** Lo que debe ahora mismo, ya redondeado a lo que se puede cobrar. */
+  debe: Centimos;
+  pollos: number;
+  peso: Gramos;
+  /** En cuántas de sus visitas quedó debiendo algo. */
+  vecesQueDebio: number;
+  /** Lo perdonado en redondeos a lo largo del tiempo. */
+  regalado: Centimos;
+  /** El precio por kilo de sus últimas entregas: el menor y el mayor. */
+  precioMin: Centimos;
+  precioMax: Centimos;
+  /** Lo que se le cobró la última vez que se le pesó. */
+  precioUltimo: Centimos;
+  /** Las últimas entregas, de la más reciente a la más vieja. */
+  recientes: EntregaFicha[];
+}
+
+/** Cuántas entregas pasadas se listan en la ficha. */
+const RECIENTES_FICHA = 20;
+
+export async function fichaDe(tiendaId: number): Promise<Ficha | null> {
+  const tienda = await db.tiendas.get(tiendaId);
+  if (!tienda) return null;
+
+  const [entregas, deudas, jornadas] = await Promise.all([
+    db.entregas.where("tiendaId").equals(tiendaId).toArray(),
+    db.deudas.where("tiendaId").equals(tiendaId).toArray(),
+    db.jornadas.toArray(),
+  ]);
+  const cerrados = new Set(jornadas.filter((j) => j.estado === "cerrada").map((j) => j.fecha));
+  // De la más reciente a la más vieja; dentro del mismo día, la última parada.
+  const orden = [...entregas].sort((a, b) =>
+    a.fecha === b.fecha ? b.orden - a.orden : a.fecha < b.fecha ? 1 : -1,
+  );
+
+  const saldoDe = (e: (typeof entregas)[number]) =>
+    Math.max(0, e.totalCalculado - e.totalCobrado - e.descuentoRedondeo);
+
+  // Solo de las que de verdad se pesaron: una entrega «sin pesar» tiene el
+  // precio por kilo en 0 y hundiría el mínimo a cero.
+  const preciosPesados = orden.filter((e) => e.precioKg > 0).map((e) => e.precioKg);
+
+  return {
+    tienda,
+    visitas: entregas.length,
+    primera: orden.length > 0 ? orden[orden.length - 1].fecha : null,
+    ultima: orden.length > 0 ? orden[0].fecha : null,
+    comprado: entregas.reduce((a, e) => a + e.totalCalculado, 0),
+    cobrado: entregas.reduce((a, e) => a + e.totalCobrado, 0),
+    /*
+     * Lo que debe **ahora**: lo que arrastra de días ya cerrados más lo que
+     * falta de los que siguen abiertos.
+     *
+     * Los dos sumandos, y sin solaparse, que es la regla de §8: al cerrar el
+     * día el saldo pasa a `deudas` y la entrega deja de contarlo, así que las
+     * entregas de días cerrados **no** se suman aquí o saldría el doble. Y
+     * mirar solo `deudas` —que es lo que hacía la primera versión— enseñaba
+     * «está al día» a quien acababa de quedar debiendo S/ 60 hoy.
+     *
+     * Redondeado a la moneda, como en Cobranza: una migaja de céntimos no se
+     * puede cobrar y no se enseña como deuda (§7 bis).
+     */
+    debe: aCobrar(
+      Math.max(
+        0,
+        deudas.filter((d) => !d.cerrada).reduce((a, d) => a + (d.monto - d.saldado), 0) +
+          entregas.filter((e) => !cerrados.has(e.fecha)).reduce((a, e) => a + saldoDe(e), 0),
+      ),
+    ),
+    pollos: entregas.reduce((a, e) => a + e.pollos, 0),
+    peso: entregas.reduce((a, e) => a + e.peso, 0),
+    vecesQueDebio: entregas.filter((e) => saldoDe(e) > 0).length,
+    regalado: entregas.reduce((a, e) => a + e.descuentoRedondeo, 0),
+    precioMin: preciosPesados.length > 0 ? Math.min(...preciosPesados) : 0,
+    precioMax: preciosPesados.length > 0 ? Math.max(...preciosPesados) : 0,
+    precioUltimo: preciosPesados[0] ?? 0,
+    recientes: orden.slice(0, RECIENTES_FICHA).map((e) => ({
+      id: e.id!,
+      fecha: e.fecha,
+      pollos: e.pollos,
+      piernas: e.piernas,
+      pechos: e.pechos,
+      peso: e.peso,
+      precioKg: e.precioKg,
+      total: e.totalCalculado,
+      saldo: saldoDe(e),
+    })),
+  };
 }

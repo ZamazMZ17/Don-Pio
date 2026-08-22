@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { Plus, Search, Trash2 } from "lucide-react";
+import { History, Plus, Search, Trash2 } from "lucide-react";
 import { db } from "../db/db";
 import { useAjuste, useMemoriaScroll } from "../lib/ganchos";
 import { CLAVE_ORDEN_TIENDAS, guardarAjuste } from "../voz/ajustes";
@@ -25,7 +25,7 @@ import { Cabecera, S, Vacio } from "../ui/base";
  * parada y su hora se aprenden solas; el botón de agregar es para las que
  * conviene tener ya cargadas antes de repartirles (sin precio ni hora todavía).
  */
-export function Tiendas() {
+export function Tiendas({ abrirFicha }: { abrirFicha: (tiendaId: number) => void }) {
   const [busca, setBusca] = useState("");
   const [editando, setEditando] = useState<number | null>(null);
   const [monto, setMonto] = useState("");
@@ -323,6 +323,34 @@ export function Tiendas() {
                     animation: "dpup .2s ease-out",
                   }}
                 >
+                  {/*
+                    Lo primero del panel, porque es lo que más se busca: qué te
+                    ha comprado, a cómo le vienes cobrando y cuántas veces te
+                    quedó debiendo. Renombrar o borrar se hace de uvas a peras.
+                  */}
+                  <button
+                    onClick={() => abrirFicha(t.id!)}
+                    className="pulsable"
+                    style={{
+                      width: "100%",
+                      minHeight: 54,
+                      marginBottom: 18,
+                      borderRadius: "var(--radio)",
+                      border: "1.5px solid var(--acento)",
+                      background: "var(--acento-900)",
+                      color: "var(--acento-200)",
+                      fontSize: 16,
+                      fontWeight: 600,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 8,
+                    }}
+                  >
+                    <History size={18} strokeWidth={2} />
+                    Ver su historial
+                  </button>
+
                   <div style={{ fontSize: 14, color: "var(--texto-3)", marginBottom: 10 }}>
                     Nombre
                   </div>

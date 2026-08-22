@@ -128,4 +128,9 @@ export const CAMBIOS: Cambio[] = [
     texto:
       "Un cobro mal tecleado ya se puede deshacer. Abre la entrega (desde Hoy, desde Cobranza o desde el Historial), busca «Cobros de ese día» y toca Deshacer. La plata vuelve a estar por cobrar y, si parte de ese cobro había saldado una deuda vieja, esa deuda vuelve también. Pide confirmación antes, que mueve plata de verdad.",
   },
+  {
+    fecha: "2026-08-22",
+    texto:
+      "Cada cliente tiene ahora su ficha: Tiendas → tócalo → «Ver su historial». Ahí ves cuánto te debe, a cómo le vienes cobrando (y entre qué precios se ha movido), cuánto te ha comprado en total, cuántas veces te quedó debiendo, lo que le has regalado en redondeos, y sus últimas entregas una por una.",
+  },
 ];

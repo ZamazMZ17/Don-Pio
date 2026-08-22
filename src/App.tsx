@@ -44,6 +44,7 @@ import { Historial } from "./pantallas/Historial";
 import { Dia } from "./pantallas/Dia";
 import { Ajustes } from "./pantallas/Ajustes";
 import { Menu } from "./pantallas/Menu";
+import { FichaTienda } from "./pantallas/FichaTienda";
 import { Gastos } from "./pantallas/Gastos";
 import {
   BotonMas,
@@ -66,6 +67,8 @@ export default function App() {
    */
   const [origenDetalle, setOrigenDetalle] = useState<OrigenDetalle>("hoy");
   const [diaSel, setDiaSel] = useState<DiaISO>(hoyISO());
+  /** Qué cliente tiene la ficha abierta. */
+  const [tiendaSel, setTiendaSel] = useState<number | null>(null);
   const [propuesta, setPropuesta] = useState<Propuesta | null>(null);
   const [pensando, setPensando] = useState(false);
   const [escribiendo, setEscribiendo] = useState(false);
@@ -578,7 +581,17 @@ export default function App() {
           }}
         />
       )}
-      {pantalla === "tiendas" && <Tiendas />}
+      {pantalla === "tiendas" && (
+        <Tiendas
+          abrirFicha={(id) => {
+            setTiendaSel(id);
+            setPantalla("ficha");
+          }}
+        />
+      )}
+      {pantalla === "ficha" && tiendaSel !== null && (
+        <FichaTienda tiendaId={tiendaSel} volver={salir} />
+      )}
       {pantalla === "historial" && (
         <Historial
           volver={salir}

@@ -110,12 +110,13 @@ intérprete que lo dictado.
 | Pantalla | Para qué |
 |---|---|
 | **Hoy** | Encabezado con las cuatro cifras (salí con → me quedan · cobrado · por cobrar) y la lista. Por defecto **solo Ruta**, sin interruptor: reparte tocando la Ruta y casi no usaba la Agenda, así que esa fila se la queda la lista. El interruptor **Agenda / Ruta** se enciende y se apaga en Ajustes (`CLAVE_VER_AGENDA`, ver §5 bis). *Agenda* es la lista de lo ya hecho hoy, tipo agenda, con punto de color por estado; *Ruta* es **todos** los clientes en orden de ruta para ir tocando de uno en uno: al que aún no se le entregó abre la tarjeta de confirmación del dictado para registrar; al que **ya** se le entregó abre su **Detalle** para editar cantidades y precio (el precio por kilo casi siempre varía), igual que tocar su fila en Agenda. Con un **+** en lugar del micrófono para dar de alta a alguien que no está en el directorio |
-| **Detalle de entrega** | Cantidades con +/−, tandas de peso que se suman solas, precio por kilo, total en grande, pago y saldo, y la deuda anterior arriba |
+| **Detalle de entrega** | Cantidades con +/−, tandas de peso que se suman solas, precio por kilo, total en grande, pago y saldo, la deuda anterior arriba y **los cobros de ese día**, cada uno con su «Deshacer» (§8). Se abre desde Hoy, desde Cobranza y desde un día del Historial, y vuelve al que lo abrió |
 | **Cobranza** | El modo del retorno: solo tiendas con saldo, con la cuenta ya sacada (día + deuda). Ordenada **del último al primero** por defecto: reparte de ida y cobra de vuelta, así que la última tienda a la que dejó es la primera que reencuentra. Las que ya **abonaron una parte** (pago parcial, `tocada`) se hunden al final con una etiqueta «ya abonó», para que no estorben arriba y suba la siguiente por cobrar del todo |
 | **Cierre del día** | «Deberías tener S/ X en la caja» para cuadrar contra la plata física. Ya cerrado, un botón pide a Gemini el informe del día |
-| **Tiendas** | El directorio que se construyó solo, con buscador y orden **por ruta o alfabético (A–Z)** |
+| **Tiendas** | El directorio que se construyó solo, con buscador y orden **por ruta o alfabético (A–Z)**. Tocar un cliente abre su panel (renombrar, deuda, borrar) y, arriba, **Ver su historial** |
+| **Ficha del cliente** | Todo lo que se sabe de él: lo que debe ahora, su precio por kilo de hoy y entre qué precios se ha movido, lo que ha comprado, cuántas veces quedó debiendo, lo regalado en redondeos y sus últimas entregas |
 | **Historial** | Días cerrados y la semana, con un botón para el informe de Gemini de esos 7 días |
-| **Detalle de día** | Un día cerrado, entrega por entrega |
+| **Detalle de día** | Un día cerrado, entrega por entrega, cada una con **Corregir esta entrega** — y lo que cambie llega hasta la deuda del cliente (§8) |
 | **Ajustes** | Apariencia (oscuro/claro/sistema), hora de cierre, redondeo, sonido, respaldo, la API key de Gemini (solo para informes) y **Actualización**: qué versión tiene puesta y el enlace para bajar la última |
 | **Cargar stock** | «¿Con cuánto sales hoy?», con la sugerencia aprendida por día de semana |
 | **Menú** | Cuadrícula de 7 fichas, detrás de la pestaña «Más» |
