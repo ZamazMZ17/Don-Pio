@@ -255,6 +255,150 @@ describe("las demás intenciones", () => {
   });
 });
 
+describe("lo sucio que escupe el reconocedor del teléfono", () => {
+  it("las muletillas de arranque no se pegan al nombre", () => {
+    expect(interpretarLocal("Ya anota Rosa dos pollos").cliente).toBe("Rosa");
+    expect(interpretarLocal("eh este Rosa dos pollos").cliente).toBe("Rosa");
+    expect(interpretarLocal("listo apúntame Chela tres pollos").cliente).toBe("Chela");
+  });
+
+  it("encuentra el nombre aunque venga al final: «dos pollos para la Rosa»", () => {
+    const i = interpretarLocal("dos pollos y el pecho para la Rosa");
+    expect(i.cliente).toBe("Rosa");
+    expect(i.pollos).toBe(2);
+    expect(i.pechos).toBe(1);
+  });
+
+  it("«le llevo dos pollos a Rosa» es una entrega, no la carga de la mañana", () => {
+    const i = interpretarLocal("le llevo dos pollos a Rosa");
+    expect(i.intencion).toBe("nueva_entrega");
+    expect(i.pollos).toBe(2);
+    expect(i.cliente).toBe("Rosa");
+  });
+
+  it("«hoy llevo 100 pollos» sí es cargar stock", () => {
+    const i = interpretarLocal("hoy llevo 100 pollos y 20 piernas");
+    expect(i.intencion).toBe("cargar_stock");
+    expect(i.stockPollos).toBe(100);
+    expect(i.stockPiernas).toBe(20);
+  });
+
+  it("se corrigió a mitad de dictado: vale lo último", () => {
+    expect(interpretarLocal("Rosa dos pollos digo tres pollos").pollos).toBe(3);
+    expect(interpretarLocal("Juan un pollo a nueve cincuenta digo a nueve ochenta").precioPorKg).toBe(9.8);
+    expect(interpretarLocal("Rosa dos pollos total 42 soles digo 45 soles").totalDictado).toBe(45);
+  });
+
+  it("corregir el producto no mezcla los dos: «dos pollos digo dos piernas»", () => {
+    const i = interpretarLocal("Rosa dos pollos digo dos piernas");
+    expect(i.pollos).toBe(0);
+    expect(i.piernas).toBe(2);
+  });
+
+  it("«s/ 26.60» se lee como soles", () => {
+    expect(interpretarLocal("Rosa un pollo s/ 26.60").totalDictado).toBe(26.6);
+  });
+
+  it("«dos kilos y medio» son 2.5 kg", () => {
+    expect(interpretarLocal("Juan dos pollos dos kilos y medio").pesoTotalKg).toBe(2.5);
+  });
+
+  it("«pesó 12.4» marca el peso aunque no diga kilos", () => {
+    const i = interpretarLocal("Rosa tres pollos pesó 12.4 a 9.50");
+    expect(i.pesoTotalKg).toBe(12.4);
+    expect(i.precioPorKg).toBe(9.5);
+  });
+
+  it("«no se pesó» no inventa un peso", () => {
+    const i = interpretarLocal("Rosa 3 pollos no se pesó 27 soles");
+    expect(i.sinPesar).toBe(true);
+    expect(i.pesoTotalKg).toBe(null);
+    expect(i.totalDictado).toBe(27);
+  });
+
+  it("un total con «soles» ya no se cuela como peso", () => {
+    const i = interpretarLocal("Soledad dos pollos 53.50 soles");
+    expect(i.totalDictado).toBe(53.5);
+    expect(i.pesoTotalKg).toBe(null);
+  });
+
+  it("diminutivos: «dos pollitos y una piernita»", () => {
+    const i = interpretarLocal("Rosa dos pollitos y una piernita");
+    expect(i.pollos).toBe(2);
+    expect(i.piernas).toBe(1);
+  });
+});
+
+describe("precios y totales dichos de otras formas", () => {
+  it("«a nueve y treinta» es 9.30", () => {
+    expect(interpretarLocal("Rosa dos pollos a nueve y treinta").precioPorKg).toBe(9.3);
+  });
+
+  it("«al precio de 9.80»", () => {
+    expect(interpretarLocal("Rosa dos pollos 6 kilos al precio de 9.80").precioPorKg).toBe(9.8);
+  });
+
+  it("«9 soles 80 el kilo»", () => {
+    expect(interpretarLocal("Rosa dos pollos 6 kilos 9 soles 80 el kilo").precioPorKg).toBe(9.8);
+  });
+
+  it("«sale 42» y «son 42» sin decir soles", () => {
+    expect(interpretarLocal("Rosa dos pollos sale 42").totalDictado).toBe(42);
+    expect(interpretarLocal("Rosa dos pollos son 42").totalDictado).toBe(42);
+  });
+
+  it("«le cobré 42»", () => {
+    expect(interpretarLocal("Rosa dos pollos le cobré 42").totalDictado).toBe(42);
+  });
+
+  it("«son 3 pollos» no se confunde con un total", () => {
+    const i = interpretarLocal("Rosa son 3 pollos y 6 kilos");
+    expect(i.pollos).toBe(3);
+    expect(i.totalDictado).toBe(null);
+  });
+
+  it("«a ojo» cuenta como sin pesar", () => {
+    expect(interpretarLocal("Rosa dos pollos a ojo 40 soles").sinPesar).toBe(true);
+  });
+});
+
+describe("pagos dichos de otras formas", () => {
+  it("«me yapeó 50»", () => {
+    const i = interpretarLocal("Rosa me yapeó 50");
+    expect(i.intencion).toBe("registrar_pago");
+    expect(i.monto).toBe(50);
+  });
+
+  it("«canceló todito»", () => {
+    const i = interpretarLocal("Rosa canceló todito");
+    expect(i.intencion).toBe("registrar_pago");
+    expect(i.pagoTodo).toBe(true);
+  });
+
+  it("«pagó lo pendiente» va contra la deuda", () => {
+    expect(interpretarLocal("Carmen pagó 30 de lo pendiente").intencion).toBe("abono_deuda");
+  });
+
+  it("«abonó 30 de lo de antes» también", () => {
+    const i = interpretarLocal("Elsa abonó 30 de lo de antes");
+    expect(i.intencion).toBe("abono_deuda");
+    expect(i.monto).toBe(30);
+  });
+
+  it("«2 pollos y me pagó 40» no pierde los pollos", () => {
+    // Antes esto caía al camino del pago y la entrega se esfumaba.
+    const i = interpretarLocal("Rosa 2 pollos y me pagó 40");
+    expect(i.intencion).toBe("nueva_entrega");
+    expect(i.pollos).toBe(2);
+  });
+
+  it("«me pagó los 2 pollos de ayer» sí es un pago: el artículo delata la referencia", () => {
+    const i = interpretarLocal("Rosa me pagó los 2 pollos de ayer");
+    expect(i.intencion).toBe("abono_deuda");
+    expect(i.pollos).toBe(0);
+  });
+});
+
 describe("lo que no entiende", () => {
   it("no se traga un dictado vacío", () => {
     expect(interpretarLocal("").intencion).toBe("desconocida");

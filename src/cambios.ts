@@ -168,4 +168,9 @@ export const CAMBIOS: Cambio[] = [
     texto:
       "«¿Con cuánto sales?» ahora tiene un campo aparte para los pechos que compraste ya sueltos, cuando te faltó mercadería y le compraste a otro repartidor. Antes, entregar esos pechos se contaba como si hubieras partido uno de tus propios pollos, y eso inflaba de más las piernas que te quedaban por vender.",
   },
+  {
+    fecha: "2026-08-22",
+    texto:
+      "El dictado por micrófono entiende muchas más formas de hablar: precios como «a nueve y treinta» o «al precio de 9.80», totales como «sale 42» o «le cobré 42», pesos como «pesó 12.4» o «dos kilos y medio», pagos por Yape o Plin, «canceló todito», y corregirte a mitad de dictado con «digo» («dos pollos digo tres»). También agarra el nombre si lo dices al final («dos pollos para la Rosa»), ignora las muletillas del arranque («ya anota…»), y ya no confunde «le llevo 2 pollos a Rosa» con la carga de la mañana.",
+  },
 ];
