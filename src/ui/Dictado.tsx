@@ -183,7 +183,16 @@ export function TarjetaConfirmacion({
 }) {
   const { intencion: i, emparejamiento: em } = propuesta;
   const [eligiendo, setEligiendo] = useState(em.decision === "ambiguo" || !em.mejor);
-  const [nombreNuevo, setNombreNuevo] = useState(em.mejor?.tienda.nombre ?? i.cliente);
+  /*
+   * Ambiguo es justo «¿cuál de estas dos es?» — precargar el campo con el
+   * nombre de una de las candidatas lo contestaba por él, y si tocaba
+   * «Crear» sin fijarse volvía a crear una tienda con el nombre de la
+   * candidata que no era. El campo tiene que arrancar con lo que **él**
+   * dijo (`i.cliente`); las candidatas siguen ahí arriba, un toque.
+   */
+  const [nombreNuevo, setNombreNuevo] = useState(
+    em.decision === "ambiguo" ? i.cliente : (em.mejor?.tienda.nombre ?? i.cliente),
+  );
   // Una vez que él toca el campo, las sugerencias siguen lo que escribe en
   // vez de las del dictado original — si estaba corrigiendo un nombre mal
   // oído, seguir mostrando las candidatas de la transcripción vieja ya no

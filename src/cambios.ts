@@ -178,4 +178,9 @@ export const CAMBIOS: Cambio[] = [
     texto:
       "El micrófono ahora escucha con un motor propio, mejor afinado: aguanta tus pausas sin cortarse (antes perdía palabras en cada corte), reconoce en el mismo teléfono sin esperar a la red (ahí estaba la demora), y ya no se queda «mudo» después de un error. Truco: si descargas el paquete de voz en español de Google (Ajustes de Android → Sistema → Dictado por voz), transcribe rápido incluso sin señal.",
   },
+  {
+    fecha: "2026-08-22",
+    texto:
+      "Corregido: cuando había dos clientes con nombre parecido, la tarjeta te preguntaba «¿cuál es?» pero el cuadro de texto ya traía puesto el nombre de uno de los dos — no lo que tú dijiste. Si tocabas «Crear» sin fijarte, podía salir un cliente nuevo con el nombre equivocado. Ahora el cuadro arranca con lo que de verdad dijiste.",
+  },
 ];

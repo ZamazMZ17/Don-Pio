@@ -596,8 +596,14 @@ como sugerencia antes de tocar «Crear», igual que la lista de candidatas del d
   «¿Con cuánto sales?» (§7). Con ese campo en 0 —el día normal— el cálculo es exactamente
   el de antes; solo cuando compra pechos sueltos aparte, entregarlos deja de tocar el
   stock de pollos y de inflar el montón de piernas.
-
----
+- **Cuando el emparejador dudaba entre dos candidatas, el cuadro de texto ya traía puesto
+  el nombre de una de ellas — no lo que él dijo.** `nombreNuevo` arrancaba siempre en
+  `em.mejor?.tienda.nombre ?? i.cliente`, y en «ambiguo» **sí** hay `mejor` (es una de las
+  dos candidatas parecidas). Dictó «Ariana» y el cuadro decía «Marina»: si tocaba «Crear»
+  sin fijarse, creaba un cliente nuevo con el nombre equivocado — la propia candidata que no
+  quería. Arreglo: en `decision === "ambiguo"` el campo arranca en `i.cliente` (lo que él
+  dijo), nunca en el nombre de una candidata; las candidatas se siguen ofreciendo arriba,
+  un toque.
 
 ## 8. Modelo de datos
 
