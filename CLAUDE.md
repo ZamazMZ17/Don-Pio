@@ -265,12 +265,16 @@ como sugerencia antes de tocar «Crear», igual que la lista de candidatas del d
   exigir un destino para cada pantalla nueva, y `navegacion.test.ts` comprueba que desde
   cualquiera se llega a Hoy sin repetir ninguna — que es lo que detecta un ciclo.
 
-  **La única excepción es el Detalle**, y es deliberada: se abre desde Hoy y desde Cobranza,
+  **Las excepciones son el Detalle y la Ficha**, y son deliberadas: el Detalle se abre desde Hoy, desde Cobranza y desde un día del Historial;
   y tiene que volver a la lista que lo abrió (salir a Hoy tras corregir una entrega en plena
   vuelta cobrando es perder el sitio). Lo lleva `OrigenDetalle`, un **solo dato puesto al
   abrir** — no un registro de por dónde se pasó: no lo alimenta el retroceder, no crece, y
-  sus dos valores son pestañas, así que no puede formar un ciclo. Si el Detalle se abre
-  algún día desde una tercera pantalla, se agrega al tipo y `atrasDesde` sigue siendo pura.
+  no crece. Lo mismo la Ficha, que se abre desde el directorio y desde el Detalle
+  (`OrigenFicha`). Los dos encadenan —ficha → detalle → cobranza → hoy— sin ciclo, y eso
+  **depende de que la Ficha no abra ningún Detalle**: si sus entregas fueran tocables, el
+  atrás podría quedarse rebotando detalle → ficha → detalle. Por eso la Ficha es de solo
+  lectura. `navegacion.test.ts` recorre todas las combinaciones de orígenes y comprueba que
+  desde cualquier pantalla se llega a Hoy sin repetir ninguna.
 - **El reconocedor del teléfono no vale como camino principal.** Transcribe a ciegas y se
   comía el nombre del cliente: «hay de cinco pollos 12 kg 750 a 9 soles 30». Con audio,
   Gemini tiene las pausas y la entonación, que es donde está la separación entre el nombre

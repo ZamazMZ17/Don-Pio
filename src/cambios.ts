@@ -138,4 +138,9 @@ export const CAMBIOS: Cambio[] = [
     texto:
       "Las tarjetas de Cobranza se leen más grandes: la línea de lo que le dejaste, el «De hoy» y la deuda subieron de tamaño, y el lápiz de corregir pasó a ser un botón con recuadro en vez de un icono diminuto.",
   },
+  {
+    fecha: "2026-08-22",
+    texto:
+      "El Detalle de una entrega estrena arriba un botón de reloj que abre el historial de ese cliente: ver a cómo le vienes cobrando mientras corriges su cuenta, sin dar el rodeo por Tiendas. Al salir vuelves a la entrega, no al directorio.",
+  },
 ];

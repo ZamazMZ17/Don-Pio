@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { Pencil, Trash2 } from "lucide-react";
+import { History, Pencil, Trash2 } from "lucide-react";
 import { db } from "../db/db";
 import {
   agregarTanda as agregarTandaDB,
@@ -64,7 +64,19 @@ function CampoNumero({
  * El detalle de una entrega. Todo editable, que es para lo que existe: cuando
  * piden más, cuando hay merma, o cuando el peso se dictó mal.
  */
-export function Detalle({ entregaId, volver }: { entregaId: number; volver: () => void }) {
+export function Detalle({
+  entregaId,
+  volver,
+  verFicha,
+}: {
+  entregaId: number;
+  volver: () => void;
+  /**
+   * Abre la ficha del cliente. Se pregunta «¿a cómo le vengo cobrando?»
+   * justo aquí, corrigiendo un precio — no dando un rodeo por el directorio.
+   */
+  verFicha: (tiendaId: number) => void;
+}) {
   const [nuevaTanda, setNuevaTanda] = useState("");
   const [renombrando, setRenombrando] = useState(false);
   const [nombreEdit, setNombreEdit] = useState("");
@@ -136,16 +148,31 @@ export function Detalle({ entregaId, volver }: { entregaId: number; volver: () =
         volver={volver}
         derecha={
           tienda && (
-            <button
-              aria-label="Editar nombre"
-              onClick={() => {
-                setNombreEdit(tienda.nombre);
-                setRenombrando((v) => !v);
-              }}
-              style={{ color: "var(--texto-3)", display: "flex", padding: 8, flex: "none" }}
-            >
-              <Pencil size={20} />
-            </button>
+            <div style={{ display: "flex", gap: 2, flex: "none", margin: "0 -6px" }}>
+              {/*
+                Su historial, a un toque desde aquí: «¿a cómo le vengo
+                cobrando?» y «¿cuántas veces me ha quedado debiendo?» se
+                preguntan justo mientras se corrige su cuenta, no dando un
+                rodeo por el directorio.
+              */}
+              <button
+                aria-label="Ver su historial"
+                onClick={() => verFicha(tienda.id!)}
+                style={{ ...S.iconoCabecera, color: "var(--acento-claro)" }}
+              >
+                <History size={22} />
+              </button>
+              <button
+                aria-label="Editar nombre"
+                onClick={() => {
+                  setNombreEdit(tienda.nombre);
+                  setRenombrando((v) => !v);
+                }}
+                style={{ ...S.iconoCabecera, color: "var(--texto-3)" }}
+              >
+                <Pencil size={20} />
+              </button>
+            </div>
           )
         }
       />

@@ -55,7 +55,7 @@ import {
   type Propuesta,
 } from "./ui/Dictado";
 import { HojaNovedades, useNovedades } from "./ui/Novedades";
-import { atrasDesde, type OrigenDetalle, type Pantalla } from "./lib/navegacion";
+import { atrasDesde, type OrigenDetalle, type OrigenFicha, type Pantalla } from "./lib/navegacion";
 
 export default function App() {
   const [pantalla, setPantalla] = useState<Pantalla>("hoy");
@@ -67,8 +67,9 @@ export default function App() {
    */
   const [origenDetalle, setOrigenDetalle] = useState<OrigenDetalle>("hoy");
   const [diaSel, setDiaSel] = useState<DiaISO>(hoyISO());
-  /** Qué cliente tiene la ficha abierta. */
+  /** Qué cliente tiene la ficha abierta, y desde dónde se abrió. */
   const [tiendaSel, setTiendaSel] = useState<number | null>(null);
+  const [origenFicha, setOrigenFicha] = useState<OrigenFicha>("tiendas");
   const [propuesta, setPropuesta] = useState<Propuesta | null>(null);
   const [pensando, setPensando] = useState(false);
   const [escribiendo, setEscribiendo] = useState(false);
@@ -459,9 +460,9 @@ export default function App() {
    * lleve su destino escrito a mano.
    */
   const salir = useCallback(() => {
-    setPantalla((actual) => atrasDesde(actual, origenDetalle) ?? actual);
+    setPantalla((actual) => atrasDesde(actual, { detalle: origenDetalle, ficha: origenFicha }) ?? actual);
     limpiar();
-  }, [limpiar, origenDetalle]);
+  }, [limpiar, origenDetalle, origenFicha]);
 
   /**
    * El botón atrás de Android. Cierra lo que haya abierto, de fuera hacia
@@ -495,7 +496,7 @@ export default function App() {
     // la tabla de `navegacion.ts`, la misma que usa su botón «volver», para
     // que los dos no puedan discrepar. `null` = ya está en Hoy, no queda nada
     // que cerrar y la app pasa a segundo plano.
-    const destino = atrasDesde(pantalla, origenDetalle);
+    const destino = atrasDesde(pantalla, { detalle: origenDetalle, ficha: origenFicha });
     if (destino === null) return false;
     setPantalla(destino);
     return true;
@@ -565,7 +566,17 @@ export default function App() {
         />
       )}
       {pantalla === "detalle" && entregaSel !== null && (
-        <Detalle entregaId={entregaSel} volver={salir} />
+        <Detalle
+          entregaId={entregaSel}
+          volver={salir}
+          // «¿A cómo le vengo cobrando?» se pregunta justo aquí, corrigiendo
+          // un precio — no dando un rodeo por el directorio.
+          verFicha={(id) => {
+            setTiendaSel(id);
+            setOrigenFicha("detalle");
+            setPantalla("ficha");
+          }}
+        />
       )}
       {pantalla === "cierre" && <Cierre fecha={fecha} volver={salir} />}
       {pantalla === "stock" && (
@@ -585,6 +596,7 @@ export default function App() {
         <Tiendas
           abrirFicha={(id) => {
             setTiendaSel(id);
+            setOrigenFicha("tiendas");
             setPantalla("ficha");
           }}
         />

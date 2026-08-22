@@ -30,6 +30,21 @@ export const S = {
     display: "flex",
     flexDirection: "column",
   } as CSSProperties,
+  /**
+   * Un botón de icono en la cabecera. Cumple el mínimo táctil de 52px de §4
+   * con margen vertical negativo, para que el área que se toca crezca sin que
+   * la cabecera engorde — el mismo truco del botón de orden de Hoy. Con
+   * `padding: 8` medía 36px y el dedo no lo acertaba a la intemperie.
+   */
+  iconoCabecera: {
+    minWidth: 52,
+    minHeight: 52,
+    margin: "-10px 0",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flex: "none",
+  } as CSSProperties,
 };
 
 export function Cabecera({

@@ -77,13 +77,35 @@ export const PADRE: Record<Rama, Pantalla> = {
 export type OrigenDetalle = Extract<Pantalla, "hoy" | "cobranza" | "dia">;
 
 /**
+ * De dónde se abrió la ficha del cliente: del directorio, o del Detalle de una
+ * entrega suya («¿a cómo le vengo cobrando?» se pregunta justo mientras se
+ * corrige un precio).
+ *
+ * Encadena con `OrigenDetalle` sin formar un ciclo, y esto **depende de que la
+ * ficha no abra ningún Detalle**: si sus entregas fueran tocables, el atrás
+ * podría quedarse rebotando detalle → ficha → detalle. Por eso la ficha es de
+ * solo lectura. Si algún día se quiere que abran, hará falta algo más que un
+ * origen suelto — y `navegacion.test.ts` lo cazaría antes de llegar al
+ * teléfono.
+ */
+export type OrigenFicha = Extract<Pantalla, "tiendas" | "detalle">;
+
+/** De dónde se abrió cada pantalla que se puede abrir desde varios sitios. */
+export interface Origenes {
+  detalle?: OrigenDetalle;
+  ficha?: OrigenFicha;
+}
+
+/**
  * A dónde va el atrás desde `p`. Desde una pestaña que no es Hoy, a Hoy;
  * desde Hoy, `null` — no queda nada que cerrar y la app pasa a segundo plano.
  *
- * `origenDetalle` solo se mira estando en el Detalle; sin él vuelve a Hoy,
- * que es lo que dice `PADRE`.
+ * Los orígenes solo se miran en la pantalla que les toca; sin ellos manda
+ * `PADRE`, que es la tabla fija.
  */
-export function atrasDesde(p: Pantalla, origenDetalle?: OrigenDetalle): Pantalla | null {
-  if (!esRaiz(p)) return p === "detalle" && origenDetalle ? origenDetalle : PADRE[p];
-  return p === "hoy" ? null : "hoy";
+export function atrasDesde(p: Pantalla, origenes: Origenes = {}): Pantalla | null {
+  if (esRaiz(p)) return p === "hoy" ? null : "hoy";
+  if (p === "detalle" && origenes.detalle) return origenes.detalle;
+  if (p === "ficha" && origenes.ficha) return origenes.ficha;
+  return PADRE[p];
 }

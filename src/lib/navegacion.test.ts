@@ -87,15 +87,15 @@ describe("el atrás", () => {
 
 describe("el Detalle vuelve a la lista que lo abrió", () => {
   it("abierto desde Hoy, sale a Hoy", () => {
-    expect(atrasDesde("detalle", "hoy")).toBe("hoy");
+    expect(atrasDesde("detalle", { detalle: "hoy" })).toBe("hoy");
   });
 
   it("abierto desde Cobranza, sale a Cobranza — no pierde el sitio de la vuelta", () => {
-    expect(atrasDesde("detalle", "cobranza")).toBe("cobranza");
+    expect(atrasDesde("detalle", { detalle: "cobranza" })).toBe("cobranza");
   });
 
   it("abierto desde un día del Historial, sale a ese día", () => {
-    expect(atrasDesde("detalle", "dia")).toBe("dia");
+    expect(atrasDesde("detalle", { detalle: "dia" })).toBe("dia");
   });
 
   it("sin origen sabido vuelve a Hoy, como dice la tabla", () => {
@@ -105,7 +105,7 @@ describe("el Detalle vuelve a la lista que lo abrió", () => {
   it("el origen no afecta a ninguna otra pantalla", () => {
     for (const p of TODAS) {
       if (p === "detalle") continue;
-      expect(atrasDesde(p, "cobranza")).toBe(atrasDesde(p));
+      expect(atrasDesde(p, { detalle: "cobranza" })).toBe(atrasDesde(p));
     }
   });
 
@@ -114,11 +114,60 @@ describe("el Detalle vuelve a la lista que lo abrió", () => {
       const camino: Pantalla[] = [];
       let actual: Pantalla | null = "detalle";
       for (let i = 0; i < TODAS.length + 1 && actual !== null; i++) {
-        actual = atrasDesde(actual, origen);
+        actual = atrasDesde(actual, { detalle: origen });
         if (actual) camino.push(actual);
       }
       expect(camino.at(-1)).toBe("hoy");
       expect(new Set(camino).size).toBe(camino.length);
+    }
+  });
+});
+
+describe("la ficha del cliente vuelve a donde se abrió", () => {
+  it("abierta desde el directorio, sale al directorio", () => {
+    expect(atrasDesde("ficha", { ficha: "tiendas" })).toBe("tiendas");
+  });
+
+  it("abierta desde el Detalle, vuelve al Detalle", () => {
+    expect(atrasDesde("ficha", { ficha: "detalle" })).toBe("detalle");
+  });
+
+  it("sin origen sabido vuelve al directorio, como dice la tabla", () => {
+    expect(atrasDesde("ficha")).toBe("tiendas");
+  });
+
+  /**
+   * El encadenado más largo posible: corrigiendo una entrega en plena vuelta
+   * cobrando, se abre su ficha para ver a cómo se le viene cobrando. El atrás
+   * tiene que desandarlo entero sin repetir pantalla.
+   */
+  it("ficha → detalle → cobranza → hoy, sin ciclos", () => {
+    const origenes = { ficha: "detalle", detalle: "cobranza" } as const;
+    const camino: Pantalla[] = [];
+    let actual: Pantalla | null = "ficha";
+    for (let i = 0; i < TODAS.length + 1 && actual !== null; i++) {
+      actual = atrasDesde(actual, origenes);
+      if (actual) camino.push(actual);
+    }
+    expect(camino).toEqual(["detalle", "cobranza", "hoy"]);
+    expect(new Set(camino).size).toBe(camino.length);
+  });
+
+  it("con cualquier combinación de orígenes se llega a Hoy sin repetir ninguna", () => {
+    for (const ficha of ["tiendas", "detalle"] as const) {
+      for (const detalle of ["hoy", "cobranza", "dia"] as const) {
+        for (const desde of TODAS) {
+          const camino: Pantalla[] = [];
+          let actual: Pantalla | null = desde;
+          for (let i = 0; i < TODAS.length + 1 && actual !== null; i++) {
+            actual = atrasDesde(actual, { ficha, detalle });
+            if (actual) camino.push(actual);
+          }
+          expect(actual).toBeNull();
+          expect(new Set(camino).size).toBe(camino.length);
+          if (desde !== "hoy") expect(camino.at(-1)).toBe("hoy");
+        }
+      }
     }
   });
 });
