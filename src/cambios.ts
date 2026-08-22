@@ -148,4 +148,9 @@ export const CAMBIOS: Cambio[] = [
     texto:
       "En Cobranza, los botones Deudas / Ruta ya no se llevan una fila entera: ahora van al ancho de su texto, compartiendo fila con el buscador. La lista empieza 54px más arriba y se ven más tiendas de una sola mirada.",
   },
+  {
+    fecha: "2026-08-22",
+    texto:
+      "Corregidos tres casos donde la plata se podía perder sin avisar, encontrados simulando dos meses de reparto: dejarle dos veces sin pesar a la misma tienda el mismo día y cobrarle todo junto ya no le mete el dinero solo a la primera entrega; deshacer un cobro de un día ya cerrado ya no deja ese saldo invisible; y borrar una entrega vieja ya no le recorta el «cobrado» a otro día distinto donde de verdad se cobró algo.",
+  },
 ];

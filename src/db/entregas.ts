@@ -298,7 +298,21 @@ export async function borrarEntrega(id: number): Promise<void> {
       );
       for (const d of suyas) await db.deudas.update(d.id!, { cerrada: 1 });
     }
-    await db.pagos.where("entregaId").equals(id).delete();
+    /*
+     * Solo los pagos que se aplicaron a **esta** entrega el mismo día
+     * (`tipo: "delDia"`): esos sí desaparecen con ella. `Pago.entregaId`
+     * también aparece en pagos `"deudaAnterior"` — ahí solo dice qué entrega
+     * *originó* la deuda que se estaba pagando, no que el pago sea de esta
+     * entrega. Ese pago pudo hacerse días después, ya con el día cerrado; un
+     * `.where("entregaId")` sin filtrar por tipo se lo llevaba también, y
+     * borrar una entrega vieja ya del todo pagada le recortaba el «cobrado»
+     * a un día completamente distinto y ya cerrado.
+     */
+    await db.pagos
+      .where("entregaId")
+      .equals(id)
+      .filter((p) => p.tipo === "delDia")
+      .delete();
     await db.entregas.delete(id);
   });
 }
@@ -596,26 +610,51 @@ export async function registrarCobro(
         .filter((e) => e.totalCalculado === 0)
         .sort((a, b) => a.orden - b.orden);
 
-      for (const e of sinPrecioHoy) {
-        if (resto <= 0) break;
+      /*
+       * Si hay varias, el resto se reparte entre todas — a prorrata de
+       * pollos, que es la única señal de tamaño que tienen sin peso ni
+       * precio. Antes se le ponía **todo** el monto a la primera y ahí se
+       * quedaba `resto = 0`: la segunda entrega sin pesar del día se quedaba
+       * en S/ 0.00 para siempre, sin dinero asignado y sin forma de cobrarla
+       * — el botón de cobrar se deshabilita en 0. Pasa cada vez que se
+       * reparte dos veces a la misma tienda sin precio el mismo día y luego
+       * se cobra todo junto.
+       *
+       * Los pollos en 0 (piernas o pechos sueltos) van a partes iguales entre
+       * sí; el resto de centavos que no divide exacto se lo lleva la última,
+       * para que la suma cuadre siempre con lo que de verdad recibió.
+       */
+      const totalPollos = sinPrecioHoy.reduce((a, e) => a + e.pollos, 0);
+      const pesoDe = (e: (typeof sinPrecioHoy)[number]) => (totalPollos > 0 ? e.pollos : 1);
+      const sumaPesos = totalPollos > 0 ? totalPollos : sinPrecioHoy.length;
+      // Cada una hacia abajo (nunca puede sobrepasar lo que queda) y la
+      // última se lleva el resto exacto: así la suma siempre cuadra con lo
+      // recibido, sin importar cómo caigan los redondeos por el camino.
+      let quedan = resto;
+      for (let i = 0; i < sinPrecioHoy.length; i++) {
+        const e = sinPrecioHoy[i];
+        const esUltima = i === sinPrecioHoy.length - 1;
+        const parte = esUltima ? quedan : Math.floor((resto * pesoDe(e)) / sumaPesos);
+        if (parte <= 0) continue;
+        quedan -= parte;
         await db.entregas.update(e.id!, {
-          totalCalculado: resto,
-          totalCobrado: resto,
-          estadoPago: estadoDe(resto, resto),
+          totalCalculado: parte,
+          totalCobrado: parte,
+          estadoPago: estadoDe(parte, parte),
         });
         await db.pagos.add({
           tiendaId,
           entregaId: e.id!,
           fecha,
-          monto: resto,
+          monto: parte,
           tipo: "delDia",
           creada: ahora,
           // Este pago es el que le puso el total: si se deshace, el total se
           // va con él (ver `deshacerCobro`).
-          totalFijado: resto,
+          totalFijado: parte,
         });
-        resto = 0;
       }
+      resto = 0;
     }
 
     if (!opciones.aceptarRedondeo) return;
@@ -776,7 +815,9 @@ async function devolverADeuda(p: Pago): Promise<void> {
  * veces en el resumen del día.
  */
 export async function deshacerCobro(tiendaId: number, creada: number): Promise<void> {
-  await db.transaction("rw", db.entregas, db.deudas, db.pagos, async () => {
+  // `db.jornadas` entra por `ajustarDeudaTrasCorregir`, que mira si el día de
+  // la entrega ya cerró.
+  await db.transaction("rw", db.entregas, db.deudas, db.pagos, db.jornadas, async () => {
     const grupo = (await db.pagos.where("tiendaId").equals(tiendaId).toArray()).filter(
       (p) => p.creada === creada,
     );
@@ -799,6 +840,16 @@ export async function deshacerCobro(tiendaId: number, creada: number): Promise<v
             totalCalculado: total,
             estadoPago: estadoDe(total, cobrado + e.descuentoRedondeo),
           });
+          /*
+           * Si el día de esa entrega ya cerró, lo que vuelve a faltar tiene
+           * que llegar hasta `deudas` — igual que al corregir desde el
+           * Detalle (`editarEntrega`/`fijarTotal`). Sin esto, deshacer un
+           * cobro de un día cerrado hacía desaparecer la plata sin dejar
+           * rastro: la entrega volvía a deber, pero ni Cobranza ni la ficha
+           * del cliente la contaban — las dos confían en `deudas` para todo
+           * lo que ya cerró, y ahí no había nada.
+           */
+          await ajustarDeudaTrasCorregir(e, saldoDe(e), total - cobrado - e.descuentoRedondeo);
         }
       }
       await db.pagos.delete(p.id!);

@@ -470,6 +470,42 @@ como sugerencia antes de tocar «Crear», igual que la lista de candidatas del d
   pero Hoy usa su propio `deudasPorTienda()`, que no pasaba por ese filtro. Arreglo: las tres
   cifras de deuda que enseña Hoy (Agenda, Ruta y el «a cobrar» combinado con lo de hoy) pasan
   por `aCobrar()`, y si eso redondea a 0 no se enseña la línea — igual que en Cobranza.
+- **Dos entregas sin precio el mismo día a la misma tienda: la segunda perdía su dinero.**
+  `registrarCobro()` reparte un pago entre deudas viejas, entregas ya calculadas, y por último
+  las que aún no tienen total (`sinPrecioHoy`, cuando `calcular()` cayó en `origen: "incompleto"`
+  — sin peso, sin precio, sin total dictado). Esa última rama tomaba **todo** el resto y se lo
+  ponía a la **primera** entrega sin precio que encontraba, y como después ponía `resto = 0`, la
+  segunda se quedaba en S/ 0.00 para siempre: pendiente en Cobranza, sin dinero asignado y sin
+  forma real de cobrarla (el botón se deshabilita en 0). Pasa cada vez que se le deja algo dos
+  veces sin pesar el mismo día y luego se cobra todo junto. Arreglo: el resto se reparte entre
+  **todas** las que faltan, a prorrata de pollos (o en partes iguales si son puras piernas/pechos
+  sueltos, con 0 pollos); la última se lleva el resto exacto para que la suma nunca falle por
+  redondeo. Se encontró en una auditoría dirigida, no por un usuario — una sonda que reproducía
+  el escenario a propósito antes de tocar código.
+- **Deshacer un cobro de un día ya cerrado hacía desaparecer la plata.** `deshacerCobro()`
+  restaba `totalCobrado` (y, si aplicaba, ponía `totalCalculado` en 0) directo sobre la
+  entrega, pero **nunca llamaba a `ajustarDeudaTrasCorregir()`** — el mismo paso que
+  `editarEntrega`/`fijarTotal` sí hacen desde el arreglo de días cerrados (§8). Si la entrega
+  era de un día ya cerrado, el saldo que volvía a faltar se quedaba **solo en la entrega**, y
+  ni Cobranza ni la ficha del cliente lo veían: las dos confían en `deudas` para todo lo que
+  ya cerró, y ahí no nacía nada. Deshacer un cobro de S/ 50 en un día cerrado dejaba a la
+  tienda «al día» en la app aunque en la calle siguiera debiendo esos 50 soles. Arreglo: el
+  mismo `ajustarDeudaTrasCorregir(e, saldoAntes, saldoDespues)` que ya usan las otras
+  correcciones, y `db.jornadas` se suma a la transacción de `deshacerCobro` porque esa función
+  la necesita para saber si el día cerró. Encontrado en la misma auditoría dirigida que el
+  bug de arriba — probando a propósito «cobro en un día que después se cierra, y luego se
+  deshace ese cobro».
+- **Borrar una entrega vieja podía recortar el «cobrado» de un día completamente distinto,
+  ya cerrado.** `borrarEntrega()` hacía `db.pagos.where("entregaId").equals(id).delete()` sin
+  mirar el `tipo`. `Pago.entregaId` significa dos cosas distintas según el tipo: en un pago
+  `"delDia"` es la entrega que se está pagando (borrarla con la entrega tiene sentido); en uno
+  `"deudaAnterior"` es la entrega que **originó** la deuda que se está pagando, y ese pago
+  puede haberse hecho días después, en una fecha completamente distinta y ya cerrada. Un
+  `.where("entregaId")` sin distinguir tipo se llevaba también ese segundo pago: borrar una
+  entrega vieja ya del todo cobrada le borraba a un día futuro y cerrado el registro de que
+  ese dinero se había cobrado — el «Cobrado» de `Dia.tsx` y `resumenDe()` de ese otro día
+  bajaban solos, sin que nadie hubiera tocado nada de ese día. Arreglo: el `.delete()` se
+  filtra a `tipo === "delDia"`. Encontrado en la misma auditoría dirigida.
 - **El «+» de Ruta para dar de alta a alguien nuevo nunca sugería tiendas parecidas —
   escribir «Olga» no encontraba a la Olga que ya existía.** La tarjeta en blanco arranca con
   `candidatas: []` a propósito (no hay nada que dictar todavía), pero nada corría el
