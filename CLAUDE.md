@@ -39,8 +39,8 @@ que quedó registrado sin mirar la pantalla.
 |---|---|
 | Plataforma | **PWA + APK por Capacitor**, pensada para Android. Mismo stack que LyKari |
 | Almacenamiento | **IndexedDB vía Dexie**, local-first. Nada de servidor propio |
-| Dictado (camino normal) | **Se graba el audio y va entero a Gemini**, que transcribe y estructura de una vez |
-| Dictado (sin key o sin señal) | Reconocedor nativo de Android (offline) + **parser local de reglas** |
+| Dictado (camino normal) | **Reconocedor nativo de Android**, español de Perú, texto parcial en vivo + **parser local de reglas** |
+| Dictado (alternativa) | Audio a Gemini, solo con API key, internet y activación explícita |
 | API key | Vive en el dispositivo, pegada desde Ajustes. **Nunca en el repo, nunca en el APK** |
 | Directorio de tiendas | **Se construye solo, desde los dictados.** No hay carga manual masiva |
 | Desambiguar homónimos | Por **nombre + hora del día + posición en la ruta**. Ver §6 |
@@ -180,10 +180,10 @@ una tienda existente en silencio: **el emparejamiento siempre se muestra antes d
 - **El botón atrás de Android** se intercepta en `lib/atras.ts`. Cierra de fuera hacia
   dentro (escucha → tarjeta → cobro → pantalla) y solo manda la app a segundo plano desde
   Hoy. Por defecto Capacitor la cerraba entera de un toque, en mitad de la ruta.
-- **El reconocedor del teléfono no vale como camino principal.** Transcribe a ciegas y se
-  comía el nombre del cliente: «hay de cinco pollos 12 kg 750 a 9 soles 30». Con audio,
-  Gemini tiene las pausas y la entonación, que es donde está la separación entre el nombre
-  y las cantidades. El reconocedor se queda solo para cuando no hay señal.
+- **El reconocedor del teléfono es el camino principal.** Se abre desde el botón propio de
+  Don Pio, usa `es-PE`, enseña resultados parciales y no manda audio fuera del dispositivo.
+  La tarjeta de confirmación sigue siendo obligatoria: el reconocimiento puede equivocarse
+  con nombres o cifras. Gemini es una alternativa opcional con API key e internet.
 - **`detener()` no puede esperar al plugin.** Hacía `await SpeechRecognition.stop()` antes
   de cerrar y esa promesa no resolvía en el teléfono: la escucha se quedaba abierta para
   siempre. Se cierra primero y se para el plugin después, siempre desde `soltar()`.

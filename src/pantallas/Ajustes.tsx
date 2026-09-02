@@ -3,6 +3,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../db/db";
 import {
   CLAVE_API,
+  CLAVE_AUDIO_IA,
   CLAVE_HORA_CIERRE,
   CLAVE_MODELO,
   CLAVE_MODO_TECLADO,
@@ -25,7 +26,8 @@ export function Ajustes({ volver }: { volver: () => void }) {
   const modelo = useAjuste(CLAVE_MODELO, MODELO_POR_DEFECTO);
   const horaCierre = useAjuste(CLAVE_HORA_CIERRE, "19:30");
   const stockDefecto = useAjuste(CLAVE_STOCK_DEFECTO, "120");
-  const modoTeclado = useAjusteBool(CLAVE_MODO_TECLADO, true);
+  const modoTeclado = useAjusteBool(CLAVE_MODO_TECLADO, false);
+  const audioIA = useAjusteBool(CLAVE_AUDIO_IA, false);
   const redondeo = useAjusteBool(CLAVE_REDONDEO);
   const sonido = useAjusteBool(CLAVE_SONIDO, true);
 
@@ -142,10 +144,16 @@ export function Ajustes({ volver }: { volver: () => void }) {
         />
 
         <Interruptor
-          label="Dictar con el teclado"
-          sub="Abre el cuadro de escribir y usas el micrófono de tu teclado. Es gratis y no gasta la cuota de Gemini."
+          label="Usar dictado del teclado"
+          sub="Alternativa al botón de voz de Don Pio. Abre un cuadro para escribir o usar el micrófono de Gboard."
           activo={modoTeclado}
           onCambio={(v) => void guardarAjuste(CLAVE_MODO_TECLADO, v ? "1" : "0")}
+        />
+        <Interruptor
+          label="Mejorar dictado con Gemini"
+          sub="Envía el audio a Gemini si hay internet y configuraste una API key. Apagado, Don Pio usa solo el reconocimiento del teléfono."
+          activo={audioIA}
+          onCambio={(v) => void guardarAjuste(CLAVE_AUDIO_IA, v ? "1" : "0")}
         />
         <Interruptor
           label="Redondear hacia abajo"

@@ -14,6 +14,7 @@ import { useAjuste, useAjusteBool } from "./lib/ganchos";
 import { useBotonAtras } from "./lib/atras";
 import {
   CLAVE_API,
+  CLAVE_AUDIO_IA,
   CLAVE_MODO_TECLADO,
   CLAVE_SONIDO,
   CLAVE_STOCK_OFRECIDO,
@@ -194,28 +195,23 @@ export default function App() {
 
   const grab = useGrabadora();
   const apiKey = useAjuste(CLAVE_API);
-  /**
-   * Por defecto se dicta con el teclado: el micrófono de Gboard transcribe
-   * igual de bien y **no gasta cuota de la API**, que en el plan gratuito se
-   * acaba en cuatro dictados. Se puede cambiar en Ajustes.
-   */
-  const modoTeclado = useAjusteBool(CLAVE_MODO_TECLADO, true);
+  /** El botón principal abre el dictado nativo de Android. */
+  const modoTeclado = useAjusteBool(CLAVE_MODO_TECLADO, false);
+  /** Envío de audio opcional; nunca se activa solo por tener una API key. */
+  const audioIA = useAjusteBool(CLAVE_AUDIO_IA, false);
   const escuchando = rec.estado === "escuchando" || rec.estado === "pidiendo";
   const grabando = grab.estado === "grabando" || grab.estado === "pidiendo";
   const dictando = escuchando || grabando;
-  /** Con key e internet manda el audio a Gemini; si no, reconocedor offline. */
-  const porAudio = !modoTeclado && apiKey !== "" && enLinea && hayInternet();
+  /** Solo se manda audio si el repartidor activa expresamente esa alternativa. */
+  const porAudio = audioIA && apiKey !== "" && enLinea && hayInternet();
 
   /**
    * Dictar.
    *
-   * Con API key e internet **se graba el audio y se manda entero a Gemini**,
-   * que transcribe y estructura de una vez. El reconocedor del teléfono se
-   * comía el nombre del cliente («hay de cinco pollos») porque transcribe a
-   * ciegas; Gemini oye las pausas y la entonación, que es donde está la
-   * separación entre el nombre y las cantidades.
-   *
-   * Sin key o sin señal se usa el reconocedor de Android, que funciona offline.
+   * El flujo habitual usa el reconocedor del dispositivo: pide `RECORD_AUDIO`,
+   * escucha en español de Perú y muestra resultados parciales. Al tocar «Ya
+   * terminé», se procesa el texto final; el audio no se envía a ningún servicio.
+   * Gemini solo recibe audio si se activa esa alternativa en Ajustes.
    */
   const dictar = useCallback(async () => {
     if (grabando) {
@@ -239,8 +235,7 @@ export default function App() {
     }
 
     setPropuesta(null);
-    // Modo teclado: se abre el cuadro de escribir y él usa el micrófono de su
-    // teclado. Un toque más, pero gratis y con mejor transcripción.
+    // Alternativa manual: permite escribir o usar el micrófono de Gboard.
     if (modoTeclado) {
       setEscribiendo(true);
       return;

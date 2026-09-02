@@ -5,6 +5,8 @@ import { db } from "../db/db";
  * **No se publica la app con la key dentro** (CLAUDE.md §3).
  */
 export const CLAVE_API = "iaApiKey";
+/** Opt-in explícito para mandar grabaciones a Gemini. */
+export const CLAVE_AUDIO_IA = "audioIA";
 export const CLAVE_MODELO = "iaModelo";
 export const CLAVE_HORA_CIERRE = "horaCierre";
 export const CLAVE_STOCK_DEFECTO = "stockDefecto";
@@ -18,9 +20,9 @@ export const CLAVE_ORDEN = "ordenLista";
  */
 export const CLAVE_ORDEN_COBRANZA = "ordenCobranza";
 /**
- * Dictar con el micrófono del teclado (Gboard) en vez de grabar audio para
- * Gemini. Es gratis, no gasta cuota de la API y transcribe muy bien: el teclado
- * de Google usa el mismo motor, pero sin pasar por nuestra clave.
+ * Usar el micrófono del teclado (Gboard) en vez del botón de voz integrado.
+ * Es una alternativa manual: requiere tocar el micrófono del teclado y no
+ * permite que Don Pio muestre sus propios estados de escucha.
  */
 export const CLAVE_MODO_TECLADO = "modoTeclado";
 /**
