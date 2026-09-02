@@ -3,11 +3,13 @@ package com.donpio.app;
 import android.Manifest;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Build;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 
 import com.getcapacitor.JSObject;
+import com.getcapacitor.JSArray;
 import com.getcapacitor.PermissionState;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -78,7 +80,7 @@ public class Reconocedor extends Plugin {
 
     private void arrancar(PluginCall call) {
         String idioma = call.getString("idioma", "es-PE");
-        boolean preferirOffline = Boolean.TRUE.equals(call.getBoolean("preferirOffline", true));
+        boolean preferirOffline = Boolean.TRUE.equals(call.getBoolean("preferirOffline", false));
         int silencioMs = call.getInt("silencioMs", 4000);
 
         Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
@@ -103,6 +105,25 @@ public class Reconocedor extends Plugin {
             silencioMs
         );
         intent.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 2000);
+
+        /*
+         * Los nombres de las tiendas viven solo en IndexedDB y se mandan al
+         * reconocedor como contexto, no a una IA de la app. Android 13+ puede
+         * usar estas frases para distinguir «Ayde» de «aire» o «Oxxa» de
+         * «oxa». En versiones anteriores simplemente se ignoran.
+         */
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            JSArray recibidas = call.getArray("frasesFavorecidas", new JSArray());
+            ArrayList<String> frases = new ArrayList<>();
+            for (int i = 0; i < recibidas.length() && frases.size() < 120; i++) {
+                String frase = recibidas.optString(i, "").trim();
+                if (!frase.isEmpty()) frases.add(frase);
+            }
+            if (!frases.isEmpty()) {
+                intent.putStringArrayListExtra(RecognizerIntent.EXTRA_BIASING_STRINGS, frases);
+                intent.putExtra(RecognizerIntent.EXTRA_ENABLE_BIASING_DEVICE_CONTEXT, true);
+            }
+        }
 
         // SpeechRecognizer exige el hilo principal, para crear y para todo.
         getActivity().runOnUiThread(() -> {

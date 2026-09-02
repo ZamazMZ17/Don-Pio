@@ -26,10 +26,12 @@ export interface CorteNativo {
 
 interface OpcionesIniciar {
   idioma?: string;
-  /** Reconocer en el teléfono si hay paquete de idioma. Falso = puede ir a la red. */
+  /** Reconocer en el teléfono si hay paquete de idioma. Falso = puede usar la red. */
   preferirOffline?: boolean;
   /** Cuánto silencio aguanta antes de cerrar el tramo por su cuenta. */
   silencioMs?: number;
+  /** Nombres y alias locales que ayudan a reconocer el directorio del reparto. */
+  frasesFavorecidas?: string[];
 }
 
 interface ReconocedorNativoPlugin {

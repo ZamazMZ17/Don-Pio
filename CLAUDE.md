@@ -40,7 +40,7 @@ que quedó registrado sin mirar la pantalla.
 |---|---|
 | Plataforma | **PWA + APK por Capacitor**, pensada para Android. Mismo stack que LyKari |
 | Almacenamiento | **IndexedDB vía Dexie**, local-first. Nada de servidor propio |
-| Dictado | **Todo local**: lo transcribe el teclado (Gboard) o el reconocedor nativo de Android, y lo interpreta el **parser de reglas**. Sin red de por medio: la tarjeta sale al instante y funciona igual sin señal |
+| Dictado | Reconocedor nativo de Android o teclado (Gboard), con parser local y tarjeta de confirmación. El modo sin conexión es opcional; con señal, Android puede usar un modelo más preciso. |
 | Gemini | **No interviene en el dictado.** Queda reservado para los informes — el resumen al cerrar el día y el de la semana —, donde tardar unos segundos no estorba |
 | API key | Vive en el dispositivo, pegada desde Ajustes. **Nunca en el repo, nunca en el APK** |
 | Directorio de tiendas | **Se construye solo, desde los dictados.** No hay carga manual masiva |
@@ -287,10 +287,9 @@ como sugerencia antes de tocar «Crear», igual que la lista de candidatas del d
   atrás podría quedarse rebotando detalle → ficha → detalle. Por eso la Ficha es de solo
   lectura. `navegacion.test.ts` recorre todas las combinaciones de orígenes y comprueba que
   desde cualquier pantalla se llega a Hoy sin repetir ninguna.
-- **El reconocedor del teléfono no vale como camino principal.** Transcribe a ciegas y se
-  comía el nombre del cliente: «hay de cinco pollos 12 kg 750 a 9 soles 30». Con audio,
-  Gemini tiene las pausas y la entonación, que es donde está la separación entre el nombre
-  y las cantidades. El reconocedor se queda solo para cuando no hay señal.
+- **El reconocedor del teléfono es el camino principal.** Usa `es-PE`, resultados parciales,
+  el resultado final al parar y los nombres/alias ya guardados como contexto. El modo sin
+  conexión se puede activar cuando no haya señal; con internet se prioriza la precisión.
 - **`detener()` no puede esperar al plugin.** Hacía `await SpeechRecognition.stop()` antes
   de cerrar y esa promesa no resolvía en el teléfono: la escucha se quedaba abierta para
   siempre. Se cierra primero y se para el plugin después, siempre desde `soltar()`.

@@ -62,6 +62,8 @@ export const CLAVE_ORDEN_TIENDAS = "ordenTiendas";
  * de Google usa el mismo motor, pero sin pasar por nuestra clave.
  */
 export const CLAVE_MODO_TECLADO = "modoTeclado";
+/** Prioriza el modelo descargado del teléfono sobre el reconocimiento mejorado por red. */
+export const CLAVE_VOZ_SIN_CONEXION = "vozSinConexion";
 /**
  * El día en que ya se le preguntó con cuánto sale. Guardarlo evita que la
  * pantalla vuelva a saltar cada vez que entra a Hoy: preguntar una vez es

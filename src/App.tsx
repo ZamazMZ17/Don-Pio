@@ -3,7 +3,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { LayoutList, MoreHorizontal, Store, Undo2 } from "lucide-react";
 
 import { db, type Tienda } from "./db/db";
-import { cerrarDiasPasados, guardarStock, leerJornada, limpiarMigajas } from "./db/jornada";
+import { cerrarDiasPasados, leerJornada, limpiarMigajas } from "./db/jornada";
 import { registrarEntrega } from "./db/entregas";
 import { registrarCobro } from "./db/entregas";
 import { contextoDeRuta, crearTienda, identificar, precioEfectivoKg } from "./db/tiendas";
@@ -18,6 +18,7 @@ import {
   CLAVE_SONIDO,
   CLAVE_STOCK_OFRECIDO,
   CLAVE_VER_AGENDA,
+  CLAVE_VOZ_SIN_CONEXION,
   HORA_TOPE_STOCK,
   guardarAjuste,
   leerAjuste,
@@ -38,7 +39,7 @@ import { Hoy } from "./pantallas/Hoy";
 import { Detalle } from "./pantallas/Detalle";
 import { Cobranza } from "./pantallas/Cobranza";
 import { Cierre } from "./pantallas/Cierre";
-import { Stock } from "./pantallas/Stock";
+import { Stock, type StockInicial } from "./pantallas/Stock";
 import { Tiendas } from "./pantallas/Tiendas";
 import { Historial } from "./pantallas/Historial";
 import { Dia } from "./pantallas/Dia";
@@ -77,6 +78,8 @@ export default function App() {
   const [escribiendo, setEscribiendo] = useState(false);
   /** «Agrégale 2 piernas», «bájale medio kilo»… ver aviso en `proponer()`. */
   const [avisoAjuste, setAvisoAjuste] = useState<string | null>(null);
+  /** El stock que entendió por voz se revisa en la pantalla antes de guardarse. */
+  const [stockDictado, setStockDictado] = useState<StockInicial | null>(null);
   /** Hay un cobro abierto con su teclado: los flotantes estorban. */
   const [cobroAbierto, setCobroAbierto] = useState(false);
   /** Qué cambió desde la última vez que abrió la app, tras una actualización. */
@@ -111,6 +114,12 @@ export default function App() {
     [fecha],
   );
   const jornada = inicio?.jornada;
+  /** Nombres reales y alias aprendidos: ayudan al motor a oír el directorio. */
+  const frasesFavorecidas =
+    useLiveQuery(async () => {
+      const tiendas = await db.tiendas.toArray();
+      return tiendas.flatMap((t) => [t.nombre, ...t.alias]);
+    }, []) ?? [];
 
   useEffect(() => configurarAviso(sonido), [sonido]);
 
@@ -157,17 +166,15 @@ export default function App() {
       const { intencion, dictadoId, transcripcion } = r;
       setAvisoAjuste(null);
 
-      // Stock no necesita confirmación: es un número suyo, no de un cliente.
+      // El stock también se puede oír mal: se prellena para que él lo confirme
+      // en su propia pantalla, igual que una entrega.
       if (intencion.intencion === "cargar_stock") {
-        await guardarStock(
-          fecha,
-          intencion.stockPollos ?? jornada?.stockPollos ?? 0,
-          intencion.stockPiernas ?? jornada?.stockPiernas ?? 0,
-          undefined,
-          intencion.stockPechos ?? jornada?.stockPechos ?? 0,
-        );
-        avisoGuardado();
-        setPantalla("hoy");
+        setStockDictado({
+          pollos: intencion.stockPollos,
+          piernas: intencion.stockPiernas,
+          pechos: intencion.stockPechos,
+        });
+        setPantalla("stock");
         return;
       }
 
@@ -235,6 +242,7 @@ export default function App() {
    * Android deja de escuchar solo** tras una pausa. Los dos caminos acaban
    * aquí, así que una pausa a mitad de frase ya no pierde el dictado.
    */
+  const priorizarSinConexion = useAjusteBool(CLAVE_VOZ_SIN_CONEXION, false);
   const rec = useReconocedor(
     useCallback(
       (texto: string) => {
@@ -247,6 +255,8 @@ export default function App() {
       },
       [procesar],
     ),
+    frasesFavorecidas,
+    priorizarSinConexion,
   );
 
   /**
@@ -254,7 +264,7 @@ export default function App() {
    * igual de bien, **sin gastar datos ni cuota**. Se puede cambiar en Ajustes
    * para usar el reconocedor de Android, que también funciona sin señal.
    */
-  const modoTeclado = useAjusteBool(CLAVE_MODO_TECLADO, true);
+  const modoTeclado = useAjusteBool(CLAVE_MODO_TECLADO, false);
   const escuchando = rec.estado === "escuchando" || rec.estado === "pidiendo";
   const dictando = escuchando;
 
@@ -592,11 +602,14 @@ export default function App() {
       {pantalla === "stock" && (
         <Stock
           fecha={fecha}
+          inicial={stockDictado}
           listo={() => {
+            setStockDictado(null);
             void stockAtendido();
             salir();
           }}
           ahoraNo={() => {
+            setStockDictado(null);
             void stockAtendido();
             salir();
           }}

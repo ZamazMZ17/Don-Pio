@@ -9,6 +9,7 @@ import {
   CLAVE_HORA_CIERRE,
   CLAVE_MODELO,
   CLAVE_MODO_TECLADO,
+  CLAVE_VOZ_SIN_CONEXION,
   CLAVE_REDONDEO,
   CLAVE_SONIDO,
   CLAVE_STOCK_DEFECTO,
@@ -32,7 +33,8 @@ export function Ajustes({ volver }: { volver: () => void }) {
   const modelo = useAjuste(CLAVE_MODELO, MODELO_POR_DEFECTO);
   const horaCierre = useAjuste(CLAVE_HORA_CIERRE, "19:30");
   const stockDefecto = useAjuste(CLAVE_STOCK_DEFECTO, "120");
-  const modoTeclado = useAjusteBool(CLAVE_MODO_TECLADO, true);
+  const modoTeclado = useAjusteBool(CLAVE_MODO_TECLADO, false);
+  const vozSinConexion = useAjusteBool(CLAVE_VOZ_SIN_CONEXION, false);
   const redondeo = useAjusteBool(CLAVE_REDONDEO);
   const sonido = useAjusteBool(CLAVE_SONIDO, true);
   const verAgenda = useAjusteBool(CLAVE_VER_AGENDA);
@@ -246,10 +248,16 @@ export function Ajustes({ volver }: { volver: () => void }) {
           onCambio={(v) => void guardarAjuste(CLAVE_VER_AGENDA, v ? "1" : "0")}
         />
         <Interruptor
-          label="Dictar con el teclado"
-          sub="Abre el cuadro de escribir y usas el micrófono de tu teclado. Es gratis y no gasta la cuota de Gemini."
+          label="Usar el dictado del teclado"
+          sub="Alternativa al botón de voz de Don Pio. Abre un cuadro para escribir o usar el micrófono de Gboard."
           activo={modoTeclado}
           onCambio={(v) => void guardarAjuste(CLAVE_MODO_TECLADO, v ? "1" : "0")}
+        />
+        <Interruptor
+          label="Priorizar dictado sin conexión"
+          sub="Úsalo si repartes sin señal. Apagado, el botón de voz puede usar el reconocimiento mejorado de Google cuando haya internet."
+          activo={vozSinConexion}
+          onCambio={(v) => void guardarAjuste(CLAVE_VOZ_SIN_CONEXION, v ? "1" : "0")}
         />
         <Interruptor
           label="Redondear hacia abajo"

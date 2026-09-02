@@ -58,18 +58,14 @@ function llano(s: string): string {
 /**
  * Junta la parte entera con los céntimos, se digan como se digan.
  *
- * Sin céntimos explícitos, un número de tres cifras o más casi nunca es la
- * cantidad real: es el punto que el reconocedor se comió. «A 970» es 9.70, y
- * «35 30 soles» dicho con una pausa —sin «con» ni coma de por medio— sale
- * transcrito pegado como «3530», que es 35.30. En los pedidos reales de
- * reparto no hay entregas de miles de soles, así que hasta 9999 se asume
- * partido; de ahí para arriba ya es sospechoso y se deja tal cual.
+ * Esta función no adivina decimales: «100 soles» significa S/ 100.00, no
+ * S/ 1.00. Los precios compactos («a 970» por 9.70) se tratan únicamente en
+ * `precioKilo`, donde el contexto «a» y el rango permitido lo hacen seguro.
  */
 function juntar(entero: string, ...dec: (string | undefined)[]): number {
   const d = dec.find(Boolean);
   if (d) return Number(`${entero}.${d}`);
-  const n = Number(entero);
-  return n >= 100 && n <= 9999 ? n / 100 : n;
+  return Number(entero);
 }
 
 /**
@@ -159,7 +155,11 @@ function precioKilo(t: string): Precio | null {
   for (const re of patrones) {
     const m = t.match(new RegExp(re));
     if (!m) continue;
-    const valor = juntar(m[1], ...m.slice(2));
+    let valor = juntar(m[1], ...m.slice(2));
+    // «A 970» es la forma corta habitual de decir 9.70. Aquí sí tenemos el
+    // contexto de precio y el rango de un kilo de pollo, por eso no se aplica
+    // a totales o pagos de tres cifras.
+    if (!m.slice(2).some(Boolean) && valor >= 100 && valor <= 4000) valor /= 100;
     // Fuera del rango de un kilo de pollo no es un precio: será otra cosa.
     if (valor >= 3 && valor <= 40) return { valor, texto: m[0] };
   }
@@ -192,7 +192,14 @@ function total(t: string, precio: Precio | null): number | null {
   ];
   for (const re of patrones) {
     const m = limpio.match(new RegExp(re));
-    if (m) return juntar(m[1], ...m.slice(2));
+    if (m) {
+      const valor = juntar(m[1], ...m.slice(2));
+      // El motor a veces pega «35 30» como «3530». Cuatro cifras sin
+      // separador se aceptan como céntimos porque vienen de dictados reales;
+      // tres cifras no se parten: «100 soles» tiene que seguir siendo 100.
+      if (!m.slice(2).some(Boolean) && /^\d{4}$/.test(m[1])) return valor / 100;
+      return valor;
+    }
   }
   return null;
 }

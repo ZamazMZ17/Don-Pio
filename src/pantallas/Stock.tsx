@@ -9,6 +9,12 @@ import { Teclado } from "../ui/Teclado";
 
 type Campo = "pollos" | "piernas" | "pechos" | "precio";
 
+export interface StockInicial {
+  pollos?: number | null;
+  piernas?: number | null;
+  pechos?: number | null;
+}
+
 /**
  * «¿Con cuánto sales hoy?». Es lo primero que se abre si la jornada empieza en
  * cero, porque sin stock inicial el «me quedan» del encabezado no dice nada.
@@ -20,11 +26,14 @@ export function Stock({
   fecha,
   listo,
   ahoraNo,
+  inicial,
 }: {
   fecha: DiaISO;
   listo: () => void;
   /** Salir sin poner nada. Saber el stock ayuda, pero no es obligatorio. */
   ahoraNo: () => void;
+  /** Valores oídos por voz: se muestran para revisarlos antes de guardar. */
+  inicial?: StockInicial | null;
 }) {
   const jornada = useLiveQuery(() => leerJornada(fecha), [fecha]);
   const sugerencia = useLiveQuery(() => sugerirStock(fecha), [fecha]);
@@ -50,16 +59,17 @@ export function Stock({
   // que Dexie reemite.
   useEffect(() => {
     if (!jornada || pollos !== null || baseSugerido === undefined) return;
-    const p = jornada.stockPollos || sugerencia?.pollos || 0;
-    const q = jornada.stockPiernas || sugerencia?.piernas || 0;
+    const p = (inicial?.pollos ?? jornada.stockPollos) || sugerencia?.pollos || 0;
+    const q = (inicial?.piernas ?? jornada.stockPiernas) || sugerencia?.piernas || 0;
     const base = jornada.precioBaseKg || baseSugerido || 0;
     setPollos(p ? String(p) : "");
     setPiernas(q ? String(q) : "");
     // Sin sugerencia: comprar pechos sueltos es la excepción, no lo normal
     // de cada día, así que no hay nada que adivinar.
-    setPechos(jornada.stockPechos ? String(jornada.stockPechos) : "");
+    const r = inicial?.pechos ?? jornada.stockPechos;
+    setPechos(r ? String(r) : "");
     setPrecio(base ? (base / 100).toFixed(2) : "");
-  }, [jornada, sugerencia, baseSugerido, pollos]);
+  }, [jornada, sugerencia, baseSugerido, inicial, pollos]);
 
   if (!jornada || pollos === null) return null;
 
@@ -136,7 +146,9 @@ export function Stock({
           ¿Con cuánto sales hoy?
         </div>
         <div style={{ fontSize: 14, color: "var(--texto-4)", marginTop: 4, lineHeight: 1.4 }}>
-          Sirve para saber cuánto te queda. Si no lo sabes todavía, puedes seguir sin ponerlo.
+          {inicial
+            ? "Esto fue lo que entendí por voz. Revísalo y toca Empezar el día para confirmarlo."
+            : "Sirve para saber cuánto te queda. Si no lo sabes todavía, puedes seguir sin ponerlo."}
         </div>
       </div>
 

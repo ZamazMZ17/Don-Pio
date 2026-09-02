@@ -71,7 +71,11 @@ type Motor = "propio" | "plugin" | "web";
  * @param alTerminar recibe todo lo dictado cuando él pulsa para parar (o
  *   cuando salta el tope de seguridad). Cadena vacía = no se agarró nada.
  */
-export function useReconocedor(alTerminar: (texto: string) => void) {
+export function useReconocedor(
+  alTerminar: (texto: string) => void,
+  frasesFavorecidas: string[] = [],
+  priorizarSinConexion = false,
+) {
   const [estado, setEstado] = useState<EstadoEscucha>("inactivo");
   const [parcial, setParcial] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -87,6 +91,8 @@ export function useReconocedor(alTerminar: (texto: string) => void) {
   const inicio = useRef(0);
   const silencios = useRef(0);
   const erroresDuros = useRef(0);
+  /** El cierre manual espera el resultado final, pero nunca se queda colgado. */
+  const cierreManual = useRef<number | null>(null);
   /**
    * El motor propio arranca prefiriendo el reconocimiento en el teléfono.
    * Si el servicio contesta que no tiene el idioma descargado, se baja esta
@@ -95,6 +101,14 @@ export function useReconocedor(alTerminar: (texto: string) => void) {
   const preferirOffline = useRef(true);
   /** Sube en cada apertura y cierre; los reinicios viejos se descartan solos. */
   const generacion = useRef(0);
+  const frasesFavorecidasRef = useRef<string[]>([]);
+  const priorizarSinConexionRef = useRef(priorizarSinConexion);
+
+  frasesFavorecidasRef.current = [...new Set(frasesFavorecidas.map((f) => f.trim()).filter(Boolean))].slice(
+    0,
+    120,
+  );
+  priorizarSinConexionRef.current = priorizarSinConexion;
 
   const alTerminarRef = useRef(alTerminar);
   alTerminarRef.current = alTerminar;
@@ -103,6 +117,10 @@ export function useReconocedor(alTerminar: (texto: string) => void) {
 
   const soltar = useCallback(() => {
     activo.current = false;
+    if (cierreManual.current !== null) {
+      clearTimeout(cierreManual.current);
+      cierreManual.current = null;
+    }
     // Cambiar de generación invalida cualquier reinicio que estuviera en cola:
     // si no, un temporizador pendiente podía resucitar la escucha ya cerrada.
     generacion.current += 1;
@@ -140,6 +158,21 @@ export function useReconocedor(alTerminar: (texto: string) => void) {
     alTerminarRef.current(texto);
   }, [soltar]);
 
+  /** Termina mostrando por qué falló, en vez de parecer un dictado vacío. */
+  const fallar = useCallback(
+    (mensaje: string) => {
+      if (!activo.current) return;
+      // Si ya se recogieron frases completas, es preferible enseñarlas para
+      // confirmación antes que perder todo por un problema del último tramo.
+      if (todo()) return finalizar();
+      soltar();
+      setEstado("error");
+      setParcial("");
+      setError(mensaje);
+    },
+    [finalizar, soltar],
+  );
+
   /** Reabre la escucha del motor propio para el siguiente tramo. */
   const reabrirPropio = useCallback(
     (esperaMs: number) => {
@@ -150,6 +183,7 @@ export function useReconocedor(alTerminar: (texto: string) => void) {
           idioma: IDIOMA,
           preferirOffline: preferirOffline.current,
           silencioMs: SILENCIO_MS,
+          frasesFavorecidas: frasesFavorecidasRef.current,
         }).catch(() => finalizar());
       }, esperaMs);
     },
@@ -168,19 +202,35 @@ export function useReconocedor(alTerminar: (texto: string) => void) {
       if (pidioParar.current) return finalizar();
       if (Date.now() - inicio.current > MAXIMO_MS) return finalizar();
 
-      if (d.motivo === "permiso") return finalizar();
+      if (d.motivo === "permiso") {
+        return fallar("Se perdió el permiso del micrófono. Actívalo en Ajustes de Android → Don Pio → Permisos.");
+      }
 
       if (d.motivo === "idioma") {
         // No tiene el paquete de español en el teléfono: que el siguiente
         // tramo vaya a la red en vez de quedarse mudo.
-        if (!preferirOffline.current) return finalizar();
+        if (!preferirOffline.current) {
+          return fallar("El teléfono no tiene disponible el reconocimiento en español de Perú.");
+        }
         preferirOffline.current = false;
         return reabrirPropio(0);
       }
 
       if (d.motivo === "red" || d.motivo === "error") {
+        // Cuando se está usando el modelo mejorado por red y esta se cae,
+        // intenta el paquete descargado antes de abandonar el dictado.
+        if (d.motivo === "red" && !preferirOffline.current) {
+          preferirOffline.current = true;
+          return reabrirPropio(0);
+        }
         erroresDuros.current += 1;
-        if (erroresDuros.current >= ERRORES_SEGUIDOS) return finalizar();
+        if (erroresDuros.current >= ERRORES_SEGUIDOS) {
+          return fallar(
+            d.motivo === "red"
+              ? "No se pudo conectar al reconocimiento de voz. Activa “Priorizar dictado sin conexión” si no tienes señal."
+              : "El reconocimiento de voz dejó de responder. Inténtalo nuevamente o usa el teclado.",
+          );
+        }
         return reabrirPropio(300);
       }
 
@@ -196,7 +246,7 @@ export function useReconocedor(alTerminar: (texto: string) => void) {
       }
       reabrirPropio(0);
     },
-    [finalizar, reabrirPropio],
+    [fallar, finalizar, reabrirPropio],
   );
 
   /** Arranca el motor propio. Lanza para que `iniciar` pruebe el siguiente. */
@@ -213,14 +263,15 @@ export function useReconocedor(alTerminar: (texto: string) => void) {
     await ReconocedorNativo.addListener("corte", alCortePropio);
 
     motor.current = "propio";
-    preferirOffline.current = true;
+    preferirOffline.current = priorizarSinConexionRef.current;
     activo.current = true;
     try {
       // La primera llamada puede pedir el permiso del micrófono.
       await ReconocedorNativo.iniciar({
         idioma: IDIOMA,
-        preferirOffline: true,
+        preferirOffline: preferirOffline.current,
         silencioMs: SILENCIO_MS,
+        frasesFavorecidas: frasesFavorecidasRef.current,
       });
     } catch (e) {
       activo.current = false;
@@ -353,18 +404,22 @@ export function useReconocedor(alTerminar: (texto: string) => void) {
   }, [finalizar, iniciarPlugin, iniciarPropio, soltar]);
 
   /**
-   * Pulsó «Ya terminé»: cierra **ya**, sin esperar al plugin.
-   *
-   * Antes esto hacía `await SpeechRecognition.stop()` antes de cerrar, y si esa
-   * promesa no resolvía —que es lo que pasaba en el teléfono— la escucha se
-   * quedaba abierta para siempre por mucho que él pulsara. Ahora se cierra
-   * primero y el motor se para dentro de `soltar()`, pase lo que pase.
+   * Pulsó «Ya terminé»: pide que el motor cierre el tramo para recibir
+   * `onResults`, que suele ser más correcto que el último parcial. No se
+   * espera su promesa: si el servicio se cuelga, el temporizador conserva el
+   * texto parcial y termina igual.
    */
   const detener = useCallback(() => {
     if (!activo.current) return;
     pidioParar.current = true;
-    if (motor.current === "web") web.current?.stop();
-    finalizar();
+    if (motor.current === "propio") {
+      void ReconocedorNativo.detener().catch(() => {});
+    } else if (motor.current === "plugin" && esNativo) {
+      void SpeechRecognition.stop().catch(() => {});
+    } else if (motor.current === "web") {
+      web.current?.stop();
+    }
+    cierreManual.current = window.setTimeout(finalizar, 1300);
   }, [finalizar]);
 
   /** Salir sin usar lo dictado (cambió de pantalla, por ejemplo). */

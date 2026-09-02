@@ -351,6 +351,15 @@ describe("precios y totales dichos de otras formas", () => {
     expect(interpretarLocal("Rosa dos pollos le cobré 42").totalDictado).toBe(42);
   });
 
+  it("no parte totales de tres cifras como si fueran céntimos", () => {
+    expect(interpretarLocal("Rosa diez pollos total 100 soles").totalDictado).toBe(100);
+    expect(interpretarLocal("Rosa doce pollos total 140 soles").totalDictado).toBe(140);
+  });
+
+  it("mantiene el precio compacto «a 970» como 9.70", () => {
+    expect(interpretarLocal("Rosa dos pollos a 970").precioPorKg).toBe(9.7);
+  });
+
   it("«son 3 pollos» no se confunde con un total", () => {
     const i = interpretarLocal("Rosa son 3 pollos y 6 kilos");
     expect(i.pollos).toBe(3);
