@@ -1,11 +1,16 @@
 /*
  * Don Pio — tokens y base.
  *
- * Sale de Nocturne, pero con la escala subida: el propio documento de diseño
- * explica por qué. La densidad 0.7x del sistema no se lee a sol directo con las
- * manos ocupadas, así que el texto base va a 17–20px, el dinero hasta 44px y
- * ninguna zona táctil baja de 52px. Y se añaden tres colores de estado porque
- * pendiente / parcial / pagado no se distingue en monocromo.
+ * V2: el mismo sistema de siempre, pero hablando el idioma visual de iOS/macOS
+ * — pedido explícito del dueño, que ya no es solo el repartidor sino también
+ * quien lo mantiene. Lo que **no** cambia es la identidad: paleta crema,
+ * verde/ámbar/rojo como señal de estado, el acento morado frío. Lo que sí
+ * cambia es cómo se construyen las superficies — radios continuos en vez de
+ * esquinas duras, materiales translúcidos con blur en vez de bloques sólidos,
+ * sombras suaves en vez de bordes de 1px, movimiento con un poco de resorte
+ * en vez de solo `ease-out`. Todo eso se añade como tokens **nuevos**; ningún
+ * nombre de los de siempre cambia, así que una pantalla que todavía no se
+ * tocó sigue funcionando exactamente igual hasta que le toque su turno.
  *
  * Por defecto la app es clara — pedido explícito del dueño. El oscuro sigue
  * ahí (Ajustes → Apariencia), y «sistema» sigue al tema del teléfono si así
@@ -73,7 +78,7 @@
   --acento-900: #3a2f63;
 
   /* Estado. Un color, un significado; si se usan para otra cosa dejan de servir. */
-  --verde: #7bbf8f; /* pagado · cobrado · stock inicial */
+  --verde: #7bbf8f; /* pagado · cobrado · stock inicial · compra a pollero liquidada */
   --ambar: #e0a06a; /* lo que queda · deuda de días anteriores */
   --ambar-señal: #d9b26a; /* parcial · sin señal */
   --rojo: #e07a6a; /* pendiente · por cobrar */
@@ -91,20 +96,68 @@
   --seguro-arriba: env(safe-area-inset-top, 0px);
   --seguro-abajo: env(safe-area-inset-bottom, 0px);
 
+  /*
+   * Radios. Los de siempre (sm/·/md/lg/xl) suben un poco en V2 — más cerca
+   * del radio "continuo" (squircle) que usa iOS, donde la curva no es un
+   * cuarto de círculo pegado sino que se funde con el lado recto. CSS no
+   * tiene ese trazado nativo, pero un radio generoso sobre una superficie
+   * sin borde duro (ver `--sombra-*` más abajo) se le acerca bastante a
+   * simple vista, que es lo que importa en una pantalla de teléfono.
+   */
   --radio-sm: 10px;
-  --radio: 12px;
-  --radio-md: 14px;
-  --radio-lg: 16px;
-  --radio-xl: 20px;
+  --radio: 14px;
+  --radio-md: 16px;
+  --radio-lg: 20px;
+  --radio-xl: 24px;
+  /** Una esquina completamente redonda: píldoras, el flotante, los switches. */
+  --radio-pill: 999px;
+  /** Las esquinas de arriba de una hoja que sube desde abajo (sheet). */
+  --radio-hoja: 28px;
 
   /*
-   * Solo para títulos: los nombres de pantalla («Cobranza», «Tiendas»…),
-   * los rótulos en mayúsculas (S.rotulo) y el día de Hoy. Todo lo demás —
-   * lo que se lee de corrido, el dinero, los menús — se queda en Inter; una
-   * condensada así rinde peor en textos largos. No depende del tema:
-   * mismo valor en oscuro y claro.
+   * Sombras. En vez del borde de 1px de siempre para separar una superficie
+   * elevada del fondo (el flotante, una hoja, la tarjeta de confirmación),
+   * V2 usa una sombra suave y difusa — así es como iOS separa capas: sin
+   * contorno, con luz. El borde de 1px (`S.tarjeta` en `ui/base.tsx`) se
+   * conserva para las tarjetas **dentro** del flujo normal, que es donde
+   * sigue leyéndose mejor sobre esta base cálida; las sombras son para lo
+   * que de verdad flota encima de otra cosa.
    */
-  --fuente-titulo: "Bebas Neue", "Arial Narrow", sans-serif;
+  --sombra-sm: 0 1px 3px rgba(20, 16, 8, 0.28), 0 1px 1px rgba(20, 16, 8, 0.2);
+  --sombra-md: 0 8px 24px rgba(10, 8, 4, 0.38), 0 2px 6px rgba(10, 8, 4, 0.22);
+  --sombra-lg: 0 20px 50px rgba(6, 5, 2, 0.5), 0 6px 16px rgba(6, 5, 2, 0.3);
+
+  /*
+   * Materiales translúcidos: la barra de pestañas y las hojas dejan ver un
+   * eco de lo que hay detrás, difuminado — el "vidrio" de iOS. `color-mix`
+   * los deriva de los tokens de siempre, así que un cambio de paleta no
+   * tiene que tocar dos sitios. Si el navegador no soporta `color-mix` o
+   * `backdrop-filter` (WebView muy viejo), cae de vuelta al color sólido —
+   * se pierde el efecto, no la legibilidad.
+   */
+  --vidrio: blur(22px) saturate(165%);
+  --superficie-vidrio: color-mix(in srgb, var(--superficie) 72%, transparent);
+  --hundido-vidrio: color-mix(in srgb, var(--hundido) 80%, transparent);
+  --fondo-vidrio: color-mix(in srgb, var(--fondo) 55%, transparent);
+
+  /*
+   * Movimiento. `--resorte` tiene un leve rebote — es lo que hace que una
+   * hoja o una tarjeta se sientan "vivas" al aparecer en vez de solo
+   * deslizarse; `--suave` es la curva por defecto de iOS para lo que no
+   * necesita rebote (listas, cambios de valor).
+   */
+  --resorte: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --suave: cubic-bezier(0.25, 0.1, 0.25, 1);
+
+  /*
+   * Tipografía. Inter para todo — también los títulos, que en V1 iban en
+   * Bebas Neue condensada y en mayúsculas. Esa condensada venía del prototipo
+   * y tenía un aire de rótulo de camión de reparto; se deja atrás a propósito
+   * para hablar el idioma de iOS, donde el título es grande, redondo y sin
+   * tensar. La variable se conserva (algún texto suelto todavía puede
+   * referenciarla) pero ya no es una familia aparte.
+   */
+  --fuente-titulo: "Inter Variable", Inter, system-ui, -apple-system, sans-serif;
 
   color-scheme: dark;
 }
@@ -150,6 +203,12 @@
   --seccion: #f5f4fa;
   --seccion-glow: #ded4f5;
   --seccion-ghost: #a89bd6;
+
+  /* Sombras más claras y menos opacas: sobre crema, una sombra oscura pesada
+     se ve como una mancha de tinta en vez de una elevación suave. */
+  --sombra-sm: 0 1px 2px rgba(80, 64, 28, 0.1), 0 1px 1px rgba(80, 64, 28, 0.07);
+  --sombra-md: 0 10px 26px rgba(80, 64, 28, 0.16), 0 2px 6px rgba(80, 64, 28, 0.1);
+  --sombra-lg: 0 22px 54px rgba(60, 46, 16, 0.22), 0 6px 16px rgba(60, 46, 16, 0.14);
 
   color-scheme: light;
 }
@@ -200,7 +259,7 @@ input {
   background: var(--acento-800);
 }
 
-/* Las tres animaciones del prototipo, tal cual. */
+/* Las animaciones del prototipo, tal cual. */
 @keyframes dpring {
   0% {
     transform: scale(1);
@@ -253,9 +312,56 @@ input {
 }
 
 /*
+ * V2 — una hoja (sheet) que sube desde abajo con un leve rebote al llegar:
+ * el gesto de iOS para un modal que cuelga del borde inferior. `dpup` se deja
+ * intacta (la siguen usando piezas chicas que no necesitan el rebote); esta
+ * es para los contenedores grandes — la tarjeta de confirmación, las hojas de
+ * escribir/escuchar, el panel de un cobro.
+ */
+@keyframes dphoja {
+  from {
+    transform: translateY(42px);
+    opacity: 0;
+  }
+  60% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/*
+ * V2 — una superficie que aparece en el sitio (no desde abajo): el menú que
+ * se despliega, una tarjeta nueva en una lista, el aviso de confirmación de
+ * Cobranza. Mismo rebote que `dphoja`, pero por escala en vez de posición.
+ */
+@keyframes dppop {
+  from {
+    transform: scale(0.92);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.015);
+    opacity: 1;
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+/*
  * Estado pulsado. En un teléfono no hay hover, y sin una respuesta al toque el
  * repartidor no sabe si registró o no — que es justo el miedo que hace que
  * mire la pantalla mientras maneja.
+ *
+ * `.pulsable` (de siempre): un flash de color, para filas de lista — el
+ * equivalente a la celda que se resalta gris al tocarla en una tabla de iOS.
+ * `.toque` (V2): encoge un poco y atenúa, sin cambiar de color — el gesto de
+ * un botón o una píldora independiente (el flotante, "Confirmar", un chip).
+ * Los dos conviven: cuál usar depende de si el elemento es una fila dentro
+ * de un grupo o una pieza suelta.
  */
 .pulsable {
   transition: background-color 90ms ease-out;
@@ -269,6 +375,17 @@ input {
   background-color: var(--acento-800) !important;
 }
 
+.toque {
+  transition:
+    transform 120ms var(--suave),
+    opacity 120ms var(--suave);
+}
+
+.toque:active {
+  transform: scale(0.96);
+  opacity: 0.82;
+}
+
 /* Scroll sin barra visible: ocupa ancho que aquí hace falta. */
 .scroll {
   overflow-y: auto;
@@ -277,6 +394,18 @@ input {
 
 .scroll::-webkit-scrollbar {
   display: none;
+}
+
+/*
+ * El material "vidrio": blur + un eco translúcido de la superficie que
+ * declare quien lo use (`--superficie-vidrio` por defecto). Se separa en una
+ * clase porque la combinación `backdrop-filter` + el prefijo `-webkit-` no se
+ * puede meter en una sola custom property y repetirla en cada sitio sería
+ * fácil de olvidar.
+ */
+.vidrio {
+  -webkit-backdrop-filter: var(--vidrio);
+  backdrop-filter: var(--vidrio);
 }
 
 /*
@@ -335,9 +464,15 @@ input {
   animation: dptour 1.4s ease-in-out infinite;
 }
 
-/* Quien pidió menos movimiento no tiene por qué aguantar un latido constante. */
+/* Quien pidió menos movimiento no tiene por qué aguantar un latido constante,
+   ni el rebote de las hojas y los popups de V2. */
 @media (prefers-reduced-motion: reduce) {
   .tour-anillo {
     animation: none;
+  }
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
