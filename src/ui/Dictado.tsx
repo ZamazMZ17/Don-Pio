@@ -11,7 +11,27 @@ import { S } from "./base";
  *
  * La regla de esta pantalla: **nunca guardar sin enseñar antes qué se entendió
  * y a quién se le va a cargar**. Un error aquí le cobra a quien no era.
+ *
+ * V2: las hojas (`HojaEscuchando`, `HojaEscribir`, `TarjetaConfirmacion`) usan
+ * `<Agarradera>` — la barra chica arriba que en iOS marca "esto es una hoja
+ * que cuelga de abajo" — y suben con el rebote de `--resorte` en vez del
+ * `ease-out` liso de V1.
  */
+
+/** La barra chica arriba de una hoja: la señal de iOS de "esto es un sheet". */
+function Agarradera() {
+  return (
+    <div
+      style={{
+        width: 36,
+        height: 5,
+        borderRadius: 3,
+        background: "var(--borde)",
+        margin: "-6px auto 14px",
+      }}
+    />
+  );
+}
 
 export function HojaEscuchando({
   texto,
@@ -34,13 +54,13 @@ export function HojaEscuchando({
         pointerEvents: "auto",
         margin: "0 18px 14px",
         background: "var(--superficie)",
-        borderRadius: "var(--radio-lg)",
-        padding: 18,
-        border: "1px solid var(--borde)",
-        boxShadow: "0 16px 40px rgba(0,0,0,.65)",
-        animation: "dpup .22s ease-out",
+        borderRadius: "var(--radio-xl)",
+        padding: "14px 18px 18px",
+        boxShadow: "var(--sombra-lg)",
+        animation: "dphoja .26s var(--resorte)",
       }}
     >
+      <Agarradera />
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
         <div style={{ display: "flex", alignItems: "flex-end", gap: 3, height: 18 }}>
           {[0, 0.12, 0.24, 0.36].map((d) => (
@@ -109,24 +129,25 @@ export function HojaEscuchando({
       {onTerminar && (
         <button
           onClick={onTerminar}
-          className="pulsable-acento"
+          className="toque"
           style={{
             marginTop: 16,
-            height: 62,
+            height: 60,
             width: "100%",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             gap: 12,
-            borderRadius: "var(--radio-md)",
-            border: "1.5px solid var(--acento)",
+            borderRadius: 30,
+            border: "none",
             background: "var(--acento-900)",
-            color: "var(--acento-200)",
-            fontSize: 19,
-            fontWeight: 600,
+            boxShadow: "var(--sombra-sm)",
+            color: "var(--acento-300)",
+            fontSize: 18,
+            fontWeight: 700,
           }}
         >
-          <Square size={20} strokeWidth={0} fill="currentColor" />
+          <Square size={19} strokeWidth={0} fill="currentColor" />
           Ya terminé
         </button>
       )}
@@ -251,14 +272,14 @@ export function TarjetaConfirmacion({
         margin: "0 14px 14px",
         background: "var(--superficie)",
         borderRadius: "var(--radio-xl)",
-        padding: "20px 18px 18px",
-        border: "1px solid var(--texto-5)",
-        boxShadow: "0 16px 40px rgba(0,0,0,.7)",
-        animation: "dpup .24s ease-out",
-        maxHeight: "78vh",
+        padding: "14px 18px 18px",
+        boxShadow: "var(--sombra-lg)",
+        animation: "dphoja .26s var(--resorte)",
+        maxHeight: "80vh",
         overflowY: "auto",
       }}
     >
+      <Agarradera />
       <div style={{ ...S.rotulo, fontSize: 13, marginBottom: 12 }}>
         {esPago ? "Confirma el cobro" : "Confirma la entrega"}
       </div>
@@ -318,7 +339,7 @@ export function TarjetaConfirmacion({
                 }}
               />
               <button
-                className="pulsable-acento"
+                className="toque"
                 disabled={!nombreNuevo.trim()}
                 onClick={() => onCrearNueva(nombreNuevo.trim())}
                 style={{
@@ -326,10 +347,11 @@ export function TarjetaConfirmacion({
                   width: 92,
                   height: 56,
                   borderRadius: "var(--radio)",
-                  border: "1.5px solid var(--acento)",
+                  border: "none",
+                  background: "var(--acento-900)",
                   color: "var(--acento-300)",
                   fontSize: 16,
-                  fontWeight: 600,
+                  fontWeight: 700,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -380,9 +402,10 @@ export function TarjetaConfirmacion({
               <div
                 style={{
                   fontSize: 12,
-                  padding: "4px 9px",
+                  fontWeight: 600,
+                  padding: "4px 10px",
                   borderRadius: 99,
-                  border: "1px solid var(--acento-700)",
+                  background: "var(--acento-900)",
                   color: "var(--acento-claro)",
                   flex: "none",
                 }}
@@ -408,8 +431,8 @@ export function TarjetaConfirmacion({
               display: "flex",
               flexWrap: "wrap",
               gap: 14,
-              borderTop: "1px solid var(--borde)",
-              borderBottom: "1px solid var(--borde)",
+              borderTop: "1px solid var(--linea)",
+              borderBottom: "1px solid var(--linea)",
               padding: "14px 0",
               marginBottom: 16,
             }}
@@ -516,7 +539,7 @@ export function TarjetaConfirmacion({
                     minWidth: 0,
                     height: 48,
                     borderRadius: "var(--radio)",
-                    border: "1.5px solid var(--borde)",
+                    border: "none",
                     background: "var(--hundido)",
                     padding: "0 12px",
                     fontSize: 16,
@@ -529,16 +552,17 @@ export function TarjetaConfirmacion({
                     onEditar({ tandasKg: [...i.tandasKg, n], pesoTotalKg: null });
                     setNuevaTanda("");
                   }}
-                  className="pulsable-acento"
+                  className="toque"
                   style={{
                     flex: "none",
                     width: 84,
                     height: 48,
                     borderRadius: "var(--radio)",
-                    border: "1.5px solid var(--acento)",
+                    border: "none",
+                    background: "var(--acento-900)",
                     color: "var(--acento-300)",
                     fontSize: 15,
-                    fontWeight: 600,
+                    fontWeight: 700,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -666,7 +690,7 @@ export function TarjetaConfirmacion({
       {esPago && (
         <div
           style={{
-            borderTop: "1px solid var(--borde)",
+            borderTop: "1px solid var(--linea)",
             padding: "16px 0",
             marginBottom: 16,
             display: "flex",
@@ -687,20 +711,19 @@ export function TarjetaConfirmacion({
       <div style={{ display: "flex", gap: 10 }}>
         <button
           onClick={onCorregir}
-          className="pulsable"
+          className="toque"
           style={{
             flex: 1,
-            height: 62,
-            borderRadius: "var(--radio-md)",
-            // 2.5px como el Confirmar de al lado y como BotonPrincipal: son
-            // los botones grandes de acción, donde el contorno es lo que los
-            // dibuja. Ver la nota en ui/base.tsx.
-            border: "2.5px solid var(--borde)",
+            height: 58,
+            borderRadius: 29,
+            border: "none",
+            background: "var(--hundido)",
             color: "var(--texto-2)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontSize: 18,
+            fontSize: 17,
+            fontWeight: 600,
           }}
         >
           Descartar
@@ -714,19 +737,20 @@ export function TarjetaConfirmacion({
               : onCrearNueva(nombreNuevo.trim())
           }
           disabled={eligiendo}
-          className="pulsable-acento"
+          className="toque"
           style={{
             flex: 1.4,
-            height: 62,
-            borderRadius: "var(--radio-md)",
-            border: "2.5px solid var(--acento)",
-            background: "var(--acento-900)",
-            color: "var(--acento-200)",
+            height: 58,
+            borderRadius: 29,
+            border: "none",
+            background: "var(--acento-claro)",
+            boxShadow: "var(--sombra-sm)",
+            color: "#fff7ec",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontSize: 19,
-            fontWeight: 600,
+            fontSize: 18,
+            fontWeight: 700,
             opacity: eligiendo ? 0.45 : 1,
           }}
         >
@@ -758,7 +782,7 @@ function Candidato({ candidata, onClick }: { candidata: Candidata; onClick: () =
       className="pulsable"
       style={{
         borderRadius: "var(--radio)",
-        border: "1.5px solid var(--borde)",
+        background: "var(--hundido)",
         padding: "14px 16px",
         display: "flex",
         alignItems: "center",
@@ -848,13 +872,13 @@ export function HojaEscribir({
         pointerEvents: "auto",
         margin: "0 14px 14px",
         background: "var(--superficie)",
-        borderRadius: "var(--radio-lg)",
-        padding: 18,
-        border: "1px solid var(--borde)",
-        boxShadow: "0 16px 40px rgba(0,0,0,.65)",
-        animation: "dpup .22s ease-out",
+        borderRadius: "var(--radio-xl)",
+        padding: "14px 18px 18px",
+        boxShadow: "var(--sombra-lg)",
+        animation: "dphoja .26s var(--resorte)",
       }}
     >
+      <Agarradera />
       <div style={{ ...S.rotulo, fontSize: 13, marginBottom: 10 }}>Escríbelo como lo dirías</div>
       <textarea
         value={texto}
@@ -865,7 +889,7 @@ export function HojaEscribir({
         style={{
           width: "100%",
           borderRadius: "var(--radio)",
-          border: "1.5px solid var(--borde)",
+          border: "none",
           background: "var(--hundido)",
           padding: 14,
           fontSize: 17,
@@ -878,17 +902,19 @@ export function HojaEscribir({
       <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
         <button
           onClick={onCerrar}
-          className="pulsable"
+          className="toque"
           style={{
             flex: 1,
-            height: 56,
-            borderRadius: "var(--radio)",
-            border: "1.5px solid var(--borde)",
+            height: 54,
+            borderRadius: 27,
+            border: "none",
+            background: "var(--hundido)",
             color: "var(--texto-2)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontSize: 17,
+            fontSize: 16,
+            fontWeight: 600,
           }}
         >
           Cancelar
@@ -896,19 +922,19 @@ export function HojaEscribir({
         <button
           onClick={() => texto.trim() && onEnviar(texto.trim())}
           disabled={!texto.trim()}
-          className="pulsable-acento"
+          className="toque"
           style={{
             flex: 1.4,
-            height: 56,
-            borderRadius: "var(--radio)",
-            border: "1.5px solid var(--acento)",
-            background: "var(--acento-900)",
-            color: "var(--acento-200)",
+            height: 54,
+            borderRadius: 27,
+            border: "none",
+            background: "var(--acento-claro)",
+            color: "#fff7ec",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontSize: 18,
-            fontWeight: 600,
+            fontSize: 17,
+            fontWeight: 700,
             opacity: texto.trim() ? 1 : 0.45,
           }}
         >
@@ -925,6 +951,7 @@ export function BotonEscribir({ onClick }: { onClick: () => void }) {
     <button
       onClick={onClick}
       aria-label="Escribir en vez de hablar"
+      className="toque"
       style={{
         position: "absolute",
         // La capa que envuelve esto va con `pointer-events: none` para no
@@ -938,12 +965,12 @@ export function BotonEscribir({ onClick }: { onClick: () => void }) {
         height: 52,
         borderRadius: "50%",
         background: "var(--superficie)",
-        border: "1.5px solid var(--borde)",
+        border: "none",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         color: "var(--texto-2)",
-        boxShadow: "0 6px 18px rgba(0,0,0,.5)",
+        boxShadow: "var(--sombra-md)",
       }}
     >
       <Keyboard size={22} />
@@ -973,6 +1000,7 @@ export function BotonMic({
       data-tour="flotante"
       onClick={onClick}
       aria-label={escuchando ? "Dejar de escuchar" : "Dictar"}
+      className="toque"
       style={{
         position: "absolute",
         // Igual que el de escribir: la capa padre no deja pasar los toques
@@ -988,13 +1016,13 @@ export function BotonMic({
         width: 84,
         height: 84,
         borderRadius: "50%",
-        background: "var(--acento-900)",
-        border: "2px solid var(--acento)",
+        background: "var(--acento-claro)",
+        border: "none",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        boxShadow: "0 10px 30px rgba(0,0,0,.6)",
-        color: "var(--acento-200)",
+        boxShadow: "var(--sombra-lg)",
+        color: "#fff7ec",
       }}
     >
       {escuchando && (
@@ -1003,7 +1031,7 @@ export function BotonMic({
             position: "absolute",
             inset: -2,
             borderRadius: "50%",
-            border: "2px solid var(--acento)",
+            border: "2px solid var(--acento-claro)",
             animation: "dpring 1.35s ease-out infinite",
           }}
         />
@@ -1015,8 +1043,8 @@ export function BotonMic({
             inset: -6,
             borderRadius: "50%",
             border: "3px solid transparent",
-            borderTopColor: "var(--acento-claro)",
-            borderRightColor: "var(--acento-claro)",
+            borderTopColor: "#fff7ec",
+            borderRightColor: "#fff7ec",
             animation: "dpgira .9s linear infinite",
           }}
         />
@@ -1038,6 +1066,7 @@ export function BotonMas({ onClick }: { onClick: () => void }) {
       data-tour="flotante"
       onClick={onClick}
       aria-label="Agregar un cliente que no está en la lista"
+      className="toque"
       style={{
         position: "absolute",
         // Igual que el micrófono: la capa padre no deja pasar los toques salvo
@@ -1048,13 +1077,13 @@ export function BotonMas({ onClick }: { onClick: () => void }) {
         width: 84,
         height: 84,
         borderRadius: "50%",
-        background: "var(--acento-900)",
-        border: "2px solid var(--acento)",
+        background: "var(--acento-claro)",
+        border: "none",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        boxShadow: "0 10px 30px rgba(0,0,0,.6)",
-        color: "var(--acento-200)",
+        boxShadow: "var(--sombra-lg)",
+        color: "#fff7ec",
       }}
     >
       <Plus size={38} strokeWidth={2.2} />

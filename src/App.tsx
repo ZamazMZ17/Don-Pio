@@ -673,11 +673,12 @@ export default function App() {
                 pointerEvents: "auto",
                 margin: "0 18px 14px",
                 background: "var(--superficie)",
-                borderRadius: "var(--radio)",
+                borderRadius: "var(--radio-lg)",
                 padding: 16,
                 fontSize: 15,
                 color: "var(--ambar)",
-                border: "1px solid var(--borde)",
+                boxShadow: "var(--sombra-md)",
+                animation: "dphoja .2s var(--resorte)",
               }}
             >
               {rec.error}
@@ -689,11 +690,12 @@ export default function App() {
                 pointerEvents: "auto",
                 margin: "0 18px 14px",
                 background: "var(--superficie)",
-                borderRadius: "var(--radio)",
+                borderRadius: "var(--radio-lg)",
                 padding: 16,
                 fontSize: 15,
                 color: "var(--ambar)",
-                border: "1px solid var(--borde)",
+                boxShadow: "var(--sombra-md)",
+                animation: "dphoja .2s var(--resorte)",
               }}
             >
               {avisoAjuste}
@@ -785,15 +787,19 @@ function BarraPestanas({ actual, ir }: { actual: Pantalla; ir: (p: Pantalla) => 
 
   return (
     <div
+      className="vidrio"
       style={{
         pointerEvents: "auto",
         position: "relative",
-        background: "var(--hundido)",
+        // El material translúcido de iOS: un eco de lo que hay detrás,
+        // difuminado — ver --superficie-vidrio en estilos.css. Cae de vuelta
+        // a un color sólido si el WebView no soporta backdrop-filter.
+        background: "var(--superficie-vidrio)",
         borderTop: "1px solid var(--linea)",
         display: "flex",
         alignItems: "flex-start",
         // Por encima de la barra de gestos de Android.
-        padding: "6px 8px calc(14px + var(--seguro-abajo))",
+        padding: "8px 8px calc(14px + var(--seguro-abajo))",
       }}
     >
       {pestanas.map(({ icono: Icono, label, destino }) => {
@@ -803,18 +809,19 @@ function BarraPestanas({ actual, ir }: { actual: Pantalla; ir: (p: Pantalla) => 
             key={destino}
             data-tour={`tab-${destino === "menu" ? "mas" : destino}`}
             onClick={() => ir(destino)}
+            className="toque"
             style={{
               flex: 1,
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              gap: 3,
+              gap: 4,
               padding: "4px 0",
               color: activa ? "var(--acento-claro)" : "var(--texto-4)",
             }}
           >
-            <Icono size={20} strokeWidth={activa ? 2.3 : 2} />
-            <div style={{ fontSize: 11, fontWeight: 500 }}>{label}</div>
+            <Icono size={21} strokeWidth={activa ? 2.4 : 2} />
+            <div style={{ fontSize: 11, fontWeight: activa ? 700 : 500 }}>{label}</div>
           </button>
         );
       })}
