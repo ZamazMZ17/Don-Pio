@@ -111,7 +111,24 @@ export interface ResumenDia {
   pagadoPolleros: Centimos;
   /** Lo cobrado hoy por venderle a un pollero: entra a la caja igual que un cobro. */
   cobradoPolleros: Centimos;
+  /** Lo cobrado por las entregas de este día — sin deudas viejas ni polleros. */
   cobrado: Centimos;
+  /** Lo cobrado este día por deudas de días anteriores (pagos `deudaAnterior`). */
+  cobradoDeuda: Centimos;
+  /**
+   * La plata que debería haber en el bolsillo al final de este día: todo lo
+   * que entró (entregas de hoy, deudas viejas cobradas hoy, ventas a
+   * polleros) menos todo lo que salió (gastos, compras a polleros pagadas).
+   *
+   * Antes el Cierre enseñaba `cobrado - gastos` y nada más: lo que le pagaban
+   * de vuelta por deudas viejas —el pan de cada día en Cobranza— y el dinero
+   * de los polleros no entraban, así que la app le decía tener menos de lo
+   * que de verdad contaba y el cuadre «no cuadraba» sin que nadie hubiera
+   * perdido nada. Se lee de los pagos **fechados** (`pagos.fecha`,
+   * `pagosPollero.fecha`), no de campos acumulados: un abono de hoy a una
+   * deuda de la semana pasada cuenta hoy, que es cuando la plata entró.
+   */
+  caja: Centimos;
   /** Lo del día que falta, **sin** las deudas viejas. */
   porCobrarDelDia: Centimos;
   descuentos: Centimos;
@@ -122,12 +139,18 @@ export interface ResumenDia {
 }
 
 export async function resumenDe(fecha: DiaISO): Promise<ResumenDia> {
-  const [jornada, entregas, gastos, polleros] = await Promise.all([
+  const [jornada, entregas, gastos, polleros, pagos] = await Promise.all([
     leerJornada(fecha),
     db.entregas.where("fecha").equals(fecha).toArray(),
     db.gastos.where("fecha").equals(fecha).toArray(),
     resumenPollerosDe(fecha),
+    db.pagos.where("fecha").equals(fecha).toArray(),
   ]);
+  const cobrado = entregas.reduce((a, e) => a + e.totalCobrado, 0);
+  const cobradoDeuda = pagos
+    .filter((p) => p.tipo === "deudaAnterior")
+    .reduce((a, p) => a + p.monto, 0);
+  const totalGastos = gastos.reduce((a, g) => a + g.monto, 0);
 
   const repartidoPollos = entregas.reduce((a, e) => a + e.pollos, 0);
   const repartidoPiernas = entregas.reduce((a, e) => a + e.piernas, 0);
@@ -189,7 +212,9 @@ export async function resumenDe(fecha: DiaISO): Promise<ResumenDia> {
     ventaPechos: polleros.ventaPechos,
     pagadoPolleros: polleros.pagadoHoy,
     cobradoPolleros: polleros.cobradoHoy,
-    cobrado: entregas.reduce((a, e) => a + e.totalCobrado, 0),
+    cobrado,
+    cobradoDeuda,
+    caja: cobrado + cobradoDeuda + polleros.cobradoHoy - polleros.pagadoHoy - totalGastos,
     // Solo mientras el día está abierto. Al cerrarlo, lo que faltaba se
     // convirtió en deuda de la tienda; seguir contándolo aquí lo sumaría dos
     // veces y le enseñaría un «por cobrar» inflado.
@@ -201,7 +226,7 @@ export async function resumenDe(fecha: DiaISO): Promise<ResumenDia> {
             0,
           ),
     descuentos: entregas.reduce((a, e) => a + e.descuentoRedondeo, 0),
-    gastos: gastos.reduce((a, g) => a + g.monto, 0),
+    gastos: totalGastos,
     tiendas: new Set(entregas.map((e) => e.tiendaId)).size,
     entregas: entregas.length,
   };

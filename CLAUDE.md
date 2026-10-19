@@ -628,6 +628,28 @@ como sugerencia antes de tocar «Crear», igual que la lista de candidatas del d
   ojo no se veían porque en el navegador de escritorio (393 px) todo cabía; **hay que
   probar a 360**, que es un ancho muy común en Android de gama baja.
 
+- **La caja del Cierre no contaba lo cobrado de deudas viejas ni lo de los polleros.**
+  «Deberías tener en la caja» era `cobrado − gastos`, y `cobrado` solo suma lo de las
+  entregas **de ese día**. Lo que le pagan de vuelta por deudas de días anteriores —el pan
+  de cada día en Cobranza— y la plata que entra o sale con Polleros no aparecían, así que
+  la app decía tener menos de lo que él contaba en el bolsillo. Ahora `resumenDe()` trae
+  `caja`: entregas de hoy + `cobradoDeuda` (pagos `deudaAnterior` **fechados** ese día) +
+  cobrado a polleros − pagado a polleros − gastos, y el Cierre enseña ese desglose
+  renglón por renglón. Se lee de pagos fechados, no de campos acumulados (§8).
+- **El «Cobrar aquí» de la deuda en el Detalle perdonaba en silencio lo de hoy.** Llamaba
+  a `registrarCobro` con `aceptarRedondeo`, y ese redondeo mira la cuenta **entera** de la
+  tienda (deudas + entregas del día) con tope de S/ 20: si además le había dejado algo hoy
+  sin cobrar, eso «cabía» en el redondeo y la entrega de hoy se daba por pagada sin un
+  céntimo. Además fechaba el pago en el día de la entrega abierta: cobrar desde un día del
+  Historial movía la caja de ese día viejo. Ahora usa `cobrarDeudas()` (entregas.ts): solo
+  deudas, pago fechado hoy, y solo perdona lo que ninguna moneda cubre.
+- **«Cobrar S/ X» de una entrega de un día ya cerrado cobraba dos veces.** `cobrarEntrega()`
+  marcaba la entrega como pagada, pero lo que faltaba ya vivía en `deudas` desde el cierre
+  y ahí no se tocaba nada: Cobranza se lo volvía a pedir. Ahora, con la jornada cerrada,
+  salda la deuda que nació de esa entrega con un pago `deudaAnterior` fechado hoy, y el
+  Detalle de un día cerrado ya no enseña ese botón (se cobra desde el banner de la deuda).
+  Los tres salieron de la misma sonda dirigida (`db/caja.test.ts`).
+
 ## 8. Modelo de datos
 
 Ver `src/db/db.ts`. Notas de implementación:

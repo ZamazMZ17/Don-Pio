@@ -5,17 +5,17 @@ import { db } from "../db/db";
 import {
   agregarTanda as agregarTandaDB,
   borrarEntrega,
+  cobrarDeudas,
   cobrarEntrega,
   cobrosDe,
   deshacerCobro,
   editarEntrega,
   fijarPeso,
   fijarTotal,
-  registrarCobro,
 } from "../db/entregas";
 import { actualizarTienda, deudaDetalle } from "../db/tiendas";
 import { aCentimos, aCobrar, aGramos, kg, money } from "../lib/dinero";
-import { diaCorto } from "../lib/fecha";
+import { diaCorto, hoyISO } from "../lib/fecha";
 import { avisoGuardado } from "../lib/aviso";
 import { BotonPrincipal, Cabecera, Contador, Fila, S } from "../ui/base";
 
@@ -102,13 +102,24 @@ export function Detalle({
   const datos = useLiveQuery(async () => {
     const entrega = await db.entregas.get(entregaId);
     if (!entrega) return null;
-    const [tienda, deuda, cobros] = await Promise.all([
+    const hoy = hoyISO();
+    const [tienda, deuda, cobrosDelDia, cobrosDeHoy, jornada] = await Promise.all([
       db.tiendas.get(entrega.tiendaId),
       deudaDetalle(entrega.tiendaId),
       // Lo que le cobró ese día, para poder deshacer uno mal tecleado.
       cobrosDe(entrega.tiendaId, entrega.fecha),
+      // Abierta desde un día viejo del Historial: lo que se le cobró **hoy** a
+      // la deuda que nació de esta entrega va fechado hoy (cuando entró la
+      // plata), así que no sale en «ese día» — sin esto no habría desde dónde
+      // deshacerlo.
+      entrega.fecha === hoy ? Promise.resolve([]) : cobrosDe(entrega.tiendaId, hoy),
+      db.jornadas.get(entrega.fecha),
     ]);
-    return { entrega, tienda, deuda, cobros };
+    const cobros = [
+      ...cobrosDelDia,
+      ...cobrosDeHoy.filter((c) => c.pagos.some((p) => p.entregaId === entrega.id)),
+    ].sort((a, b) => b.creada - a.creada);
+    return { entrega, tienda, deuda, cobros, cerrada: jornada?.estado === "cerrada" };
   }, [entregaId]);
 
   if (datos === undefined) return null;
@@ -117,7 +128,7 @@ export function Detalle({
     return null;
   }
 
-  const { entrega: e, tienda, deuda, cobros } = datos;
+  const { entrega: e, tienda, deuda, cobros, cerrada } = datos;
   const cobrado = e.totalCobrado + e.descuentoRedondeo;
   const saldo = Math.max(0, e.totalCalculado - cobrado);
 
@@ -253,10 +264,10 @@ export function Detalle({
           <button
             className="toque"
             onClick={() => {
-              void registrarCobro(e.tiendaId, aCobrar(deuda.monto), {
-                fecha: e.fecha,
-                aceptarRedondeo: true,
-              }).then(() => avisoGuardado());
+              // Solo la deuda, fechada hoy, perdonando solo los céntimos que
+              // ninguna moneda cubre (ver `cobrarDeudas`). Con `registrarCobro`
+              // + redondeo se perdonaba de paso lo de hoy sin cobrar.
+              void cobrarDeudas(e.tiendaId, aCobrar(deuda.monto)).then(() => avisoGuardado());
             }}
             style={{
               background: "var(--acento-900)",
@@ -516,7 +527,9 @@ export function Detalle({
             todavía no, y sin este botón la única forma de cobrarla era
             Cobranza, que junta todo lo del día en una sola cuenta.
           */}
-          {saldo > 0 && (
+          {/* En un día ya cerrado lo que falta ya no es de la entrega: pasó a
+              deuda de la tienda, y se cobra con el «Cobrar aquí» de arriba. */}
+          {saldo > 0 && !cerrada && (
             <button
               className="toque"
               onClick={() => {

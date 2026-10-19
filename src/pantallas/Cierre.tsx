@@ -48,7 +48,7 @@ export function Cierre({ fecha, volver }: { fecha: DiaISO; volver: () => void })
   const { resumen, pendiente } = datos;
 
   const cerrar = () => {
-    void cerrarDia(fecha, resumen.cobrado - resumen.gastos, cuadro).then(() => {
+    void cerrarDia(fecha, resumen.caja, cuadro).then(() => {
       avisoGuardado();
       volver();
     });
@@ -98,10 +98,19 @@ export function Cierre({ fecha, volver }: { fecha: DiaISO; volver: () => void })
           >
             Deberías tener en la caja
           </div>
-          {/* Lo cobrado menos lo que gastó: es la plata que de verdad
-              debería tener encima al contar. */}
-          <div style={{ fontSize: 52, fontWeight: 700, lineHeight: 1, letterSpacing: -1 }}>
-            {money(resumen.cobrado - resumen.gastos)}
+          {/* Todo lo que entró menos todo lo que salió (ver `caja` en
+              resumenDe): es la plata que de verdad debería tener al contar. */}
+          <div
+            style={{
+              fontSize: "clamp(40px, 13vw, 52px)",
+              fontWeight: 700,
+              lineHeight: 1,
+              letterSpacing: -1,
+              whiteSpace: "nowrap",
+              fontVariantNumeric: "tabular-nums",
+            }}
+          >
+            {money(resumen.caja)}
           </div>
           <div style={{ fontSize: 14, color: "var(--texto-2)", marginTop: 10 }}>
             {cuadro === null
@@ -173,7 +182,40 @@ export function Cierre({ fecha, volver }: { fecha: DiaISO; volver: () => void })
 
         <div style={{ ...S.tarjeta, padding: 16 }}>
           <div style={{ ...S.rotulo, marginBottom: 12 }}>Dinero</div>
-          <Fila label="Cobrado hoy" valor={money(resumen.cobrado)} color="var(--verde)" tam={17} />
+          {/* El desglose de la caja de arriba, renglón por renglón: si no
+              cuadra, aquí se ve de dónde viene la diferencia. */}
+          <Fila label="Cobrado de hoy" valor={money(resumen.cobrado)} color="var(--verde)" tam={17} />
+          {resumen.cobradoDeuda > 0 && (
+            <Fila
+              label="Cobrado de deudas viejas"
+              valor={money(resumen.cobradoDeuda)}
+              color="var(--verde)"
+              tam={17}
+            />
+          )}
+          {resumen.cobradoPolleros > 0 && (
+            <Fila
+              label="Cobrado a polleros"
+              valor={money(resumen.cobradoPolleros)}
+              color="var(--verde)"
+              tam={17}
+            />
+          )}
+          {resumen.pagadoPolleros > 0 && (
+            <Fila
+              label="Pagado a polleros"
+              valor={`−${money(resumen.pagadoPolleros)}`}
+              color="var(--ambar)"
+              tam={17}
+            />
+          )}
+          <Fila
+            label="Gastos del día"
+            valor={resumen.gastos > 0 ? `−${money(resumen.gastos)}` : money(0)}
+            color={resumen.gastos > 0 ? "var(--ambar)" : "var(--texto-4)"}
+            tam={17}
+          />
+          <div style={{ borderTop: "1px solid var(--linea)", marginTop: 6, paddingTop: 2 }} />
           <Fila
             label="Queda por cobrar"
             valor={money(pendiente)}
@@ -184,12 +226,6 @@ export function Cierre({ fecha, volver }: { fecha: DiaISO; volver: () => void })
             label="Regalado en redondeos"
             valor={money(resumen.descuentos)}
             color="var(--texto)"
-            tam={17}
-          />
-          <Fila
-            label="Gastos del día"
-            valor={money(resumen.gastos)}
-            color={resumen.gastos > 0 ? "var(--ambar)" : "var(--texto-4)"}
             tam={17}
           />
         </div>

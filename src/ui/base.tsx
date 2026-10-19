@@ -344,8 +344,20 @@ export function Fila({
         padding: "7px 0",
       }}
     >
-      <span style={{ color: "var(--texto-2)" }}>{label}</span>
-      <span style={{ color: color ?? "var(--texto)", fontWeight: peso || 600 }}>{valor}</span>
+      <span style={{ color: "var(--texto-2)", minWidth: 0 }}>{label}</span>
+      {/* El valor no se parte nunca: si falta sitio, cede el rótulo. Sin esto un
+          monto quedaba «S/» en una línea y «150.00» en la de abajo. */}
+      <span
+        style={{
+          color: color ?? "var(--texto)",
+          fontWeight: peso || 600,
+          flex: "none",
+          whiteSpace: "nowrap",
+          fontVariantNumeric: "tabular-nums",
+        }}
+      >
+        {valor}
+      </span>
     </div>
   );
 }

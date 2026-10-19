@@ -327,9 +327,42 @@ export async function borrarEntrega(id: number): Promise<void> {
  * de esta, que es justo lo que pidió cobrar.
  */
 export async function cobrarEntrega(id: number, montoRecibido: Centimos): Promise<void> {
-  await db.transaction("rw", db.entregas, db.pagos, async () => {
+  await db.transaction("rw", [db.entregas, db.pagos, db.jornadas, db.deudas], async () => {
     const e = await db.entregas.get(id);
     if (!e) return;
+
+    /*
+     * Día ya cerrado: lo que faltaba de esta entrega ya no vive en ella, se
+     * convirtió en deuda de la tienda al cerrar (§8). Cobrarlo sobre la
+     * entrega —como se hacía— la marcaba pagada pero dejaba la deuda
+     * intacta: Cobranza se lo volvía a pedir y se cobraba dos veces. Además
+     * el pago quedaba fechado en el día viejo, inflando una caja ya cuadrada
+     * y faltando en la de hoy. Se salda la deuda que nació de esta entrega,
+     * con un pago `deudaAnterior` fechado hoy — el mismo camino que
+     * `registrarCobro`, así que «Deshacer» lo revierte igual.
+     */
+    const jornada = await db.jornadas.get(e.fecha);
+    if (jornada?.estado === "cerrada") {
+      const d = (await db.deudas.where("tiendaId").equals(e.tiendaId).toArray()).find(
+        (x) => x.entregaId === id && !x.cerrada,
+      );
+      if (!d) return;
+      const aplica = Math.min(Math.max(0, montoRecibido), d.monto - d.saldado);
+      if (aplica <= 0) return;
+      await db.deudas.update(d.id!, {
+        saldado: d.saldado + aplica,
+        cerrada: d.saldado + aplica >= d.monto ? 1 : 0,
+      });
+      await db.pagos.add({
+        tiendaId: e.tiendaId,
+        entregaId: id,
+        fecha: hoyISO(),
+        monto: aplica,
+        tipo: "deudaAnterior",
+        creada: Date.now(),
+      });
+      return;
+    }
     const falta = e.totalCalculado - e.totalCobrado - e.descuentoRedondeo;
     const aplica = Math.min(Math.max(0, montoRecibido), falta);
     if (aplica <= 0) return;
@@ -530,6 +563,61 @@ export async function cuentasDelDia(fecha: DiaISO = hoyISO()): Promise<CuentaTie
       c.entregas.length > 0 ? Math.max(...c.entregas.map((e) => e.orden)) : undefined,
     );
   return cuentas.sort((a, b) => paradaCuenta(a) - paradaCuenta(b));
+}
+
+/**
+ * Cobra **solo la deuda vieja** de una tienda — lo que hace el «Cobrar aquí»
+ * del Detalle. No toca las entregas de ningún día.
+ *
+ * Antes ese botón llamaba a `registrarCobro` con `aceptarRedondeo`, y ahí el
+ * redondeo mira la cuenta entera de la tienda (deuda + entregas del día),
+ * con tope de S/ 20: si además le había dejado algo hoy sin cobrar, el resto
+ * «cabía» en el redondeo y la entrega de hoy se perdonaba entera, en
+ * silencio. Además fechaba el pago en el día de la entrega abierta, así que
+ * cobrar desde un día viejo del Historial movía la caja de ese día viejo.
+ *
+ * Aquí el pago va fechado hoy (cuando entra la plata) y lo único que se
+ * perdona es lo que ninguna moneda puede cubrir: si tras pagar la deuda
+ * queda por debajo de los 10 céntimos (`aCobrar` da 0), se cierra.
+ */
+export async function cobrarDeudas(
+  tiendaId: number,
+  montoRecibido: Centimos,
+  fecha: DiaISO = hoyISO(),
+): Promise<void> {
+  await db.transaction("rw", db.deudas, db.pagos, async () => {
+    const abiertas = (await db.deudas.where("tiendaId").equals(tiendaId).toArray())
+      .filter((d) => !d.cerrada)
+      .sort((a, b) => (a.fechaOrigen < b.fechaOrigen ? -1 : 1));
+
+    let resto = Math.max(0, montoRecibido);
+    const ahora = Date.now();
+    for (const d of abiertas) {
+      if (resto <= 0) break;
+      const aplica = Math.min(resto, d.monto - d.saldado);
+      if (aplica <= 0) continue;
+      d.saldado += aplica;
+      d.cerrada = d.saldado >= d.monto ? 1 : 0;
+      await db.deudas.update(d.id!, { saldado: d.saldado, cerrada: d.cerrada });
+      await db.pagos.add({
+        tiendaId,
+        entregaId: d.entregaId,
+        fecha,
+        monto: aplica,
+        tipo: "deudaAnterior",
+        creada: ahora,
+      });
+      resto -= aplica;
+    }
+
+    const queda = abiertas.reduce((a, d) => a + (d.monto - d.saldado), 0);
+    if (queda > 0 && aCobrar(queda) === 0) {
+      for (const d of abiertas) {
+        if (d.cerrada) continue;
+        await db.deudas.update(d.id!, { saldado: d.monto, cerrada: 1 });
+      }
+    }
+  });
 }
 
 /**

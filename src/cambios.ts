@@ -198,4 +198,9 @@ export const CAMBIOS: Cambio[] = [
     texto:
       "Arreglado: en teléfonos angostos algunas letras se montaban o se salían de la pantalla — el encabezado de Hoy (piernas, pechos y tiendas quedaban cortados), el formulario de Polleros y algunos montos que se partían en dos líneas. Y el modo oscuro ahora es cálido, color café, de la misma familia que la crema, con botones que se leen mejor.",
   },
+  {
+    fecha: "2026-10-19",
+    texto:
+      "Arreglado: «Deberías tener en la caja» ahora cuenta todo lo que entró y salió ese día — también lo que te pagaron de deudas viejas y la plata de los polleros —, con el desglose renglón por renglón. Antes salía de menos y parecía que no cuadraba. También se corrigió que cobrar una deuda vieja desde el detalle de una entrega podía dar por pagado, sin querer, lo que te debían de hoy.",
+  },
 ];
