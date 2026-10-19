@@ -4,7 +4,6 @@ import {
   useRef,
   useState,
   type MutableRefObject,
-  type ReactNode,
 } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Pencil, Search, X } from "lucide-react";
@@ -18,7 +17,7 @@ import { useAjuste, useMemoriaScroll } from "../lib/ganchos";
 import { CLAVE_MODO_COBRANZA, CLAVE_ORDEN_COBRANZA, guardarAjuste } from "../voz/ajustes";
 import { mediana } from "../tiendas/emparejar";
 import { normalizar, parecido } from "../tiendas/normalizar";
-import { S, Vacio } from "../ui/base";
+import { Insignia, Interruptor, S, Segmentado, Vacio } from "../ui/base";
 import { Teclado } from "../ui/Teclado";
 import { db } from "../db/db";
 
@@ -380,18 +379,16 @@ export function Cobranza({
               )}
             </div>
           )}
-          <ModoBtn
-            activo={modo === "deudas"}
-            onClick={() => void guardarAjuste(CLAVE_MODO_COBRANZA, "deudas")}
-          >
-            Deudas
-          </ModoBtn>
-          <ModoBtn
-            activo={modo === "ruta"}
-            onClick={() => void guardarAjuste(CLAVE_MODO_COBRANZA, "ruta")}
-          >
-            Ruta
-          </ModoBtn>
+          <div style={{ flex: "none" }}>
+            <Segmentado
+              opciones={[
+                { valor: "deudas", etiqueta: "Deudas" },
+                { valor: "ruta", etiqueta: "Ruta" },
+              ]}
+              valor={modo}
+              onCambio={(v) => void guardarAjuste(CLAVE_MODO_COBRANZA, v)}
+            />
+          </div>
         </div>
       )}
 
@@ -509,7 +506,7 @@ export function Cobranza({
               <Marco
                 key={c.tienda.id}
                 {...(ultima
-                  ? { onClick: () => abrir(ultima.id!), className: "pulsable" }
+                  ? { onClick: () => abrir(ultima.id!), className: "toque" }
                   : {})}
                 style={{
                   ...S.tarjeta,
@@ -594,7 +591,9 @@ export function Cobranza({
                   <div style={{ fontSize: 20, fontWeight: 700 }}>{c.tienda.nombre}</div>
                   {/* Ya pagó una parte: por eso está aquí abajo, esperando el resto. */}
                   {c.tocada && (
-                    <div style={{ fontSize: 14, color: "var(--verde)", flex: "none" }}>ya abonó</div>
+                    <div style={{ flex: "none" }}>
+                      <Insignia texto="ya abonó" color="var(--verde)" />
+                    </div>
                   )}
                 </div>
                 {c.tienda.ordenRuta > 0 && (
@@ -716,7 +715,7 @@ export function Cobranza({
                 <>
                   {!c.tieneSinPesar && (
                     <button
-                      className="pulsable-acento"
+                      className="toque"
                       data-tour="cobrar"
                       onClick={() => setConfirmando(c.tienda.id!)}
                       style={{
@@ -726,9 +725,10 @@ export function Cobranza({
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        borderRadius: "var(--radio)",
-                        border: "1.5px solid var(--acento)",
-                        color: "var(--acento-300)",
+                        borderRadius: "var(--radio-pill)",
+                        background: "var(--acento-claro)",
+                        boxShadow: "var(--sombra-sm)",
+                        color: "#fff7ec",
                         fontSize: 18,
                         fontWeight: 600,
                       }}
@@ -737,7 +737,7 @@ export function Cobranza({
                     </button>
                   )}
                   <button
-                    className={c.tieneSinPesar ? "pulsable-acento" : "pulsable"}
+                    className="toque"
                     onClick={() => {
                       setAbierta(c.tienda.id!);
                       setMonto("");
@@ -749,9 +749,10 @@ export function Cobranza({
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      borderRadius: "var(--radio)",
-                      border: `1.5px solid var(${c.tieneSinPesar ? "--acento" : "--borde"})`,
-                      color: `var(${c.tieneSinPesar ? "--acento-300" : "--texto-2"})`,
+                      borderRadius: "var(--radio-pill)",
+                      background: c.tieneSinPesar ? "var(--acento-claro)" : "var(--hundido)",
+                      boxShadow: c.tieneSinPesar ? "var(--sombra-sm)" : undefined,
+                      color: c.tieneSinPesar ? "#fff7ec" : "var(--texto-2)",
                       fontSize: c.tieneSinPesar ? 18 : 16,
                       fontWeight: c.tieneSinPesar ? 600 : undefined,
                     }}
@@ -768,7 +769,7 @@ export function Cobranza({
                 solo a los 8 segundos por si lo dejó a medias.
               */}
               {porConfirmar && (
-                <div style={{ marginTop: 14, animation: "dpup .18s ease-out" }}>
+                <div style={{ marginTop: 14, animation: "dppop .22s var(--resorte)" }}>
                   <div
                     style={{
                       fontSize: 16,
@@ -782,13 +783,13 @@ export function Cobranza({
                   </div>
                   <div style={{ display: "flex", gap: 10 }}>
                     <button
-                      className="pulsable"
+                      className="toque"
                       onClick={() => setConfirmando(null)}
                       style={{
                         flex: 1,
                         height: 58,
-                        borderRadius: "var(--radio)",
-                        border: "1.5px solid var(--borde)",
+                        borderRadius: "var(--radio-pill)",
+                        background: "var(--hundido)",
                         color: "var(--texto-2)",
                         display: "flex",
                         alignItems: "center",
@@ -799,7 +800,7 @@ export function Cobranza({
                       No
                     </button>
                     <button
-                      className="pulsable-acento"
+                      className="toque"
                       // `c.total` ya viene redondeado a monedas de 10 céntimos
                       // (`aCobrar`): cuando él dice «me pagó todo», paga eso, y
                       // el resto por debajo de la moneda —los pocos céntimos que
@@ -813,10 +814,10 @@ export function Cobranza({
                       style={{
                         flex: 1.5,
                         height: 58,
-                        borderRadius: "var(--radio)",
-                        border: "1.5px solid var(--acento)",
-                        background: "var(--acento-900)",
-                        color: "var(--acento-200)",
+                        borderRadius: "var(--radio-pill)",
+                        background: "var(--acento-claro)",
+                        boxShadow: "var(--sombra-sm)",
+                        color: "#fff7ec",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -837,7 +838,7 @@ export function Cobranza({
                     marginTop: 14,
                     paddingTop: 16,
                     borderTop: "1px solid var(--borde)",
-                    animation: "dpup .2s ease-out",
+                    animation: "dppop .24s var(--resorte)",
                   }}
                 >
                   {/* El desglose en vivo: qué pasa con esa plata antes de tocar nada. */}
@@ -891,69 +892,34 @@ export function Cobranza({
                     cliente para siempre y él tenía que perseguirlo.
                   */}
                   {reparto.restante > 0 && reparto.restante <= TOPE_REDONDEO && (
-                    <button
-                      onClick={() => setPerdonar(!perdonar)}
-                      role="switch"
-                      aria-checked={perdonar}
-                      className="pulsable"
+                    <div
                       style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 12,
                         width: "100%",
                         marginBottom: 14,
                         padding: "10px 12px",
                         borderRadius: "var(--radio)",
-                        border: "1.5px solid var(--borde)",
+                        background: "var(--hundido)",
                       }}
                     >
-                      <span
-                        style={{
-                          flex: 1,
-                          fontSize: 15,
-                          color: "var(--texto-2)",
-                          textAlign: "left",
-                          lineHeight: 1.4,
-                        }}
-                      >
-                        Ya no cobrar {money(reparto.restante)}
-                      </span>
-                      <span
-                        style={{
-                          width: 50,
-                          height: 30,
-                          borderRadius: 99,
-                          padding: 3,
-                          flex: "none",
-                          display: "flex",
-                          background: perdonar ? "var(--acento-700)" : "var(--borde)",
-                          justifyContent: perdonar ? "flex-end" : "flex-start",
-                          transition: "background-color 140ms",
-                        }}
-                      >
-                        <span
-                          style={{
-                            width: 24,
-                            height: 24,
-                            borderRadius: "50%",
-                            background: "var(--texto)",
-                          }}
-                        />
-                      </span>
-                    </button>
+                      <Interruptor
+                        activo={perdonar}
+                        onCambio={() => setPerdonar(!perdonar)}
+                        etiqueta={`Ya no cobrar ${money(reparto.restante)}`}
+                      />
+                    </div>
                   )}
 
                   <Teclado valor={monto} onCambio={setMonto} />
 
                   <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
                     <button
-                      className="pulsable"
+                      className="toque"
                       onClick={cerrar}
                       style={{
                         flex: 1,
                         height: 58,
-                        borderRadius: "var(--radio)",
-                        border: "1.5px solid var(--borde)",
+                        borderRadius: "var(--radio-pill)",
+                        background: "var(--hundido)",
                         color: "var(--texto-2)",
                         display: "flex",
                         alignItems: "center",
@@ -964,16 +930,16 @@ export function Cobranza({
                       Cancelar
                     </button>
                     <button
-                      className="pulsable-acento"
+                      className="toque"
                       disabled={centimos <= 0}
                       onClick={() => cobrar(c.tienda.id!, centimos, perdonar)}
                       style={{
                         flex: 1.5,
                         height: 58,
-                        borderRadius: "var(--radio)",
-                        border: "1.5px solid var(--acento)",
-                        background: "var(--acento-900)",
-                        color: "var(--acento-200)",
+                        borderRadius: "var(--radio-pill)",
+                        background: "var(--acento-claro)",
+                        boxShadow: "var(--sombra-sm)",
+                        color: "#fff7ec",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -1032,7 +998,7 @@ function EntregasCorregibles({
           key={e.id}
           data-tour="corregir"
           onClick={() => abrir(e.id!)}
-          className="pulsable"
+          className="toque"
           style={{
             width: "100%",
             minHeight: 52,
@@ -1060,7 +1026,7 @@ function EntregasCorregibles({
               width: 40,
               height: 40,
               borderRadius: "var(--radio-sm)",
-              border: "1.5px solid var(--borde)",
+              background: "var(--hundido)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -1074,46 +1040,3 @@ function EntregasCorregibles({
   );
 }
 
-/**
- * Un botón del interruptor Deudas / Ruta.
- *
- * Al ancho del texto y no a media pantalla cada uno: antes se llevaban una
- * fila entera para sí solos y, con el buscador debajo, la lista no empezaba
- * hasta pasada la mitad de la pantalla. Ahora comparten fila con el buscador.
- * Los dos siguen a la vista —nada de desplegable— porque cambiar de modo en
- * plena vuelta tiene que ser un toque, no dos.
- */
-function ModoBtn({
-  activo,
-  onClick,
-  children,
-}: {
-  activo: boolean;
-  onClick: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className="pulsable"
-      style={{
-        flex: "none",
-        padding: "0 14px",
-        // Los 52px de §4: la fila los da de alto, así que no hace falta el
-        // truco del margen negativo.
-        height: 52,
-        borderRadius: "var(--radio)",
-        border: activo ? "1.5px solid var(--acento)" : "1.5px solid var(--borde)",
-        background: activo ? "var(--acento-900)" : "transparent",
-        color: activo ? "var(--acento-200)" : "var(--texto-3)",
-        fontSize: 15,
-        fontWeight: activo ? 600 : 500,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      {children}
-    </button>
-  );
-}
