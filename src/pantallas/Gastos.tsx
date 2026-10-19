@@ -68,7 +68,7 @@ export function Gastos({ fecha, volver }: { fecha: DiaISO; volver: () => void })
               width: "100%",
               height: 54,
               borderRadius: "var(--radio)",
-              border: "1.5px solid var(--borde)",
+              border: "none",
               background: "var(--hundido)",
               padding: "0 14px",
               fontSize: 17,
@@ -87,7 +87,7 @@ export function Gastos({ fecha, volver }: { fecha: DiaISO; volver: () => void })
                 minWidth: 0,
                 height: 54,
                 borderRadius: "var(--radio)",
-                border: "1.5px solid var(--borde)",
+                border: "none",
                 background: "var(--hundido)",
                 padding: "0 14px",
                 fontSize: 18,
@@ -95,15 +95,15 @@ export function Gastos({ fecha, volver }: { fecha: DiaISO; volver: () => void })
             />
             <button
               onClick={agregar}
-              className="pulsable-acento"
+              className="toque"
               disabled={!listo}
               style={{
                 flex: "none",
                 width: 96,
                 height: 54,
-                borderRadius: "var(--radio)",
-                border: "1.5px solid var(--acento)",
-                color: "var(--acento-300)",
+                borderRadius: "var(--radio-pill)",
+                background: "var(--acento-claro)",
+                color: "#fff7ec",
                 fontSize: 16,
                 fontWeight: 600,
                 display: "flex",

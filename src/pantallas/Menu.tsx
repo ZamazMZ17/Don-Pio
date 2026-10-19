@@ -46,7 +46,7 @@ export function Menu({ ir }: { ir: (p: Pantalla) => void }) {
             key={destino}
             data-tour={`menu-${destino}`}
             onClick={() => ir(destino)}
-            className="pulsable"
+            className="toque"
             style={{
               ...S.tarjeta,
               borderRadius: "var(--radio-lg)",

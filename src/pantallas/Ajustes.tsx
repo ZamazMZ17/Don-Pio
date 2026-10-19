@@ -21,7 +21,7 @@ import { useAjuste, useAjusteBool, type Tema } from "../lib/ganchos";
 import { hoyISO } from "../lib/fecha";
 import { avisoAtencion, avisoGuardado } from "../lib/aviso";
 import { esNativo } from "../lib/plataforma";
-import { Cabecera, S } from "../ui/base";
+import { Cabecera, Interruptor as Switch, S, Segmentado } from "../ui/base";
 
 /**
  * Ajustes. Lo importante aquí es la API key: vive en el dispositivo y no se
@@ -134,36 +134,15 @@ export function Ajustes({ volver }: { volver: () => void }) {
         {/* Apariencia */}
         <div style={{ ...S.tarjeta, borderRadius: 12, padding: 16 }}>
           <div style={{ ...S.rotulo, marginBottom: 12 }}>Apariencia</div>
-          <div style={{ display: "flex", gap: 8 }}>
-            {(
-              [
-                ["oscuro", "Oscuro"],
-                ["claro", "Claro"],
-                ["sistema", "Sistema"],
-              ] as const
-            ).map(([valor, label]) => (
-              <button
-                key={valor}
-                onClick={() => void guardarAjuste(CLAVE_TEMA, valor)}
-                className="pulsable"
-                style={{
-                  flex: 1,
-                  height: 48,
-                  borderRadius: "var(--radio)",
-                  border: `1.5px solid ${tema === valor ? "var(--acento)" : "var(--borde)"}`,
-                  background: tema === valor ? "var(--acento-900)" : "transparent",
-                  color: tema === valor ? "var(--acento-300)" : "var(--texto-2)",
-                  fontSize: 15,
-                  fontWeight: tema === valor ? 600 : 400,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+          <Segmentado
+            opciones={[
+              { valor: "oscuro", etiqueta: "Oscuro" },
+              { valor: "claro", etiqueta: "Claro" },
+              { valor: "sistema", etiqueta: "Sistema" },
+            ]}
+            valor={tema}
+            onCambio={(v) => void guardarAjuste(CLAVE_TEMA, v)}
+          />
           <div style={{ fontSize: 13, color: "var(--texto-4)", marginTop: 10, lineHeight: 1.5 }}>
             {tema === "sistema"
               ? "Sigue el tema que tenga puesto el teléfono."
@@ -194,13 +173,13 @@ export function Ajustes({ volver }: { volver: () => void }) {
             />
             <button
               onClick={() => setVerKey(!verKey)}
-              className="pulsable"
+              className="toque"
               style={{
                 flex: "none",
                 width: 72,
                 height: 52,
-                borderRadius: "var(--radio)",
-                border: "1.5px solid var(--borde)",
+                borderRadius: "var(--radio-pill)",
+                background: "var(--hundido)",
                 color: "var(--texto-2)",
                 fontSize: 14,
                 display: "flex",
@@ -239,25 +218,25 @@ export function Ajustes({ volver }: { volver: () => void }) {
           tipo="number"
         />
 
-        <Interruptor
+        <FilaInterruptor
           label="Ver la Agenda en Hoy"
           sub="Pone arriba el interruptor Agenda / Ruta, con la lista de lo que ya entregaste. Apagado, Hoy es solo la Ruta."
           activo={verAgenda}
           onCambio={(v) => void guardarAjuste(CLAVE_VER_AGENDA, v ? "1" : "0")}
         />
-        <Interruptor
+        <FilaInterruptor
           label="Dictar con el teclado"
           sub="Abre el cuadro de escribir y usas el micrófono de tu teclado. Es gratis y no gasta la cuota de Gemini."
           activo={modoTeclado}
           onCambio={(v) => void guardarAjuste(CLAVE_MODO_TECLADO, v ? "1" : "0")}
         />
-        <Interruptor
+        <FilaInterruptor
           label="Redondear hacia abajo"
           sub="Sugiere cobrar a los .50 más cercanos. El cálculo exacto siempre queda guardado."
           activo={redondeo}
           onCambio={(v) => void guardarAjuste(CLAVE_REDONDEO, v ? "1" : "0")}
         />
-        <Interruptor
+        <FilaInterruptor
           label="Aviso con sonido y vibración"
           sub="Para no mirar la pantalla al manejar"
           activo={sonido}
@@ -292,7 +271,7 @@ export function Ajustes({ volver }: { volver: () => void }) {
           <button
             onClick={() => void compartirRespaldo()}
             disabled={compartiendo}
-            className="pulsable"
+            className="toque"
             style={{ ...botonRespaldo, marginBottom: 10, opacity: compartiendo ? 0.6 : 1 }}
           >
             {compartiendo ? "Armando…" : "Compartir respaldo"}
@@ -301,7 +280,7 @@ export function Ajustes({ volver }: { volver: () => void }) {
           <button
             onClick={() => archivoRef.current?.click()}
             disabled={restaurando}
-            className="pulsable"
+            className="toque"
             style={{ ...botonRespaldo, opacity: restaurando ? 0.6 : 1 }}
           >
             {restaurando ? "Restaurando…" : "Restaurar desde un archivo"}
@@ -350,7 +329,7 @@ export function Ajustes({ volver }: { volver: () => void }) {
           </div>
           <button
             onClick={() => window.open(URL_DESCARGA, "_blank", "noopener")}
-            className="pulsable"
+            className="toque"
             style={botonRespaldo}
           >
             Buscar actualización
@@ -369,7 +348,7 @@ const campo: React.CSSProperties = {
   width: "100%",
   height: 52,
   borderRadius: "var(--radio)",
-  border: "1.5px solid var(--borde)",
+  border: "none",
   background: "var(--hundido)",
   padding: "0 14px",
   fontSize: 16,
@@ -379,8 +358,8 @@ const campo: React.CSSProperties = {
 const botonRespaldo: React.CSSProperties = {
   height: 52,
   width: "100%",
-  borderRadius: "var(--radio)",
-  border: "1.5px solid var(--borde)",
+  borderRadius: "var(--radio-pill)",
+  background: "var(--hundido)",
   color: "var(--texto-2)",
   fontSize: 15,
   display: "flex",
@@ -388,7 +367,7 @@ const botonRespaldo: React.CSSProperties = {
   justifyContent: "center",
 };
 
-function Interruptor({
+function FilaInterruptor({
   label,
   sub,
   activo,
@@ -400,43 +379,20 @@ function Interruptor({
   onCambio: (v: boolean) => void;
 }) {
   return (
-    <button
-      onClick={() => onCambio(!activo)}
-      role="switch"
-      aria-checked={activo}
-      className="pulsable"
-      style={{
-        ...S.tarjeta,
-        borderRadius: 12,
-        padding: 16,
-        display: "flex",
-        alignItems: "center",
-        gap: 14,
-        width: "100%",
-      }}
-    >
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 17, fontWeight: 500 }}>{label}</div>
-        <div style={{ fontSize: 14, color: "var(--texto-3)", marginTop: 3, lineHeight: 1.45 }}>
-          {sub}
-        </div>
-      </div>
-      <div
-        style={{
-          width: 56,
-          height: 32,
-          borderRadius: 99,
-          padding: 3,
-          flex: "none",
-          display: "flex",
-          background: activo ? "var(--acento-700)" : "var(--borde)",
-          justifyContent: activo ? "flex-end" : "flex-start",
-          transition: "background-color 140ms",
-        }}
-      >
-        <div style={{ width: 26, height: 26, borderRadius: "50%", background: "var(--texto)" }} />
-      </div>
-    </button>
+    <div style={{ ...S.tarjeta, borderRadius: 12, padding: 16 }}>
+      <Switch
+        activo={activo}
+        onCambio={() => onCambio(!activo)}
+        etiqueta={
+          <>
+            <div style={{ fontSize: 17, fontWeight: 500 }}>{label}</div>
+            <div style={{ fontSize: 14, color: "var(--texto-3)", marginTop: 3, lineHeight: 1.45 }}>
+              {sub}
+            </div>
+          </>
+        }
+      />
+    </div>
   );
 }
 
@@ -480,7 +436,7 @@ function Valor({
           height: 48,
           textAlign: "center",
           borderRadius: "var(--radio-sm)",
-          border: "1.5px solid var(--borde)",
+          border: "none",
           background: "var(--hundido)",
           fontSize: 17,
           fontWeight: 600,
