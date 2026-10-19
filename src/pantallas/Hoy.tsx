@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, type ReactNode } from "react";
+import { useLayoutEffect, useRef } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, type Entrega, type Tienda } from "../db/db";
 import { leerJornada, resumenDe } from "../db/jornada";
@@ -17,7 +17,7 @@ import {
   CLAVE_MODO_HOY,
   CLAVE_VER_AGENDA,
 } from "../voz/ajustes";
-import { S, Vacio } from "../ui/base";
+import { S, Segmentado, Vacio } from "../ui/base";
 // Importado como módulo, no referenciado por ruta absoluta: es el único
 // sitio de la app que pinta una imagen suelta, y `/icono-192.png` a pelo no
 // se resolvía dentro del WebView del APK aunque en el navegador sí. Así lo
@@ -357,19 +357,15 @@ export function Hoy({
         a la lista.
       */}
       {verAgenda && (
-        <div style={{ flex: "none", padding: "10px 18px 2px", display: "flex", gap: 8 }}>
-          <ModoBtn
-            activo={modo === "agenda"}
-            onClick={() => void guardarAjuste(CLAVE_MODO_HOY, "agenda")}
-          >
-            Agenda
-          </ModoBtn>
-          <ModoBtn
-            activo={modo === "ruta"}
-            onClick={() => void guardarAjuste(CLAVE_MODO_HOY, "ruta")}
-          >
-            Ruta
-          </ModoBtn>
+        <div style={{ flex: "none", padding: "10px 18px 2px" }}>
+          <Segmentado
+            opciones={[
+              { valor: "agenda", etiqueta: "Agenda" },
+              { valor: "ruta", etiqueta: "Ruta" },
+            ]}
+            valor={modo}
+            onCambio={(v) => void guardarAjuste(CLAVE_MODO_HOY, v)}
+          />
         </div>
       )}
 
@@ -585,39 +581,6 @@ export function Hoy({
         )}
       </div>
     </div>
-  );
-}
-
-/** Un botón del interruptor Agenda / Ruta. Objetivo táctil de 52px. */
-function ModoBtn({
-  activo,
-  onClick,
-  children,
-}: {
-  activo: boolean;
-  onClick: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className="pulsable"
-      style={{
-        flex: 1,
-        height: 44,
-        borderRadius: "var(--radio)",
-        border: activo ? "1.5px solid var(--acento)" : "1.5px solid var(--borde)",
-        background: activo ? "var(--acento-900)" : "transparent",
-        color: activo ? "var(--acento-200)" : "var(--texto-3)",
-        fontSize: 15,
-        fontWeight: activo ? 600 : 500,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      {children}
-    </button>
   );
 }
 
