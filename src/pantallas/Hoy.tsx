@@ -9,7 +9,7 @@ import { paradaDe } from "../tiendas/ruta";
 import { diaCorto, diaLargo, horaTxt, type DiaISO } from "../lib/fecha";
 import { aCobrar, money } from "../lib/dinero";
 import { useAjuste, useAjusteBool, useHolguraMic } from "../lib/ganchos";
-import { Plus } from "lucide-react";
+import { ArrowRight, ArrowUpDown, Plus } from "lucide-react";
 import {
   guardarAjuste,
   modoHoyEfectivo,
@@ -154,9 +154,9 @@ export function Hoy({
 
   const SIGUIENTE = { ruta: "retorno", retorno: "pendientes", pendientes: "ruta" } as const;
   const ETIQUETA = {
-    ruta: "Por ruta ⇅",
-    retorno: "Del último ⇅",
-    pendientes: "Por pendientes ⇅",
+    ruta: "Por ruta",
+    retorno: "Del último",
+    pendientes: "Por pendientes",
   } as const;
 
   return (
@@ -165,22 +165,22 @@ export function Hoy({
       <div
         style={{
           flex: "none",
-          padding: "6px 20px 16px",
+          padding: "8px 20px 14px",
           borderBottom: "1px solid var(--linea)",
-          // Tres columnas: la figura | salí-me quedan | piernas-pechos-tiendas.
-          // La figura tiene columna propia y todo el alto del encabezado, así
-          // que puede ir grande sin empujar a nada — antes vivía dentro de la
-          // fila del título y había que encogerla con márgenes negativos para
-          // que no la engordara.
+          // Dos columnas: la figura | el día con sus cifras. Antes había una
+          // tercera (piernas · pechos · tiendas) pegada a la derecha; con los
+          // rótulos en Inter en vez de la Bebas condensada ya no cabía, y en
+          // un teléfono de 360 se salía de la pantalla cortada por la mitad.
+          // Ahora va como una línea debajo de las cifras, donde sobra ancho.
           display: "flex",
           alignItems: "center",
-          gap: 12,
+          gap: 14,
         }}
       >
         {/*
           Escala con el ancho: a 96px fijos, en un teléfono de 360 (de los
-          más comunes) le comía tanto sitio a las otras dos columnas que
-          «ME QUEDAN» y cada contador se partían en dos líneas.
+          más comunes) le comía tanto sitio a la columna de cifras que los
+          contadores se partían en dos líneas.
         */}
         <img
           src={logo}
@@ -189,8 +189,8 @@ export function Hoy({
           style={{
             flex: "none",
             objectFit: "contain",
-            width: "clamp(58px, 19vw, 96px)",
-            height: "clamp(58px, 19vw, 96px)",
+            width: "clamp(58px, 18vw, 88px)",
+            height: "clamp(58px, 18vw, 88px)",
           }}
         />
         <img
@@ -200,151 +200,152 @@ export function Hoy({
           style={{
             flex: "none",
             objectFit: "contain",
-            width: "clamp(58px, 19vw, 96px)",
-            height: "clamp(58px, 19vw, 96px)",
+            width: "clamp(58px, 18vw, 88px)",
+            height: "clamp(58px, 18vw, 88px)",
           }}
         />
 
-        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
+        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 8 }}>
           <div
             style={{
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
-              marginBottom: 10,
+              gap: 10,
             }}
           >
+            {/* Mismo tratamiento que el título de cualquier otra pantalla
+                (Cabecera): Inter gruesa, en minúsculas. En mayúsculas finas
+                desentonaba con todo lo demás. */}
             <div
               style={{
-                fontFamily: "var(--fuente-titulo)",
-                fontSize: 27,
-                letterSpacing: 0.4,
-                textTransform: "uppercase",
-                lineHeight: 1,
+                fontSize: 26,
+                fontWeight: 800,
+                letterSpacing: -0.6,
+                lineHeight: 1.1,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                minWidth: 0,
               }}
             >
               {diaCorto(fecha)}
             </div>
             {/*
-              «jornada» con un punto: verde mientras está abierta, rojo cuando ya
-              se cerró. Se lee de un vistazo y sin leer, que es de lo que se trata
-              con el teléfono en una mano.
+              La jornada con un punto: verde mientras está abierta, rojo cuando
+              ya se cerró. Se lee de un vistazo y sin leer, que es de lo que se
+              trata con el teléfono en una mano.
             */}
-            <div style={{ display: "flex", alignItems: "center", gap: 7, flex: "none" }}>
-              <span style={{ fontSize: 14, color: "var(--texto-3)" }}>jornada</span>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                flex: "none",
+                padding: "4px 10px",
+                borderRadius: "var(--radio-pill)",
+                background: "var(--hundido)",
+              }}
+            >
               <span
                 aria-label={`jornada ${jornada.estado}`}
                 style={{
-                  width: 11,
-                  height: 11,
+                  width: 8,
+                  height: 8,
                   borderRadius: "50%",
                   flex: "none",
                   background:
                     jornada.estado === "cerrada" ? "var(--rojo)" : "var(--verde)",
                 }}
               />
+              <span style={{ fontSize: 12, fontWeight: 600, color: "var(--texto-3)" }}>
+                {jornada.estado === "cerrada" ? "cerrada" : "abierta"}
+              </span>
             </div>
           </div>
 
-        {/*
-          Sin stock cargado no se puede decir cuánto queda, así que se enseña
-          lo repartido — que sí se sabe — y se ofrece ponerlo. Un «0 → 0» no
-          informa de nada y encima parece que la app está rota.
-        */}
-        <button
-          data-tour="encabezado"
-          onClick={abrirStock}
-          style={{
-            display: "flex",
-            // `center`: la columna de piernas/pechos/tiendas es la más alta
-            // (tres líneas) y es la que marca el alto de la fila; centrar
-            // contra ella deja los números justo a la altura de «pechos», la
-            // línea de en medio.
-            alignItems: "center",
-            gap: 14,
-            width: "100%",
-          }}
-        >
-          {resumen.stockPollos > 0 ? (
-            // `flex: 1` + `justifyContent: center`: reparte el espacio que le
-            // deja el bloque de la derecha (marginLeft: auto) y centra el par
-            // ahí adentro, en vez de quedarse pegado al borde izquierdo.
+          {/*
+            Sin stock cargado no se puede decir cuánto queda, así que se enseña
+            lo repartido — que sí se sabe — y se ofrece ponerlo. Un «0 → 0» no
+            informa de nada y encima parece que la app está rota.
+          */}
+          <button
+            data-tour="encabezado"
+            onClick={abrirStock}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "flex-start",
+              gap: 6,
+              width: "100%",
+            }}
+          >
+            {resumen.stockPollos > 0 ? (
+              <div style={{ display: "flex", alignItems: "flex-end", gap: 14 }}>
+                <CifraHoy rotulo="Salí con" valor={resumen.stockPollos} color="var(--verde)" />
+                <ArrowRight
+                  size={20}
+                  strokeWidth={2.2}
+                  color="var(--texto-5)"
+                  style={{ flexShrink: 0, marginBottom: 9 }}
+                />
+                <CifraHoy rotulo="Me quedan" valor={resumen.restantePollos} color="var(--ambar)" />
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                <div style={{ ...S.rotulo }}>Has repartido</div>
+                <div
+                  style={{
+                    fontSize: 36,
+                    fontWeight: 700,
+                    letterSpacing: -1,
+                    lineHeight: 1,
+                    fontVariantNumeric: "tabular-nums",
+                  }}
+                >
+                  {resumen.repartidoPollos}
+                </div>
+              </div>
+            )}
+            {/* Piernas y pechos: siempre visibles, aunque estén en cero, para
+                que se vea que la cuenta sigue en cero y no que falta cargarla.
+                Con stock cargado son lo que le queda por vender (pechosLibres),
+                no lo entregado — igual que «me quedan» de los pollos. */}
             <div
               style={{
                 display: "flex",
-                flex: 1,
-                justifyContent: "center",
-                alignItems: "flex-start",
-                gap: 10,
+                flexWrap: "wrap",
+                columnGap: 6,
+                rowGap: 2,
+                fontSize: 13,
+                color: "var(--texto-3)",
+                fontVariantNumeric: "tabular-nums",
               }}
             >
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-                <div style={{ ...S.rotulo, fontSize: 14, letterSpacing: 0.9, whiteSpace: "nowrap" }}>Salí con</div>
-                <div
-                  style={{ fontSize: 36, fontWeight: 600, color: "var(--verde)", lineHeight: 1.1 }}
-                >
-                  {resumen.stockPollos}
-                </div>
-              </div>
-              {/* A la altura de los números, no de los rótulos. */}
-              <div style={{ fontSize: 26, color: "var(--texto-5)", marginTop: 16 }}>→</div>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-                <div style={{ ...S.rotulo, fontSize: 14, letterSpacing: 0.9, whiteSpace: "nowrap" }}>Me quedan</div>
-                <div
-                  style={{ fontSize: 36, fontWeight: 700, color: "var(--ambar)", lineHeight: 1.1 }}
-                >
-                  {resumen.restantePollos}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 3, textAlign: "left" }}>
-              <div style={{ ...S.rotulo, fontSize: 12, letterSpacing: 0.9 }}>Has repartido</div>
-              <div style={{ fontSize: 44, fontWeight: 700, color: "var(--texto)", lineHeight: 1 }}>
-                {resumen.repartidoPollos}
-              </div>
-              <div style={{ fontSize: 13, color: "var(--acento-claro)", marginTop: 2 }}>
-                Poner con cuánto saliste
-              </div>
-            </div>
-          )}
-          <div
-            style={{
-              marginLeft: "auto",
-              textAlign: "right",
-              fontSize: 13,
-              color: "var(--texto-3)",
-              lineHeight: 1.55,
-              // Sin esto, al apretarse la fila se parten en «0 / piernas».
-              flex: "none",
-              whiteSpace: "nowrap",
-            }}
-          >
-            <div>
               {(() => {
                 const piernas =
                   resumen.stockPollos > 0 ? resumen.restantePiernas : resumen.repartidoPiernas;
-                return `${piernas} ${piernas === 1 ? "pierna" : "piernas"}`;
-              })()}
-            </div>
-            {/* Siempre visible, igual que piernas — no solo cuando hay
-                pollos partidos, para que se vea de un vistazo que la
-                cuenta sigue en cero y no que falta por cargar. Con stock
-                cargado enseña los pechos sueltos por vender (pechosLibres),
-                no los entregados: es lo que le queda por vender, igual que
-                «me quedan» pollos y piernas — no un contador de reparto. */}
-            <div>
-              {(() => {
                 const pechos =
                   resumen.stockPollos > 0 ? resumen.pechosLibres : resumen.repartidoPechos;
-                return `${pechos} ${pechos === 1 ? "pecho" : "pechos"}`;
+                const partes = [
+                  `${piernas} ${piernas === 1 ? "pierna" : "piernas"}`,
+                  `${pechos} ${pechos === 1 ? "pecho" : "pechos"}`,
+                  `${resumen.tiendas} ${resumen.tiendas === 1 ? "tienda" : "tiendas"}`,
+                ];
+                return partes.map((p, i) => (
+                  <span key={p} style={{ whiteSpace: "nowrap" }}>
+                    {i > 0 && <span style={{ color: "var(--texto-5)", marginRight: 6 }}>·</span>}
+                    {p}
+                  </span>
+                ));
               })()}
             </div>
-            <div>
-              {resumen.tiendas} {resumen.tiendas === 1 ? "tienda" : "tiendas"}
-            </div>
-          </div>
-        </button>
+            {resumen.stockPollos === 0 && (
+              <div style={{ fontSize: 13, fontWeight: 600, color: "var(--acento-claro)" }}>
+                Poner con cuánto saliste
+              </div>
+            )}
+          </button>
         </div>
       </div>
 
@@ -428,12 +429,14 @@ export function Hoy({
               minHeight: 52,
               display: "inline-flex",
               alignItems: "center",
+              gap: 5,
               whiteSpace: "nowrap",
               padding: "0 10px",
               margin: "-14px -6px",
             }}
           >
-            {ETIQUETA[orden as keyof typeof ETIQUETA] ?? "Por ruta ⇅"}
+            {ETIQUETA[orden as keyof typeof ETIQUETA] ?? "Por ruta"}
+            <ArrowUpDown size={14} strokeWidth={2.2} style={{ flexShrink: 0 }} />
           </button>
         </div>
 
@@ -721,3 +724,24 @@ function RutaLista({
   );
 }
 
+
+/** Una de las dos cifras grandes del encabezado: rótulo chico arriba, número abajo. */
+function CifraHoy({ rotulo, valor, color }: { rotulo: string; valor: number; color: string }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
+      <div style={{ ...S.rotulo, whiteSpace: "nowrap" }}>{rotulo}</div>
+      <div
+        style={{
+          fontSize: 36,
+          fontWeight: 700,
+          letterSpacing: -1,
+          lineHeight: 1,
+          color,
+          fontVariantNumeric: "tabular-nums",
+        }}
+      >
+        {valor}
+      </div>
+    </div>
+  );
+}

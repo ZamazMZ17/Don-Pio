@@ -743,9 +743,9 @@ export function TarjetaConfirmacion({
             height: 58,
             borderRadius: 29,
             border: "none",
-            background: "var(--acento-claro)",
+            background: "var(--acento-solido)",
             boxShadow: "var(--sombra-sm)",
-            color: "#fff7ec",
+            color: "var(--sobre-solido)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -928,8 +928,8 @@ export function HojaEscribir({
             height: 54,
             borderRadius: 27,
             border: "none",
-            background: "var(--acento-claro)",
-            color: "#fff7ec",
+            background: "var(--acento-solido)",
+            color: "var(--sobre-solido)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -1016,13 +1016,13 @@ export function BotonMic({
         width: 84,
         height: 84,
         borderRadius: "50%",
-        background: "var(--acento-claro)",
+        background: "var(--acento-solido)",
         border: "none",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         boxShadow: "var(--sombra-lg)",
-        color: "#fff7ec",
+        color: "var(--sobre-solido)",
       }}
     >
       {escuchando && (
@@ -1043,8 +1043,8 @@ export function BotonMic({
             inset: -6,
             borderRadius: "50%",
             border: "3px solid transparent",
-            borderTopColor: "#fff7ec",
-            borderRightColor: "#fff7ec",
+            borderTopColor: "var(--sobre-solido)",
+            borderRightColor: "var(--sobre-solido)",
             animation: "dpgira .9s linear infinite",
           }}
         />
@@ -1077,13 +1077,13 @@ export function BotonMas({ onClick }: { onClick: () => void }) {
         width: 84,
         height: 84,
         borderRadius: "50%",
-        background: "var(--acento-claro)",
+        background: "var(--acento-solido)",
         border: "none",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         boxShadow: "var(--sombra-lg)",
-        color: "#fff7ec",
+        color: "var(--sobre-solido)",
       }}
     >
       <Plus size={38} strokeWidth={2.2} />

@@ -209,9 +209,9 @@ export function BotonSolido({
         justifyContent: "center",
         borderRadius: alto / 2,
         border: "none",
-        background: color === "rojo" ? "var(--rojo)" : "var(--acento-claro)",
+        background: color === "rojo" ? "var(--rojo-solido)" : "var(--acento-solido)",
         boxShadow: "var(--sombra-md)",
-        color: "#fff7ec",
+        color: "var(--sobre-solido)",
         fontSize: 18,
         fontWeight: 700,
         opacity: deshabilitado ? 0.4 : 1,
@@ -515,7 +515,11 @@ export function Segmentado<T extends string>({
             className="toque"
             style={{
               flex: 1,
-              minWidth: 0,
+              // Cuando el control se dimensiona por su contenido (Cobranza,
+              // que comparte fila con el buscador) el padding es lo único que
+              // separa una etiqueta de la otra: sin él quedaba «DeudasRuta».
+              minWidth: 72,
+              padding: "0 16px",
               borderRadius: "calc(var(--radio) - 3px)",
               display: "flex",
               alignItems: "center",
@@ -569,7 +573,7 @@ export function Interruptor({
           padding: 2,
           flex: "none",
           display: "flex",
-          background: activo ? "var(--acento-claro)" : "var(--borde)",
+          background: activo ? "var(--acento-solido)" : "var(--borde)",
           justifyContent: activo ? "flex-end" : "flex-start",
           transition: "background-color 180ms var(--suave)",
         }}

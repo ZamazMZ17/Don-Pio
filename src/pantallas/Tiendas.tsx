@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { History, Plus, Search, Trash2 } from "lucide-react";
+import { ArrowUpDown, History, Plus, Search, Trash2 } from "lucide-react";
 import { db } from "../db/db";
 import { useAjuste, useMemoriaScroll } from "../lib/ganchos";
 import { CLAVE_ORDEN_TIENDAS, guardarAjuste } from "../voz/ajustes";
@@ -116,13 +116,15 @@ export function Tiendas({ abrirFicha }: { abrirFicha: (tiendaId: number) => void
               minHeight: 52,
               display: "inline-flex",
               alignItems: "center",
+              gap: 5,
               whiteSpace: "nowrap",
               padding: "0 10px",
               margin: "-14px -6px",
               flex: "none",
             }}
           >
-            {ordenTiendas === "abc" ? "A–Z ⇅" : "Por ruta ⇅"}
+            {ordenTiendas === "abc" ? "A–Z" : "Por ruta"}
+            <ArrowUpDown size={14} strokeWidth={2.2} style={{ flexShrink: 0 }} />
           </button>
         }
       />
@@ -208,8 +210,8 @@ export function Tiendas({ abrirFicha }: { abrirFicha: (tiendaId: number) => void
                 width: 90,
                 height: 54,
                 borderRadius: "var(--radio-pill)",
-                background: "var(--acento-claro)",
-                color: "#fff7ec",
+                background: "var(--acento-solido)",
+                color: "var(--sobre-solido)",
                 fontSize: 16,
                 fontWeight: 600,
                 display: "flex",
@@ -336,9 +338,9 @@ export function Tiendas({ abrirFicha }: { abrirFicha: (tiendaId: number) => void
                       minHeight: 54,
                       marginBottom: 18,
                       borderRadius: "var(--radio-pill)",
-                      background: "var(--acento-claro)",
+                      background: "var(--acento-solido)",
                       boxShadow: "var(--sombra-sm)",
-                      color: "#fff7ec",
+                      color: "var(--sobre-solido)",
                       fontSize: 16,
                       fontWeight: 600,
                       display: "flex",
@@ -380,8 +382,8 @@ export function Tiendas({ abrirFicha }: { abrirFicha: (tiendaId: number) => void
                         width: 96,
                         height: 54,
                         borderRadius: "var(--radio-pill)",
-                        background: "var(--acento-claro)",
-                        color: "#fff7ec",
+                        background: "var(--acento-solido)",
+                        color: "var(--sobre-solido)",
                         fontSize: 16,
                         fontWeight: 600,
                         display: "flex",
@@ -431,8 +433,8 @@ export function Tiendas({ abrirFicha }: { abrirFicha: (tiendaId: number) => void
                         width: 96,
                         height: 54,
                         borderRadius: "var(--radio-pill)",
-                        background: "var(--acento-claro)",
-                        color: "#fff7ec",
+                        background: "var(--acento-solido)",
+                        color: "var(--sobre-solido)",
                         fontSize: 16,
                         fontWeight: 600,
                         display: "flex",
@@ -522,8 +524,8 @@ export function Tiendas({ abrirFicha }: { abrirFicha: (tiendaId: number) => void
                             height: 44,
                             padding: "0 16px",
                             borderRadius: "var(--radio-pill)",
-                            background: "var(--rojo)",
-                            color: "#fff7ec",
+                            background: "var(--rojo-solido)",
+                            color: "var(--sobre-solido)",
                             fontSize: 15,
                             fontWeight: 600,
                           }}

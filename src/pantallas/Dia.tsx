@@ -478,7 +478,18 @@ function Ficha({
       <div style={{ ...S.rotulo, fontSize: 11, letterSpacing: 0.9, marginBottom: 4 }}>
         {rotulo}
       </div>
-      <div style={{ fontSize: 24, fontWeight: 700, color: valorColor }}>{valor}</div>
+      <div
+        style={{
+          fontSize: "clamp(18px, 6vw, 24px)",
+          fontWeight: 700,
+          color: valorColor,
+          whiteSpace: "nowrap",
+          fontVariantNumeric: "tabular-nums",
+          letterSpacing: -0.4,
+        }}
+      >
+        {valor}
+      </div>
       <div style={{ fontSize: 13, color: pieColor ?? "var(--texto-4)", marginTop: 2 }}>{pie}</div>
     </div>
   );

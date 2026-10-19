@@ -193,4 +193,9 @@ export const CAMBIOS: Cambio[] = [
     texto:
       "La app se vistió de nuevo: la misma crema de siempre, pero con el aire de iOS — tarjetas con sombra suave en vez de bordes, botones redondeados de punta a punta, interruptores y controles deslizantes nuevos, y animaciones con un poco de rebote al abrir una tarjeta. Es solo vestuario: nada de lo que ya sabías usar cambió de sitio ni de función.",
   },
+  {
+    fecha: "2026-10-19",
+    texto:
+      "Arreglado: en teléfonos angostos algunas letras se montaban o se salían de la pantalla — el encabezado de Hoy (piernas, pechos y tiendas quedaban cortados), el formulario de Polleros y algunos montos que se partían en dos líneas. Y el modo oscuro ahora es cálido, color café, de la misma familia que la crema, con botones que se leen mejor.",
+  },
 ];

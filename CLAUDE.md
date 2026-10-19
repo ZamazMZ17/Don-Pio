@@ -76,16 +76,26 @@ Reglas que no se rompen:
   dueño. El acento morado se dejó frío a propósito — el contraste con la base
   cálida es lo que lo hace notarse, igual que ya pasaba con verde/ámbar/rojo sobre
   el gris de fondo.
+- **El oscuro es «cacao», la crema de noche** — no un tema aparte. Era un azul marino
+  frío (`#101220`) que no tenía nada que ver con la crema, y al dueño no le gustaba.
+  Ahora la escala neutra es la misma familia cálida: fondo de café tostado, tarjetas un
+  punto más claras, texto del color de la crema. Si se toca un tema, que el otro siga
+  pareciendo la misma app.
+- **Botón sólido = `--acento-solido` / `--rojo-solido` con texto `--sobre-solido`**, nunca
+  `--acento-claro` de fondo. En oscuro `acento-claro` es un lila claro pensado para
+  texto; de fondo con letra blanca daba 1.9 de contraste («Siguiente», «Registrar
+  cobro» casi no se leían). Los `*-solido` dan 4.5+ en los dos temas.
 - Un color, un significado. El ámbar es «lo que falta»; si se usa para otra cosa deja
   de funcionar como señal — en los dos temas.
 - **Íconos de `lucide-react`, nunca emojis.** El prototipo usa glifos unicode
   (`▤ ↩ ☷ ⋯ 🎙`) porque era un mockup; en Android cada fabricante los dibuja distinto.
 - Tipografía **Inter**, cargada localmente con `@fontsource-variable`. A las 5 a.m. no
-  hay red para pedirle nada a Google Fonts. Para lo que actúa como título —los
-  nombres de pantalla (`Cabecera`), los rótulos en mayúsculas (`S.rotulo`) y el día
-  en Hoy— hay una segunda familia, **Bebas Neue** (`--fuente-titulo` en
-  `estilos.css`), condensada y en mayúsculas: cargada local igual que Inter. Todo lo
-  que se lee de corrido —texto, dinero, menús— se queda en Inter.
+  hay red para pedirle nada a Google Fonts. Desde la V2 (estilo iOS) **todo es Inter**,
+  también los títulos: gruesa (800) y en minúsculas para los nombres de pantalla y el
+  día en Hoy; los rótulos chicos en mayúsculas (`S.rotulo`) siguen en mayúsculas.
+  `--fuente-titulo` se conserva pero apunta a Inter; la Bebas Neue condensada de V1 ya
+  no se usa. Ojo: Inter es mucho más ancha que la Bebas, así que cualquier fila que
+  se diseñó para la condensada puede no caber (ver §7 bis, el encabezado de Hoy).
 - Todo el código en español: archivos, tipos, variables, comentarios.
 
 ---
@@ -604,6 +614,19 @@ como sugerencia antes de tocar «Crear», igual que la lista de candidatas del d
   quería. Arreglo: en `decision === "ambiguo"` el campo arranca en `i.cliente` (lo que él
   dijo), nunca en el nombre de una candidata; las candidatas se siguen ofreciendo arriba,
   un toque.
+
+- **Al pasar de la Bebas condensada a Inter, el encabezado de Hoy se salía de la
+  pantalla.** Tenía tres columnas (figura · salí/me quedan · piernas/pechos/tiendas)
+  medidas para una fuente condensada; con Inter, «SALÍ CON / ME QUEDAN» ocupan casi el
+  doble y en un teléfono de 360 la tercera columna quedaba cortada por el borde. Ahora
+  son dos columnas y piernas · pechos · tiendas van en una línea debajo de las cifras.
+  Se encontró, junto con otros choques (el formulario de Polleros montaba un campo
+  sobre otro, «DeudasRuta» pegadas en el control segmentado, «S/» y el número partidos
+  en dos líneas), con un **detector automático**: un script de Playwright que recorre
+  cada pantalla con nombres largos y montos grandes, mide la caja de cada texto y avisa
+  de los que se pisan, se pegan, se salen de la pantalla o parten un monto en dos. A
+  ojo no se veían porque en el navegador de escritorio (393 px) todo cabía; **hay que
+  probar a 360**, que es un ancho muy común en Android de gama baja.
 
 ## 8. Modelo de datos
 

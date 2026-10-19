@@ -37,56 +37,64 @@
 
 :root {
   /*
-   * Superficies. Se separaron a propósito respecto de la primera versión:
-   * la tarjeta apenas se despegaba del fondo (1.16 de contraste) y su borde
-   * era todavía menos visible (1.14), así que las listas se veían planas —
-   * una mancha oscura sin bordes. En el claro el borde llega a 1.39 y **eso**
-   * es lo que dibuja la tarjeta; aquí ahora hace lo mismo (fondo más hondo,
-   * superficie más alta, línea bien por encima de las dos).
+   * Oscuro «cacao»: la contraparte cálida de la crema, no un tema aparte.
+   * Antes era un azul marino frío (#101220) que no tenía nada que ver con el
+   * claro — el dueño lo encontraba poco atractivo, y con razón: eran dos apps
+   * distintas. Ahora la escala neutra es la misma familia que la crema, solo
+   * que de noche: fondo de café tostado, tarjetas un punto más claras, texto
+   * del color de la crema del claro. El logo dorado del oscuro ya pedía esto.
+   *
+   * La tarjeta se despega del fondo por luminosidad (1.3 de contraste), que
+   * es como lo hace iOS en oscuro: ahí las sombras casi no se ven.
    */
-  --fondo: #101220;
-  --superficie: #282b3c;
-  --hundido: #191b28;
-  --linea: #3d4154;
-  --borde: #525668;
+  --fondo: #16120e;
+  --superficie: #2a231c;
+  --hundido: #1d1813;
+  --linea: #3a3027;
+  --borde: #54483b;
+
+  /* Texto, de más a menos presente. `texto-4` (rótulos) queda en 5:1 sobre la
+     tarjeta: legible a sol directo. */
+  --texto: #f5ecdb;
+  --texto-2: #d8cbb1;
+  --texto-3: #bcae93;
+  --texto-4: #a39479;
+  --texto-5: #7d715f;
+
+  /* Acento: el mismo morado de marca, en versión para fondo oscuro. */
+  --acento: #9d8ef2;
+  --acento-claro: #b9adff;
+  --acento-200: #ebe7ff;
+  --acento-300: #d6cfff;
+  --acento-700: #6a5bc4;
+  /*
+   * `acento-900` es fondo de píldora activa y de tarjeta resaltada;
+   * `acento-800` es el «pulsado» encima de ella. Un morado apagado que tira a
+   * ciruela, para que no se vea como un parche frío sobre el café.
+   */
+  --acento-800: #443868;
+  --acento-900: #30283f;
 
   /*
-   * Texto, de más a menos presente. Los tres últimos subieron: `texto-4` es
-   * el de los rótulos en mayúsculas y se quedaba en 3.5 sobre la tarjeta,
-   * por debajo del mínimo legible a sol directo con el teléfono en la mano.
+   * Relleno de los botones sólidos y el texto que va encima. Aparte de
+   * `acento-claro` porque en oscuro ese es un lila claro pensado para texto:
+   * usado de fondo con letra blanca daba 1.9 de contraste — «Siguiente» o
+   * «Registrar cobro» casi no se leían. Este da 4.8.
    */
-  --texto: #eceef4;
-  --texto-2: #b8bccf;
-  --texto-3: #a4a8bd;
-  --texto-4: #8a8fa4;
-  --texto-5: #6e7385;
-
-  /* Acento */
-  --acento: #9184d9;
-  --acento-claro: #b5abfc;
-  --acento-200: #e7e5fe;
-  --acento-300: #d2cefd;
-  --acento-700: #5d5294;
-  /*
-   * `acento-900` es fondo de píldora activa (Agenda/Ruta, los modos) y de
-   * tarjeta resaltada; `acento-800` es el «pulsado» encima de ella. Los dos
-   * subieron al aclarar `--superficie`: con los valores viejos la tarjeta
-   * resaltada quedaba a 1.02 de la normal — o sea, idéntica — y el pulsado
-   * casi no se notaba sobre la píldora.
-   */
-  --acento-800: #4d4380;
-  --acento-900: #3a2f63;
+  --acento-solido: #6e5bdf;
+  --rojo-solido: #c24e3b;
+  --sobre-solido: #fffaf0;
 
   /* Estado. Un color, un significado; si se usan para otra cosa dejan de servir. */
-  --verde: #7bbf8f; /* pagado · cobrado · stock inicial · compra a pollero liquidada */
-  --ambar: #e0a06a; /* lo que queda · deuda de días anteriores */
-  --ambar-señal: #d9b26a; /* parcial · sin señal */
-  --rojo: #e07a6a; /* pendiente · por cobrar */
+  --verde: #8acb9d; /* pagado · cobrado · stock inicial · compra a pollero liquidada */
+  --ambar: #eaab70; /* lo que queda · deuda de días anteriores */
+  --ambar-señal: #ddb872; /* parcial · sin señal */
+  --rojo: #ee8c7a; /* pendiente · por cobrar */
 
   /* Solo la tarjeta de caja del cierre. A escala de pantalla, no de interfaz. */
-  --seccion: #262a60;
-  --seccion-glow: #353b80;
-  --seccion-ghost: #4c5397;
+  --seccion: #2e2640;
+  --seccion-glow: #41365c;
+  --seccion-ghost: #5c4f80;
 
   /*
    * Zonas seguras del teléfono. En Android moderno la app se dibuja de borde a
@@ -123,9 +131,9 @@
    * sigue leyéndose mejor sobre esta base cálida; las sombras son para lo
    * que de verdad flota encima de otra cosa.
    */
-  --sombra-sm: 0 1px 3px rgba(20, 16, 8, 0.28), 0 1px 1px rgba(20, 16, 8, 0.2);
-  --sombra-md: 0 8px 24px rgba(10, 8, 4, 0.38), 0 2px 6px rgba(10, 8, 4, 0.22);
-  --sombra-lg: 0 20px 50px rgba(6, 5, 2, 0.5), 0 6px 16px rgba(6, 5, 2, 0.3);
+  --sombra-sm: 0 1px 3px rgba(0, 0, 0, 0.35), 0 1px 1px rgba(0, 0, 0, 0.25);
+  --sombra-md: 0 8px 24px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.3);
+  --sombra-lg: 0 20px 50px rgba(0, 0, 0, 0.55), 0 6px 16px rgba(0, 0, 0, 0.35);
 
   /*
    * Materiales translúcidos: la barra de pestañas y las hojas dejan ver un
@@ -194,6 +202,10 @@
   --acento-700: #9683e8;
   --acento-800: #ded7f9;
   --acento-900: #eeecfc;
+
+  --acento-solido: #5b48c6;
+  --rojo-solido: #c03b28;
+  --sobre-solido: #fff7ec;
 
   --verde: #1a8a52;
   --ambar: #a5601f;

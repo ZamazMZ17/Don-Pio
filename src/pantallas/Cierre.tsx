@@ -363,10 +363,13 @@ function Opcion({
         flex: 1,
         height: 56,
         borderRadius: "var(--radio-pill)",
-        background: activa ? "var(--seccion-glow)" : "var(--seccion-ghost)",
+        // Sin opacidad: a medio transparentar, las dos opciones sin elegir se
+        // leían como deshabilitadas. La elegida va en el relleno sólido.
+        background: activa
+          ? "var(--acento-solido)"
+          : "color-mix(in srgb, var(--seccion-ghost) 30%, transparent)",
         boxShadow: activa ? "var(--sombra-sm)" : undefined,
-        opacity: activa ? 1 : 0.55,
-        color: activa ? "var(--acento-200)" : "var(--texto-2)",
+        color: activa ? "var(--sobre-solido)" : "var(--texto-2)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",

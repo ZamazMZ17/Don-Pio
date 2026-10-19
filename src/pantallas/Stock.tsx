@@ -279,14 +279,18 @@ function Campo({
       <div style={{ ...S.rotulo, fontSize: 11, marginBottom: 4 }}>{rotulo}</div>
       <div
         style={{
-          fontSize: 42,
+          // Escala con el ancho: a 42px fijos, en un teléfono de 360 «S/ 11.50»
+          // no cabía y el número se partía en dos líneas, montado sobre el «S/».
+          fontSize: "clamp(30px, 10vw, 42px)",
           fontWeight: 700,
           lineHeight: 1,
           letterSpacing: -1,
+          whiteSpace: "nowrap",
+          fontVariantNumeric: "tabular-nums",
           color: valor ? "var(--texto)" : "var(--texto-5)",
         }}
       >
-        {prefijo && <span style={{ fontSize: 24, color: "var(--texto-4)" }}>{prefijo}</span>}
+        {prefijo && <span style={{ fontSize: "0.5em", color: "var(--texto-4)", letterSpacing: 0 }}>{prefijo}</span>}
         {valor || "0"}
         {activo && (
           <span

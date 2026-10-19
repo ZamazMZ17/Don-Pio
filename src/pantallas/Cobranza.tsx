@@ -6,7 +6,7 @@ import {
   type MutableRefObject,
 } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { Pencil, Search, X } from "lucide-react";
+import { ArrowUpDown, Pencil, Search, X } from "lucide-react";
 import { cuentasDelDia, cuentasPendientes, registrarCobro } from "../db/entregas";
 import type { Entrega } from "../db/db";
 import { descripcionEntrega, repartirPago, TOPE_REDONDEO } from "../dominio/calculo";
@@ -278,13 +278,15 @@ export function Cobranza({
                 minHeight: 52,
                 display: "inline-flex",
                 alignItems: "center",
+                gap: 5,
                 whiteSpace: "nowrap",
                 padding: "0 10px",
                 margin: "-14px -6px",
                 flex: "none",
               }}
             >
-              {orden === "retorno" ? "Del último ⇅" : "Del primero ⇅"}
+              {orden === "retorno" ? "Del último" : "Del primero"}
+              <ArrowUpDown size={14} strokeWidth={2.2} style={{ flexShrink: 0 }} />
             </button>
           )}
         </div>
@@ -726,9 +728,9 @@ export function Cobranza({
                         alignItems: "center",
                         justifyContent: "center",
                         borderRadius: "var(--radio-pill)",
-                        background: "var(--acento-claro)",
+                        background: "var(--acento-solido)",
                         boxShadow: "var(--sombra-sm)",
-                        color: "#fff7ec",
+                        color: "var(--sobre-solido)",
                         fontSize: 18,
                         fontWeight: 600,
                       }}
@@ -750,9 +752,9 @@ export function Cobranza({
                       alignItems: "center",
                       justifyContent: "center",
                       borderRadius: "var(--radio-pill)",
-                      background: c.tieneSinPesar ? "var(--acento-claro)" : "var(--hundido)",
+                      background: c.tieneSinPesar ? "var(--acento-solido)" : "var(--hundido)",
                       boxShadow: c.tieneSinPesar ? "var(--sombra-sm)" : undefined,
-                      color: c.tieneSinPesar ? "#fff7ec" : "var(--texto-2)",
+                      color: c.tieneSinPesar ? "var(--sobre-solido)" : "var(--texto-2)",
                       fontSize: c.tieneSinPesar ? 18 : 16,
                       fontWeight: c.tieneSinPesar ? 600 : undefined,
                     }}
@@ -815,9 +817,9 @@ export function Cobranza({
                         flex: 1.5,
                         height: 58,
                         borderRadius: "var(--radio-pill)",
-                        background: "var(--acento-claro)",
+                        background: "var(--acento-solido)",
                         boxShadow: "var(--sombra-sm)",
-                        color: "#fff7ec",
+                        color: "var(--sobre-solido)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -937,9 +939,9 @@ export function Cobranza({
                         flex: 1.5,
                         height: 58,
                         borderRadius: "var(--radio-pill)",
-                        background: "var(--acento-claro)",
+                        background: "var(--acento-solido)",
                         boxShadow: "var(--sombra-sm)",
-                        color: "#fff7ec",
+                        color: "var(--sobre-solido)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",

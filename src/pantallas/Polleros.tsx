@@ -340,8 +340,8 @@ function PanelPollero({
                 height: 42,
                 padding: "0 16px",
                 borderRadius: "var(--radio)",
-                background: "var(--rojo)",
-                color: "#fff7ec",
+                background: "var(--rojo-solido)",
+                color: "var(--sobre-solido)",
                 fontSize: 14,
                 fontWeight: 700,
               }}
@@ -517,8 +517,12 @@ function FormularioMovimiento({
   const totalNum = Number(total.replace(",", "."));
   const listo = Number.isFinite(totalNum) && totalNum > 0;
 
+  // `width: 100%` y no `flex: 1`: varios de estos campos viven en un bloque
+  // normal o en una columna flex, y ahí `flex: 1` no los ensanchaba (el input
+  // se quedaba con su ancho nativo y se montaba sobre el de al lado) o, en
+  // columna, les aplastaba el alto. La fila de tres los reparte por su cuenta.
   const campo: React.CSSProperties = {
-    flex: 1,
+    width: "100%",
     minWidth: 0,
     height: 50,
     borderRadius: "var(--radio-sm)",
@@ -572,14 +576,14 @@ function FormularioMovimiento({
         onCambio={setTipo}
       />
 
-      <div style={{ display: "flex", gap: 8 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
         <input value={pollos} onChange={(e) => setPollos(e.target.value)} inputMode="numeric" placeholder="Pollos" style={campo} />
         <input value={piernas} onChange={(e) => setPiernas(e.target.value)} inputMode="numeric" placeholder="Piernas" style={campo} />
         <input value={pechos} onChange={(e) => setPechos(e.target.value)} inputMode="numeric" placeholder="Pechos" style={campo} />
       </div>
 
-      <div style={{ display: "flex", gap: 8, minWidth: 0 }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+        <div style={{ minWidth: 0 }}>
           <div style={{ ...S.rotulo, fontSize: 11, marginBottom: 5 }}>Total acordado</div>
           <input
             value={total}
@@ -589,7 +593,7 @@ function FormularioMovimiento({
             style={{ ...campo, textAlign: "left", padding: "0 12px", fontWeight: 700, fontSize: 18 }}
           />
         </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ minWidth: 0 }}>
           <div
             style={{
               ...S.rotulo,
@@ -608,7 +612,7 @@ function FormularioMovimiento({
               onChange={(e) => setPagado(e.target.value)}
               inputMode="decimal"
               placeholder="0"
-              style={{ ...campo, minWidth: 0, textAlign: "left", padding: "0 10px", fontSize: 16 }}
+              style={{ ...campo, flex: 1, width: "auto", textAlign: "left", padding: "0 10px", fontSize: 16 }}
             />
             <button
               onClick={() => setPagado(total)}
@@ -616,13 +620,14 @@ function FormularioMovimiento({
               className="toque"
               style={{
                 flex: "none",
-                width: 44,
+                width: 52,
                 height: 50,
                 borderRadius: "var(--radio-sm)",
                 background: "var(--acento-900)",
                 color: "var(--acento-300)",
-                fontSize: 11,
+                fontSize: 13,
                 fontWeight: 700,
+                textAlign: "center",
                 opacity: listo ? 1 : 0.4,
               }}
             >
@@ -645,12 +650,15 @@ function FormularioMovimiento({
           className="toque"
           style={{
             flex: 1,
-            height: 50,
-            borderRadius: "var(--radio)",
+            height: 52,
+            borderRadius: "var(--radio-pill)",
             background: "var(--superficie)",
             color: "var(--texto-2)",
-            fontSize: 15,
+            fontSize: 16,
             fontWeight: 600,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
           Cancelar
@@ -661,10 +669,10 @@ function FormularioMovimiento({
           className="toque"
           style={{
             flex: 1.4,
-            height: 50,
-            borderRadius: "var(--radio)",
-            background: "var(--acento-claro)",
-            color: "#fff7ec",
+            height: 52,
+            borderRadius: "var(--radio-pill)",
+            background: "var(--acento-solido)",
+            color: "var(--sobre-solido)",
             fontSize: 16,
             fontWeight: 700,
             opacity: listo ? 1 : 0.45,

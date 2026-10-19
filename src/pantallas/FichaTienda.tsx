@@ -186,10 +186,16 @@ function Cifra({
       <div style={{ ...S.rotulo, fontSize: 12 }}>{rotulo}</div>
       <div
         style={{
-          fontSize: 26,
+          // Una línea siempre, encogiendo con el ancho: en un teléfono de 360
+          // «S/ 1,081.90» a 26px no cabía en media pantalla y el «S/» quedaba
+          // solo arriba del número.
+          fontSize: "clamp(19px, 6.4vw, 26px)",
           fontWeight: 700,
           lineHeight: 1.15,
           marginTop: 3,
+          whiteSpace: "nowrap",
+          fontVariantNumeric: "tabular-nums",
+          letterSpacing: -0.5,
           color: color ?? "var(--texto-1)",
         }}
       >
