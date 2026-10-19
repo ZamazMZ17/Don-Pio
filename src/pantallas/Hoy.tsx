@@ -704,7 +704,7 @@ function RutaLista({
                   width: 40,
                   height: 40,
                   borderRadius: "50%",
-                  border: "1.5px solid var(--borde)",
+                  background: "var(--hundido)",
                   color: "var(--texto-3)",
                   display: "flex",
                   alignItems: "center",

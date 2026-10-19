@@ -422,8 +422,8 @@ function FilaMovimiento({ movimiento: m }: { movimiento: MovimientoPollero }) {
                   minWidth: 0,
                   height: 44,
                   borderRadius: "var(--radio-sm)",
-                  border: "1.5px solid var(--borde)",
-                  background: "var(--superficie)",
+                  border: "none",
+                  background: "var(--hundido)",
                   padding: "0 12px",
                   fontSize: 16,
                 }}

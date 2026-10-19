@@ -115,6 +115,13 @@ export const PASOS_TOUR: PasoTour[] = [
   },
   {
     pantalla: "menu",
+    objetivo: "menu-polleros",
+    titulo: "Comprar o vender entre colegas",
+    texto:
+      "Si te falta mercadería y le compras a otro repartidor, o te sobra y le vendes, apúntalo aquí — aparte de tus clientes. Lo que compras entra a tu stock, lo que vendes sale, y cada pollero lleva su propia cuenta.",
+  },
+  {
+    pantalla: "menu",
     objetivo: "menu-tutorial",
     titulo: "Y eso es todo",
     texto:

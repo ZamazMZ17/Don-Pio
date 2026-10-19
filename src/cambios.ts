@@ -183,4 +183,14 @@ export const CAMBIOS: Cambio[] = [
     texto:
       "Corregido: cuando había dos clientes con nombre parecido, la tarjeta te preguntaba «¿cuál es?» pero el cuadro de texto ya traía puesto el nombre de uno de los dos — no lo que tú dijiste. Si tocabas «Crear» sin fijarte, podía salir un cliente nuevo con el nombre equivocado. Ahora el cuadro arranca con lo que de verdad dijiste.",
   },
+  {
+    fecha: "2026-10-19",
+    texto:
+      "Nueva pantalla: Polleros. Para cuando le compras pollo a otro repartidor porque te faltó mercadería, o le vendes lo que te sobró. Lo que compras entra al stock del día y lo que vendes sale, igual que una entrega, y cada uno lleva su propia cuenta de cuánto le debes o te debe — se abre desde el Menú.",
+  },
+  {
+    fecha: "2026-10-19",
+    texto:
+      "La app se vistió de nuevo: la misma crema de siempre, pero con el aire de iOS — tarjetas con sombra suave en vez de bordes, botones redondeados de punta a punta, interruptores y controles deslizantes nuevos, y animaciones con un poco de rebote al abrir una tarjeta. Es solo vestuario: nada de lo que ya sabías usar cambió de sitio ni de función.",
+  },
 ];

@@ -9,6 +9,7 @@ import {
   RotateCcw,
   Settings,
   Store,
+  Truck,
   Undo2,
   Play,
   type LucideIcon,
@@ -31,6 +32,7 @@ const ICONOS: Record<IconoPaso, LucideIcon> = {
   RotateCcw,
   CalendarClock,
   Settings,
+  Truck,
   Bird,
 };
 

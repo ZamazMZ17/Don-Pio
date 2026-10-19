@@ -23,6 +23,7 @@ export type IconoPaso =
   | "RotateCcw"
   | "CalendarClock"
   | "Settings"
+  | "Truck"
   | "Bird";
 
 export interface PasoTutorial {
@@ -121,8 +122,17 @@ export const PASOS: PasoTutorial[] = [
     ],
   },
   {
+    icono: "Truck",
+    titulo: "9 · Cuando compras o vendes entre repartidores",
+    cuerpo: [
+      "A veces te falta mercadería y le compras a otro repartidor, o te sobra y le vendes. En Más → Polleros apuntas eso, aparte de tus clientes.",
+      "Lo que le compras entra a tu stock del día, igual que si lo hubieras cargado tú; lo que le vendes sale, igual que una entrega.",
+      "Cada pollero lleva su propia cuenta de cuánto le debes o te debe, separada de la de tus clientes.",
+    ],
+  },
+  {
     icono: "Settings",
-    titulo: "9 · Ajustes",
+    titulo: "10 · Ajustes",
     cuerpo: [
       "Ahí eliges si la app se ve clara u oscura, la hora de cierre, y si quieres el sonido al guardar.",
       "También está el respaldo: guarda una copia de vez en cuando, sobre todo antes de cambiar de teléfono.",
