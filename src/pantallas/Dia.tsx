@@ -349,7 +349,7 @@ export function Dia({
               */}
               <button
                 onClick={() => abrir(e.id!)}
-                className="pulsable"
+                className="toque"
                 style={{
                   marginTop: 11,
                   paddingTop: 10,

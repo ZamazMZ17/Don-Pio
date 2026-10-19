@@ -155,13 +155,13 @@ export function Historial({ volver, abrirDia }: { volver: () => void; abrirDia: 
               <button
                 onClick={generarInforme}
                 disabled={generandoInforme}
-                className="pulsable"
+                className="toque"
                 style={{
                   height: 48,
                   width: "100%",
-                  borderRadius: "var(--radio)",
-                  border: "1.5px solid var(--borde)",
-                  color: "var(--acento-300)",
+                  borderRadius: "var(--radio-pill)",
+                  background: "var(--hundido)",
+                  color: "var(--acento-claro)",
                   fontSize: 15,
                   fontWeight: 600,
                   display: "flex",
@@ -231,7 +231,7 @@ export function Historial({ volver, abrirDia }: { volver: () => void; abrirDia: 
         {hayActividadHoy && (
           <button
             onClick={() => abrirDia(hoy)}
-            className="pulsable"
+            className="toque"
             style={{
               ...S.tarjeta,
               borderRadius: 12,
@@ -240,7 +240,7 @@ export function Historial({ volver, abrirDia }: { volver: () => void; abrirDia: 
               alignItems: "center",
               gap: 12,
               width: "100%",
-              border: "1.5px solid var(--acento)",
+              background: "var(--acento-900)",
             }}
           >
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -271,7 +271,7 @@ export function Historial({ volver, abrirDia }: { volver: () => void; abrirDia: 
             <button
               key={jornada.fecha}
               onClick={() => abrirDia(jornada.fecha)}
-              className="pulsable"
+              className="toque"
               style={{
                 ...S.tarjeta,
                 borderRadius: 12,
