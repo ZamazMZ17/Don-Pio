@@ -48,7 +48,7 @@ function CampoNumero({
           height: 46,
           textAlign: "right",
           borderRadius: "var(--radio-sm)",
-          border: "1.5px solid var(--borde)",
+          border: "none",
           background: "var(--hundido)",
           padding: "0 10px",
           fontSize: 22,
@@ -192,7 +192,15 @@ export function Detalle({
         }}
       >
         {renombrando && tienda && (
-          <div style={{ ...S.tarjeta, padding: 16, display: "flex", gap: 8 }}>
+          <div
+            style={{
+              ...S.tarjeta,
+              padding: 16,
+              display: "flex",
+              gap: 8,
+              animation: "dppop .2s var(--resorte)",
+            }}
+          >
             <input
               autoFocus
               value={nombreEdit}
@@ -204,7 +212,7 @@ export function Detalle({
                 minWidth: 0,
                 height: 54,
                 borderRadius: "var(--radio)",
-                border: "1.5px solid var(--borde)",
+                border: "none",
                 background: "var(--hundido)",
                 padding: "0 14px",
                 fontSize: 17,
@@ -212,15 +220,15 @@ export function Detalle({
             />
             <button
               onClick={guardarNombre}
-              className="pulsable-acento"
+              className="toque"
               disabled={!nombreEdit.trim() || nombreEdit.trim() === tienda.nombre}
               style={{
                 flex: "none",
                 width: 96,
                 height: 54,
-                borderRadius: "var(--radio)",
-                border: "1.5px solid var(--acento)",
-                color: "var(--acento-300)",
+                borderRadius: "var(--radio-pill)",
+                background: "var(--acento-claro)",
+                color: "#fff7ec",
                 fontSize: 16,
                 fontWeight: 600,
                 display: "flex",
@@ -243,7 +251,7 @@ export function Detalle({
         */}
         {aCobrar(deuda.monto) > 0 && (
           <button
-            className="pulsable"
+            className="toque"
             onClick={() => {
               void registrarCobro(e.tiendaId, aCobrar(deuda.monto), {
                 fecha: e.fecha,
@@ -364,7 +372,7 @@ export function Detalle({
                   minWidth: 0,
                   height: 52,
                   borderRadius: "var(--radio)",
-                  border: "1.5px solid var(--borde)",
+                  border: "none",
                   background: "var(--hundido)",
                   padding: "0 14px",
                   fontSize: 17,
@@ -372,14 +380,14 @@ export function Detalle({
               />
               <button
                 onClick={agregarTanda}
-                className="pulsable-acento"
+                className="toque"
                 style={{
                   flex: "none",
                   width: 92,
                   height: 52,
-                  borderRadius: "var(--radio)",
-                  border: "1.5px solid var(--acento)",
-                  color: "var(--acento-300)",
+                  borderRadius: "var(--radio-pill)",
+                  background: "var(--acento-claro)",
+                  color: "#fff7ec",
                   fontSize: 16,
                   fontWeight: 600,
                   display: "flex",
@@ -443,7 +451,7 @@ export function Detalle({
                   height: 44,
                   textAlign: "right",
                   borderRadius: "var(--radio-sm)",
-                  border: "1.5px solid var(--borde)",
+                  border: "none",
                   background: "var(--hundido)",
                   padding: "0 12px",
                   fontSize: 20,
@@ -510,7 +518,7 @@ export function Detalle({
           */}
           {saldo > 0 && (
             <button
-              className="pulsable-acento"
+              className="toque"
               onClick={() => {
                 void cobrarEntrega(entregaId, saldo).then(() => {
                   avisoGuardado();
@@ -520,10 +528,10 @@ export function Detalle({
                 marginTop: 14,
                 height: 54,
                 width: "100%",
-                borderRadius: "var(--radio)",
-                border: "1.5px solid var(--acento)",
-                background: "var(--acento-900)",
-                color: "var(--acento-200)",
+                borderRadius: "var(--radio-pill)",
+                background: "var(--acento-claro)",
+                boxShadow: "var(--sombra-sm)",
+                color: "#fff7ec",
                 fontSize: 16,
                 fontWeight: 600,
               }}
@@ -567,6 +575,7 @@ export function Detalle({
                   {deshaciendo === c.creada ? (
                     <>
                       <button
+                        className="toque"
                         onClick={() => {
                           void deshacerCobro(e.tiendaId, c.creada).then(() => {
                             setDeshaciendo(null);
@@ -576,9 +585,9 @@ export function Detalle({
                         style={{
                           minHeight: 44,
                           padding: "0 14px",
-                          borderRadius: "var(--radio-sm)",
-                          border: "1.5px solid var(--rojo)",
-                          color: "var(--rojo)",
+                          borderRadius: "var(--radio-pill)",
+                          background: "var(--rojo)",
+                          color: "#fff7ec",
                           fontSize: 15,
                           fontWeight: 600,
                           flex: "none",
@@ -587,10 +596,12 @@ export function Detalle({
                         Sí, deshacer
                       </button>
                       <button
+                        className="toque"
                         onClick={() => setDeshaciendo(null)}
                         style={{
                           minHeight: 44,
                           padding: "0 12px",
+                          borderRadius: "var(--radio-pill)",
                           color: "var(--texto-3)",
                           fontSize: 15,
                           flex: "none",
@@ -602,12 +613,12 @@ export function Detalle({
                   ) : (
                     <button
                       onClick={() => setDeshaciendo(c.creada)}
-                      className="pulsable"
+                      className="toque"
                       style={{
                         minHeight: 44,
                         padding: "0 14px",
-                        borderRadius: "var(--radio-sm)",
-                        border: "1.5px solid var(--borde)",
+                        borderRadius: "var(--radio-pill)",
+                        background: "var(--hundido)",
                         color: "var(--texto-3)",
                         fontSize: 15,
                         flex: "none",
@@ -625,13 +636,22 @@ export function Detalle({
         <BotonPrincipal onClick={volver} alto={62}>Listo</BotonPrincipal>
 
         {borrando ? (
-          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 4px" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "0 4px",
+              animation: "dppop .2s var(--resorte)",
+            }}
+          >
             <div style={{ flex: 1, fontSize: 14, color: "var(--rojo)" }}>
               {e.totalCobrado > 0
                 ? `¿Borrar? Se pierde también ${money(e.totalCobrado)} ya cobrado.`
                 : "¿Borrar esta entrega? No se puede deshacer."}
             </div>
             <button
+              className="toque"
               onClick={() => {
                 void borrarEntrega(entregaId);
                 volver();
@@ -640,9 +660,9 @@ export function Detalle({
                 flex: "none",
                 height: 44,
                 padding: "0 16px",
-                borderRadius: "var(--radio)",
-                border: "1.5px solid var(--rojo)",
-                color: "var(--rojo)",
+                borderRadius: "var(--radio-pill)",
+                background: "var(--rojo)",
+                color: "#fff7ec",
                 fontSize: 15,
                 fontWeight: 600,
               }}
@@ -652,6 +672,7 @@ export function Detalle({
           </div>
         ) : (
           <button
+            className="toque"
             onClick={() => setBorrando(true)}
             style={{
               height: 52,

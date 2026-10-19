@@ -247,13 +247,13 @@ export function Cierre({ fecha, volver }: { fecha: DiaISO; volver: () => void })
                 <button
                   onClick={generarInforme}
                   disabled={generandoInforme}
-                  className="pulsable"
+                  className="toque"
                   style={{
                     height: 48,
                     width: "100%",
-                    borderRadius: "var(--radio)",
-                    border: "1.5px solid var(--borde)",
-                    color: "var(--acento-300)",
+                    borderRadius: "var(--radio-pill)",
+                    background: "var(--hundido)",
+                    color: "var(--acento-claro)",
                     fontSize: 15,
                     fontWeight: 600,
                     display: "flex",
@@ -286,11 +286,18 @@ export function Cierre({ fecha, volver }: { fecha: DiaISO; volver: () => void })
             Este día ya está cerrado.
           </div>
         ) : confirmando ? (
-          <>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 12,
+              animation: "dppop .22s var(--resorte)",
+            }}
+          >
             <div
               style={{
                 background: "var(--acento-900)",
-                borderRadius: "var(--radio)",
+                borderRadius: "var(--radio-lg)",
                 padding: 16,
                 fontSize: 15,
                 color: "var(--acento-300)",
@@ -304,12 +311,19 @@ export function Cierre({ fecha, volver }: { fecha: DiaISO; volver: () => void })
               Sí, cerrar el día
             </BotonPrincipal>
             <button
+              className="toque"
               onClick={() => setConfirmando(false)}
-              style={{ height: 52, color: "var(--texto-3)", fontSize: 16, width: "100%" }}
+              style={{
+                height: 52,
+                borderRadius: "var(--radio-pill)",
+                color: "var(--texto-3)",
+                fontSize: 16,
+                width: "100%",
+              }}
             >
               Todavía no
             </button>
-          </>
+          </div>
         ) : (
           <BotonPrincipal onClick={() => setConfirmando(true)} alto={62}>
             Cerrar el día
@@ -344,12 +358,14 @@ function Opcion({
   return (
     <button
       onClick={onClick}
+      className="toque"
       style={{
         flex: 1,
         height: 56,
-        borderRadius: "var(--radio)",
-        border: `1.5px solid ${activa ? "var(--acento-claro)" : "var(--seccion-ghost)"}`,
-        background: activa ? "var(--seccion-glow)" : "transparent",
+        borderRadius: "var(--radio-pill)",
+        background: activa ? "var(--seccion-glow)" : "var(--seccion-ghost)",
+        boxShadow: activa ? "var(--sombra-sm)" : undefined,
+        opacity: activa ? 1 : 0.55,
         color: activa ? "var(--acento-200)" : "var(--texto-2)",
         display: "flex",
         alignItems: "center",
