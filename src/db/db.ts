@@ -176,6 +176,76 @@ export interface Deuda {
   creada: number;
 }
 
+/**
+ * Un colega repartidor — no un cliente. A veces le falta mercadería y le
+ * compra, a veces le sobra y le vende. No pasa por el emparejador de tiendas
+ * de §6 (nombre + hora + secuencia de ruta): son pocos, conocidos de memoria,
+ * y se dan de alta a mano, igual que las tiendas que se cargan antes de
+ * repartirles por primera vez.
+ */
+export interface Pollero {
+  id?: number;
+  nombre: string;
+  nombreNorm: string;
+  notas: string;
+  creada: number;
+  ultimaVez: number;
+}
+
+/**
+ * Una compra o venta de mercadería con otro repartidor. Vive aparte de
+ * `Entrega` a propósito: el dinero y el stock se mueven distinto. Una
+ * **compra** engorda el stock disponible del día exactamente como si hubiera
+ * salido con eso de más por la mañana; una **venta** lo adelgaza exactamente
+ * como si lo hubiera repartido — ver `resumenDe` en `db/jornada.ts`, que
+ * sigue siendo el único sitio donde corre la matemática del despiece
+ * (CLAUDE.md §7). Ninguna de las dos pasa por el directorio de clientes ni
+ * por Cobranza: es plata y mercadería entre dos repartidores, no una venta
+ * al público.
+ */
+export interface MovimientoPollero {
+  id?: number;
+  fecha: DiaISO;
+  polleroId: number;
+  tipo: "compra" | "venta";
+  pollos: number;
+  piernas: number;
+  pechos: number;
+  /** 0 si el trato fue por unidad, sin pesar. */
+  peso: Gramos;
+  /** 0 si no aplica (trato cerrado por el lote, no por kilo). */
+  precioKg: Centimos;
+  /** Lo acordado. */
+  total: Centimos;
+  /**
+   * Lo que ya se liquidó **al registrar** el movimiento — igual que
+   * `Entrega.totalCobrado` arranca en lo que se cobró de una. Si después se
+   * le paga el resto en otro momento, eso es un `PagoPollero` aparte, fechado
+   * el día en que de verdad se movió esa plata — para que el cuadre de caja
+   * de *ese* día lo cuente y no el día del movimiento original.
+   */
+  pagado: Centimos;
+  notas: string;
+  creada: number;
+}
+
+/**
+ * Un abono posterior a un `MovimientoPollero` que no se liquidó entero al
+ * registrarlo. Fechado aparte del movimiento por la misma razón que `Pago`
+ * vive aparte de `Entrega` (§8): el cuadre de caja de un día necesita saber
+ * qué plata se movió **ese día**, no el día en que nació la cuenta.
+ */
+export interface PagoPollero {
+  id?: number;
+  polleroId: number;
+  movimientoId: number;
+  fecha: DiaISO;
+  /** Heredado del movimiento, para no tener que ir a buscarlo cada vez. */
+  tipo: "compra" | "venta";
+  monto: Centimos;
+  creada: number;
+}
+
 export type EstadoDictado = "pendiente" | "procesado" | "descartado" | "error";
 
 /**
@@ -246,6 +316,9 @@ class BaseDonPio extends Dexie {
   gastos!: Table<Gasto, number>;
   ajustes!: Table<Ajuste, string>;
   informes!: Table<Informe, string>;
+  polleros!: Table<Pollero, number>;
+  movimientosPollero!: Table<MovimientoPollero, number>;
+  pagosPollero!: Table<PagoPollero, number>;
 
   constructor() {
     super("donpio");
@@ -289,6 +362,12 @@ class BaseDonPio extends Dexie {
             j.stockPechos = j.stockPechos ?? 0;
           }),
       );
+
+    this.version(7).stores({
+      polleros: "++id, nombreNorm",
+      movimientosPollero: "++id, fecha, polleroId, tipo",
+      pagosPollero: "++id, polleroId, movimientoId, fecha",
+    });
   }
 }
 

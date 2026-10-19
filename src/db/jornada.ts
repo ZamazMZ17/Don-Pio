@@ -2,6 +2,7 @@ import { db, type Jornada } from "./db";
 import { diaSemana, hoyISO, type DiaISO } from "../lib/fecha";
 import { aCobrar, type Centimos } from "../lib/dinero";
 import { estadoDe } from "../dominio/calculo";
+import { resumenPollerosDe } from "./polleros";
 
 /** Hora de cierre por defecto. Se cambia desde Ajustes. */
 export const HORA_CIERRE_DEFECTO = "19:30";
@@ -98,6 +99,18 @@ export interface ResumenDia {
    * cada uno dejó un pecho sin dueño todavía.
    */
   pechosLibres: number;
+  /** Comprado hoy a otros repartidores — ya está sumado dentro de "restante". */
+  compraPollos: number;
+  compraPiernas: number;
+  compraPechos: number;
+  /** Vendido hoy a otros repartidores — ya está restado dentro de "restante". */
+  ventaPollos: number;
+  ventaPiernas: number;
+  ventaPechos: number;
+  /** Lo pagado hoy por comprarle a un pollero: sale de la caja igual que un gasto. */
+  pagadoPolleros: Centimos;
+  /** Lo cobrado hoy por venderle a un pollero: entra a la caja igual que un cobro. */
+  cobradoPolleros: Centimos;
   cobrado: Centimos;
   /** Lo del día que falta, **sin** las deudas viejas. */
   porCobrarDelDia: Centimos;
@@ -109,10 +122,11 @@ export interface ResumenDia {
 }
 
 export async function resumenDe(fecha: DiaISO): Promise<ResumenDia> {
-  const [jornada, entregas, gastos] = await Promise.all([
+  const [jornada, entregas, gastos, polleros] = await Promise.all([
     leerJornada(fecha),
     db.entregas.where("fecha").equals(fecha).toArray(),
     db.gastos.where("fecha").equals(fecha).toArray(),
+    resumenPollerosDe(fecha),
   ]);
 
   const repartidoPollos = entregas.reduce((a, e) => a + e.pollos, 0);
@@ -134,10 +148,27 @@ export async function resumenDe(fecha: DiaISO): Promise<ResumenDia> {
    * Si aun así entrega más piernas de las que tiene sueltas, esas de más
    * solo pudieron salir de partir pollos enteros por la pierna: cada una
    * gasta un pollo más y deja un pecho suelto, todavía sin vender.
+   *
+   * Comprarle a un pollero (db/polleros.ts) engorda el stock exactamente
+   * como si hubiera salido con eso de más por la mañana; vendérselo lo
+   * adelgaza exactamente como si lo hubiera repartido. Por eso entran a la
+   * misma cuenta — `stockXEf`/`repartidoXTotal` — **antes** de que corra la
+   * matemática de arriba, y esa matemática no tiene que saber que existen.
+   * Los `repartidoX` que devuelve esta función se quedan significando **solo**
+   * entregas a clientes — es lo que ya leen Hoy («Has repartido») e
+   * informes.ts, y mezclar ahí una venta al por mayor a un colega los haría
+   * mentir sobre cuántas entregas hubo.
    */
-  const pechosDeRotura = Math.max(0, repartidoPechos - jornada.stockPechos);
-  const piernasDisponibles = jornada.stockPiernas + pechosDeRotura;
-  const roturasPorPierna = Math.max(0, repartidoPiernas - piernasDisponibles);
+  const stockPollosEf = jornada.stockPollos + polleros.compraPollos;
+  const stockPiernasEf = jornada.stockPiernas + polleros.compraPiernas;
+  const stockPechosEf = jornada.stockPechos + polleros.compraPechos;
+  const repartidoPollosTotal = repartidoPollos + polleros.ventaPollos;
+  const repartidoPiernasTotal = repartidoPiernas + polleros.ventaPiernas;
+  const repartidoPechosTotal = repartidoPechos + polleros.ventaPechos;
+
+  const pechosDeRotura = Math.max(0, repartidoPechosTotal - stockPechosEf);
+  const piernasDisponibles = stockPiernasEf + pechosDeRotura;
+  const roturasPorPierna = Math.max(0, repartidoPiernasTotal - piernasDisponibles);
 
   return {
     stockPollos: jornada.stockPollos,
@@ -146,10 +177,18 @@ export async function resumenDe(fecha: DiaISO): Promise<ResumenDia> {
     repartidoPollos,
     repartidoPiernas,
     repartidoPechos,
-    restantePollos: jornada.stockPollos - repartidoPollos - pechosDeRotura - roturasPorPierna,
-    restantePiernas: Math.max(0, piernasDisponibles - repartidoPiernas),
+    restantePollos: stockPollosEf - repartidoPollosTotal - pechosDeRotura - roturasPorPierna,
+    restantePiernas: Math.max(0, piernasDisponibles - repartidoPiernasTotal),
     piernasDisponibles,
-    pechosLibres: Math.max(0, jornada.stockPechos - repartidoPechos) + roturasPorPierna,
+    pechosLibres: Math.max(0, stockPechosEf - repartidoPechosTotal) + roturasPorPierna,
+    compraPollos: polleros.compraPollos,
+    compraPiernas: polleros.compraPiernas,
+    compraPechos: polleros.compraPechos,
+    ventaPollos: polleros.ventaPollos,
+    ventaPiernas: polleros.ventaPiernas,
+    ventaPechos: polleros.ventaPechos,
+    pagadoPolleros: polleros.pagadoHoy,
+    cobradoPolleros: polleros.cobradoHoy,
     cobrado: entregas.reduce((a, e) => a + e.totalCobrado, 0),
     // Solo mientras el día está abierto. Al cerrarlo, lo que faltaba se
     // convirtió en deuda de la tienda; seguir contándolo aquí lo sumaría dos
