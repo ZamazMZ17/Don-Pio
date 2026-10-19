@@ -159,7 +159,7 @@ export function Tiendas({ abrirFicha }: { abrirFicha: (tiendaId: number) => void
         <button
           aria-label="Nueva tienda"
           onClick={() => setAgregando((v) => !v)}
-          className="pulsable"
+          className="toque"
           style={{
             // El directorio se construye solo desde los dictados — agregar
             // a mano es el camino secundario, así que no compite en peso
@@ -167,8 +167,8 @@ export function Tiendas({ abrirFicha }: { abrirFicha: (tiendaId: number) => void
             flex: "none",
             width: 52,
             height: 52,
-            borderRadius: "var(--radio)",
-            border: "1.5px solid var(--borde)",
+            borderRadius: "50%",
+            background: "var(--hundido)",
             color: "var(--texto-2)",
             display: "flex",
             alignItems: "center",
@@ -180,7 +180,7 @@ export function Tiendas({ abrirFicha }: { abrirFicha: (tiendaId: number) => void
       </div>
 
       {agregando && (
-        <div style={{ flex: "none", padding: "0 20px 12px" }}>
+        <div style={{ flex: "none", padding: "0 20px 12px", animation: "dppop .2s var(--resorte)" }}>
           <div style={{ ...S.tarjeta, padding: 16, display: "flex", gap: 8 }}>
             <input
               autoFocus
@@ -193,7 +193,7 @@ export function Tiendas({ abrirFicha }: { abrirFicha: (tiendaId: number) => void
                 minWidth: 0,
                 height: 54,
                 borderRadius: "var(--radio)",
-                border: "1.5px solid var(--borde)",
+                border: "none",
                 background: "var(--hundido)",
                 padding: "0 14px",
                 fontSize: 17,
@@ -201,15 +201,15 @@ export function Tiendas({ abrirFicha }: { abrirFicha: (tiendaId: number) => void
             />
             <button
               onClick={crear}
-              className="pulsable-acento"
+              className="toque"
               disabled={!nombreNuevo.trim()}
               style={{
                 flex: "none",
                 width: 90,
                 height: 54,
-                borderRadius: "var(--radio)",
-                border: "1.5px solid var(--acento)",
-                color: "var(--acento-300)",
+                borderRadius: "var(--radio-pill)",
+                background: "var(--acento-claro)",
+                color: "#fff7ec",
                 fontSize: 16,
                 fontWeight: 600,
                 display: "flex",
@@ -320,7 +320,7 @@ export function Tiendas({ abrirFicha }: { abrirFicha: (tiendaId: number) => void
                     marginTop: 14,
                     paddingTop: 14,
                     borderTop: "1px solid var(--borde)",
-                    animation: "dpup .2s ease-out",
+                    animation: "dppop .22s var(--resorte)",
                   }}
                 >
                   {/*
@@ -330,15 +330,15 @@ export function Tiendas({ abrirFicha }: { abrirFicha: (tiendaId: number) => void
                   */}
                   <button
                     onClick={() => abrirFicha(t.id!)}
-                    className="pulsable"
+                    className="toque"
                     style={{
                       width: "100%",
                       minHeight: 54,
                       marginBottom: 18,
-                      borderRadius: "var(--radio)",
-                      border: "1.5px solid var(--acento)",
-                      background: "var(--acento-900)",
-                      color: "var(--acento-200)",
+                      borderRadius: "var(--radio-pill)",
+                      background: "var(--acento-claro)",
+                      boxShadow: "var(--sombra-sm)",
+                      color: "#fff7ec",
                       fontSize: 16,
                       fontWeight: 600,
                       display: "flex",
@@ -365,23 +365,23 @@ export function Tiendas({ abrirFicha }: { abrirFicha: (tiendaId: number) => void
                         minWidth: 0,
                         height: 54,
                         borderRadius: "var(--radio)",
-                        border: "1.5px solid var(--borde)",
+                        border: "none",
                         background: "var(--hundido)",
                         padding: "0 14px",
                         fontSize: 17,
                       }}
                     />
                     <button
-                      className="pulsable-acento"
+                      className="toque"
                       disabled={!nombreEdit.trim() || nombreEdit.trim() === t.nombre}
                       onClick={() => guardarNombre(t.id!, t.nombre)}
                       style={{
                         flex: "none",
                         width: 96,
                         height: 54,
-                        borderRadius: "var(--radio)",
-                        border: "1.5px solid var(--acento)",
-                        color: "var(--acento-300)",
+                        borderRadius: "var(--radio-pill)",
+                        background: "var(--acento-claro)",
+                        color: "#fff7ec",
                         fontSize: 16,
                         fontWeight: 600,
                         display: "flex",
@@ -408,14 +408,14 @@ export function Tiendas({ abrirFicha }: { abrirFicha: (tiendaId: number) => void
                         minWidth: 0,
                         height: 54,
                         borderRadius: "var(--radio)",
-                        border: "1.5px solid var(--borde)",
+                        border: "none",
                         background: "var(--hundido)",
                         padding: "0 14px",
                         fontSize: 18,
                       }}
                     />
                     <button
-                      className="pulsable-acento"
+                      className="toque"
                       disabled={!Number(monto.replace(",", "."))}
                       onClick={() => {
                         const n = Number(monto.replace(",", "."));
@@ -430,9 +430,9 @@ export function Tiendas({ abrirFicha }: { abrirFicha: (tiendaId: number) => void
                         flex: "none",
                         width: 96,
                         height: 54,
-                        borderRadius: "var(--radio)",
-                        border: "1.5px solid var(--acento)",
-                        color: "var(--acento-300)",
+                        borderRadius: "var(--radio-pill)",
+                        background: "var(--acento-claro)",
+                        color: "#fff7ec",
                         fontSize: 16,
                         fontWeight: 600,
                         display: "flex",
@@ -447,6 +447,7 @@ export function Tiendas({ abrirFicha }: { abrirFicha: (tiendaId: number) => void
 
                   {saldoVieja > 0 && (
                     <button
+                      className="toque"
                       onClick={() => {
                         void cerrarDeudas(t.id!).then(() => {
                           avisoGuardado();
@@ -457,6 +458,7 @@ export function Tiendas({ abrirFicha }: { abrirFicha: (tiendaId: number) => void
                         marginTop: 10,
                         height: 48,
                         width: "100%",
+                        borderRadius: "var(--radio-pill)",
                         color: "var(--texto-3)",
                         fontSize: 15,
                         textAlign: "center",
@@ -502,6 +504,7 @@ export function Tiendas({ abrirFicha }: { abrirFicha: (tiendaId: number) => void
                           ¿Borrar {t.nombre}? No se puede deshacer.
                         </div>
                         <button
+                          className="toque"
                           onClick={() => {
                             void borrarTienda(t.id!).then((r) => {
                               setBorrando(null);
@@ -518,9 +521,9 @@ export function Tiendas({ abrirFicha }: { abrirFicha: (tiendaId: number) => void
                             flex: "none",
                             height: 44,
                             padding: "0 16px",
-                            borderRadius: "var(--radio)",
-                            border: "1.5px solid var(--rojo)",
-                            color: "var(--rojo)",
+                            borderRadius: "var(--radio-pill)",
+                            background: "var(--rojo)",
+                            color: "#fff7ec",
                             fontSize: 15,
                             fontWeight: 600,
                           }}
@@ -530,10 +533,12 @@ export function Tiendas({ abrirFicha }: { abrirFicha: (tiendaId: number) => void
                       </div>
                     ) : (
                       <button
+                        className="toque"
                         onClick={() => setBorrando(t.id!)}
                         style={{
                           height: 48,
                           width: "100%",
+                          borderRadius: "var(--radio-pill)",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
