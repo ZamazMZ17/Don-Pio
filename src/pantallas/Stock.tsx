@@ -221,9 +221,11 @@ export function Stock({
         </BotonPrincipal>
         <button
           onClick={ahoraNo}
+          className="toque"
           style={{
             height: 52,
             width: "100%",
+            borderRadius: "var(--radio-pill)",
             color: "var(--texto-3)",
             fontSize: 16,
             textAlign: "center",
@@ -258,6 +260,7 @@ function Campo({
     <button
       onClick={onClick}
       aria-label={`${rotulo}: ${valor || "sin cantidad"}`}
+      className="toque"
       style={{
         ...S.tarjeta,
         flex: 1,
@@ -266,8 +269,10 @@ function Campo({
         padding: "10px 14px 12px",
         // Ancho fijo en los dos estados — si cambiara de 1px a 2px al
         // activarse, el contenido saltaría un pixel al pasar de un campo a
-        // otro con box-sizing: border-box.
-        border: activo ? "2px solid var(--acento)" : "2px solid var(--linea)",
+        // otro con box-sizing: border-box. Transparente en vez de quitarlo
+        // del todo, por la misma razón: un borde que aparece de la nada
+        // también corre el contenido.
+        border: activo ? "2px solid var(--acento-claro)" : "2px solid transparent",
         background: activo ? "var(--acento-900)" : "var(--superficie)",
       }}
     >

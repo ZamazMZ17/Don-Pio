@@ -55,11 +55,10 @@ export function HojaNovedades({ cambios, onCerrar }: { cambios: Cambio[]; onCerr
         pointerEvents: "auto",
         margin: "0 18px 14px",
         background: "var(--superficie)",
-        borderRadius: "var(--radio-lg)",
+        borderRadius: "var(--radio-xl)",
         padding: 20,
-        border: "1px solid var(--borde)",
-        boxShadow: "0 16px 40px rgba(0,0,0,.65)",
-        animation: "dpup .22s ease-out",
+        boxShadow: "var(--sombra-lg)",
+        animation: "dppop .24s var(--resorte)",
         maxHeight: "72vh",
         display: "flex",
         flexDirection: "column",
@@ -69,9 +68,9 @@ export function HojaNovedades({ cambios, onCerrar }: { cambios: Cambio[]; onCerr
       <div
         style={{
           fontFamily: "var(--fuente-titulo)",
-          fontSize: 24,
-          letterSpacing: 0.4,
-          textTransform: "uppercase",
+          fontSize: 26,
+          fontWeight: 800,
+          letterSpacing: -0.5,
           marginBottom: 14,
         }}
       >

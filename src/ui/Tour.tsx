@@ -227,11 +227,10 @@ function Burbuja({
         right: 14,
         ...posicion,
         background: "var(--superficie)",
-        border: "1.5px solid var(--acento)",
         borderRadius: "var(--radio-lg)",
         padding: "16px 18px 14px",
-        boxShadow: "0 10px 30px rgba(0,0,0,.45)",
-        animation: "dpup .18s ease-out",
+        boxShadow: "var(--sombra-lg)",
+        animation: "dppop .22s var(--resorte)",
       }}
     >
       <div style={{ fontSize: 12, letterSpacing: 1, color: "var(--texto-4)", marginBottom: 6 }}>
@@ -262,12 +261,12 @@ function Burbuja({
         {onAtras && (
           <button
             onClick={onAtras}
-            className="pulsable"
+            className="toque"
             style={{
               minHeight: 52,
               padding: "0 16px",
-              borderRadius: "var(--radio)",
-              border: "1.5px solid var(--borde)",
+              borderRadius: "var(--radio-pill)",
+              background: "var(--hundido)",
               color: "var(--texto-2)",
               fontSize: 16,
               flex: "none",
@@ -278,14 +277,14 @@ function Burbuja({
         )}
         <button
           onClick={onSiguiente}
-          className="pulsable-acento"
+          className="toque"
           style={{
             minHeight: 52,
             padding: "0 22px",
-            borderRadius: "var(--radio)",
-            border: "2px solid var(--acento)",
-            background: "var(--acento-900)",
-            color: "var(--acento-200)",
+            borderRadius: "var(--radio-pill)",
+            background: "var(--acento-claro)",
+            boxShadow: "var(--sombra-sm)",
+            color: "#fff7ec",
             fontSize: 17,
             fontWeight: 600,
             flex: "none",

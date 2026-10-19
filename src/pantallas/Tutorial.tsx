@@ -95,15 +95,15 @@ export function Tutorial({
         */}
         <button
           onClick={empezarTour}
-          className="pulsable-acento"
+          className="toque"
           style={{
             flex: "none",
             width: "100%",
             minHeight: 60,
-            borderRadius: "var(--radio)",
-            border: "2.5px solid var(--acento)",
-            background: "var(--acento-900)",
-            color: "var(--acento-200)",
+            borderRadius: "var(--radio-pill)",
+            background: "var(--acento-claro)",
+            boxShadow: "var(--sombra-sm)",
+            color: "#fff7ec",
             fontSize: 17,
             fontWeight: 600,
             display: "flex",
@@ -151,7 +151,6 @@ export function Tutorial({
                 padding: "12px 14px",
                 borderRadius: "var(--radio)",
                 background: "var(--acento-900)",
-                border: "1.5px solid var(--acento)",
               }}
             >
               <div style={{ ...S.rotulo, fontSize: 12, marginBottom: 4 }}>Truco</div>
@@ -173,13 +172,13 @@ export function Tutorial({
         }}
       >
         <button
-          className="pulsable"
+          className="toque"
           onClick={() => (primero ? volver() : setI(i - 1))}
           style={{
             flex: 1,
             height: 58,
-            borderRadius: "var(--radio)",
-            border: "1.5px solid var(--borde)",
+            borderRadius: "var(--radio-pill)",
+            background: "var(--hundido)",
             color: "var(--texto-2)",
             fontSize: 17,
             display: "flex",
@@ -190,15 +189,15 @@ export function Tutorial({
           {primero ? "Salir" : "Atrás"}
         </button>
         <button
-          className="pulsable-acento"
+          className="toque"
           onClick={() => (ultimo ? volver() : setI(i + 1))}
           style={{
             flex: 1.5,
             height: 58,
-            borderRadius: "var(--radio)",
-            border: "2.5px solid var(--acento)",
-            background: "var(--acento-900)",
-            color: "var(--acento-200)",
+            borderRadius: "var(--radio-pill)",
+            background: "var(--acento-claro)",
+            boxShadow: "var(--sombra-sm)",
+            color: "#fff7ec",
             fontSize: 18,
             fontWeight: 600,
             display: "flex",
