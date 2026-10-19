@@ -5,6 +5,7 @@ import {
   GraduationCap,
   Settings,
   Store,
+  Truck,
   Undo2,
   Wallet,
 } from "lucide-react";
@@ -19,6 +20,7 @@ export function Menu({ ir }: { ir: (p: Pantalla) => void }) {
     { icono: Store, label: "Tiendas", sub: "Tu directorio", destino: "tiendas" },
     { icono: CalendarClock, label: "Historial", sub: "Días cerrados", destino: "historial" },
     { icono: Wallet, label: "Gastos", sub: "Almuerzo, gasolina…", destino: "gastos" },
+    { icono: Truck, label: "Polleros", sub: "Comprar o vender entre colegas", destino: "polleros" },
     { icono: Package, label: "Cargar stock", sub: "Con cuánto sales", destino: "stock" },
     { icono: Settings, label: "Ajustes", sub: "API key y avisos", destino: "ajustes" },
     { icono: GraduationCap, label: "Cómo se usa", sub: "Un tour por la app", destino: "tutorial" },

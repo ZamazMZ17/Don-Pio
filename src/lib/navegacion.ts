@@ -29,6 +29,7 @@ export type Pantalla =
   | "gastos"
   | "ficha"
   | "tutorial"
+  | "polleros"
   | "menu";
 
 /** Las pestañas: la raíz de la navegación, de ellas no se sale hacia atrás. */
@@ -60,6 +61,7 @@ export const PADRE: Record<Rama, Pantalla> = {
   // Android tiene que coincidir, o la misma pantalla sale a un sitio
   // distinto según cuál de los dos botones se toque.
   gastos: "menu",
+  polleros: "menu",
 };
 
 /**

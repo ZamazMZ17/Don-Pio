@@ -47,6 +47,7 @@ import { Menu } from "./pantallas/Menu";
 import { FichaTienda } from "./pantallas/FichaTienda";
 import { Tutorial } from "./pantallas/Tutorial";
 import { Gastos } from "./pantallas/Gastos";
+import { Polleros } from "./pantallas/Polleros";
 import {
   BotonMas,
   BotonMic,
@@ -636,6 +637,7 @@ export default function App() {
       )}
       {pantalla === "ajustes" && <Ajustes volver={salir} />}
       {pantalla === "gastos" && <Gastos fecha={fecha} volver={salir} />}
+      {pantalla === "polleros" && <Polleros volver={salir} />}
       {pantalla === "tutorial" && (
         <Tutorial volver={salir} empezarTour={() => setTourAbierto(true)} />
       )}
